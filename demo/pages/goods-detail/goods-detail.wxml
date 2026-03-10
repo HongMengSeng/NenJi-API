@@ -24,15 +24,7 @@
       <view class="delivery-text">立即下单，预计明日 07:00-07:30 送达</view>
     </view>
     
-    <!-- 领券信息 -->
-    <view class="coupon-info">
-      <view class="coupon-item">
-        <text class="coupon-text">满99减6</text>
-      </view>
-      <view class="coupon-item">
-        <text class="coupon-text">满120减20</text>
-      </view>
-    </view>
+
     
     <!-- 服务信息 -->
     <view class="service-info">

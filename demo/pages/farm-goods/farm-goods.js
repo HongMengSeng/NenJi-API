@@ -116,51 +116,51 @@ Page({
     // 分类商品数据
     categoryGoods: {
       'all': [
-        { id: 1, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['玉米榜榜榜第1名'] },
-        { id: 2, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['快速沥干', '管饱'] },
-        { id: 3, name: '鸡蛋 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20eggs&image_size=square', price: 9.4, tags: ['玉米榜榜榜第1名'] },
-        { id: 4, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['快速沥干', '管饱'] },
-        { id: 5, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['快速沥干', '管饱'] },
-        { id: 6, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['快速沥干', '管饱'] }
+        { id: 1, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['农场直供', '新鲜采摘'] },
+        { id: 2, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['农场直供', '新鲜采摘'] },
+        { id: 3, name: '鸡蛋 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20eggs&image_size=square', price: 9.4, tags: ['农场直供', '散养'] },
+        { id: 4, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['农场直供', '新鲜采摘'] },
+        { id: 5, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['农场直供', '新鲜采摘'] },
+        { id: 6, name: '白糯玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 9.4, tags: ['农场直供', '新鲜采摘'] }
       ],
       'new': [
-        { id: 7, name: '新品玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 10.4, tags: ['新品', '限时优惠'] }
+        { id: 7, name: '新品玉米 800g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20corn%20on%20the%20cob&image_size=square', price: 10.4, tags: ['农场直供', '新品上市'] }
       ],
       'leaf': [
-        { id: 8, name: '新鲜菠菜 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20spinach&image_size=square', price: 6.4, tags: ['新鲜', '营养'] }
+        { id: 8, name: '新鲜菠菜 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20spinach&image_size=square', price: 6.4, tags: ['农场直供', '新鲜采摘'] }
       ],
       'tomato': [
-        { id: 9, name: '番茄 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square', price: 5.9, tags: ['当季', '新鲜'] }
+        { id: 9, name: '番茄 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square', price: 5.9, tags: ['农场直供', '当季新鲜'] }
       ],
       'potato': [
-        { id: 10, name: '土豆 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square', price: 2.9, tags: ['淀粉含量高', '软糯'] }
+        { id: 10, name: '土豆 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square', price: 2.9, tags: ['农场直供', '新鲜'] }
       ],
       'tofu': [
-        { id: 11, name: '嫩豆腐 400g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tofu&image_size=square', price: 3.5, tags: ['嫩', '新鲜'] }
+        { id: 11, name: '嫩豆腐 400g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tofu&image_size=square', price: 3.5, tags: ['农场直供', '新鲜制作'] }
       ],
       'mushroom': [
-        { id: 12, name: '香菇 200g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20shiitake%20mushrooms&image_size=square', price: 8.9, tags: ['鲜香', '营养'] }
+        { id: 12, name: '香菇 200g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20shiitake%20mushrooms&image_size=square', price: 8.9, tags: ['农场直供', '新鲜'] }
       ],
       'bean': [
-        { id: 13, name: '黄豆 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20soybeans&image_size=square', price: 4.9, tags: ['高蛋白', '营养'] }
+        { id: 13, name: '黄豆 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20soybeans&image_size=square', price: 4.9, tags: ['农场直供', '优质'] }
       ],
       'organic': [
-        { id: 14, name: '有机菜 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20vegetables&image_size=square', price: 12.9, tags: ['有机认证', '无农药'] }
+        { id: 14, name: '有机菜 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20vegetables&image_size=square', price: 12.9, tags: ['农场直供', '有机认证'] }
       ],
       'salad': [
-        { id: 15, name: '净菜沙拉 300g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20salad&image_size=square', price: 15.9, tags: ['新鲜', '健康'] }
+        { id: 15, name: '净菜沙拉 300g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20salad&image_size=square', price: 15.9, tags: ['农场直供', '新鲜'] }
       ],
       'duck': [
-        { id: 16, name: '鸭苗', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=duck%20lings&image_size=square', price: 19.9, tags: ['鲜活', '健康'] }
+        { id: 16, name: '鸭苗', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=duck%20lings&image_size=square', price: 19.9, tags: ['农场直供', '鲜活'] }
       ],
       'poultry': [
-        { id: 17, name: '土鸡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=free%20range%20chicken&image_size=square', price: 59.9, tags: ['散养', '新鲜'] }
+        { id: 17, name: '土鸡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=free%20range%20chicken&image_size=square', price: 59.9, tags: ['农场直供', '散养'] }
       ],
       'fruit': [
-        { id: 18, name: '苹果 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples&image_size=square', price: 7.9, tags: ['脆甜', '多汁'] }
+        { id: 18, name: '苹果 500g', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples&image_size=square', price: 7.9, tags: ['农场直供', '新鲜'] }
       ],
       'dairy': [
-        { id: 19, name: '牛奶 250ml', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20milk&image_size=square', price: 3.5, tags: ['新鲜', '营养'] }
+        { id: 19, name: '牛奶 250ml', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20milk&image_size=square', price: 3.5, tags: ['农场直供', '新鲜'] }
       ]
     },
     currentCategoryGoods: []

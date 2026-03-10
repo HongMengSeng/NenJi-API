@@ -46,7 +46,7 @@
         <view class="project-title-small">认购一亩田</view>
         <view class="project-description-small">新型农场推出的共享农业体验项目</view>
         <view class="project-price-row">
-          <view class="project-price-small">99999$</view>
+          <view class="project-price-small">￥99999</view>
           <button class="buy-btn-small" bindtap="navigateToAcreDetail" data-id="1">立即购买</button>
         </view>
       </view>
@@ -57,7 +57,7 @@
         <view class="project-title-small">某某农场</view>
         <view class="project-description-small">新型农场推出的共享农业体验项目</view>
         <view class="project-price-row">
-          <view class="project-price-small">88888$</view>
+          <view class="project-price-small">￥88888</view>
           <button class="buy-btn-small" bindtap="navigateToAcreDetail" data-id="2">立即购买</button>
         </view>
       </view>
