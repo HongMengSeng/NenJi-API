@@ -12,9 +12,8 @@ Page({
 
   // 检查登录状态
   checkLoginStatus: function() {
-    // 模拟检查登录状态
-    const hasLogin = wx.getStorageSync('hasLogin');
-    if (hasLogin) {
+    const token = wx.getStorageSync('token');
+    if (token) {
       // 已登录，跳转到首页
       wx.switchTab({
         url: '/pages/index/index'
@@ -25,55 +24,41 @@ Page({
   // 一键登录
   oneClickLogin: function() {
     if (this.data.isLogging) return;
-    
     this.setData({ isLogging: true });
-    
-    // 模拟登录过程
-    wx.showLoading({
-      title: '登录中...',
-      mask: true
-    });
-    
-    // 模拟网络请求
-    setTimeout(() => {
-      // 登录成功
-      wx.hideLoading();
-      
-      // 存储登录状态
-      wx.setStorageSync('hasLogin', true);
-      
-      // 显示登录成功提示
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success',
-        duration: 1500
-      });
-      
-      // 跳转到首页
+    wx.showLoading({ title: '登录中...', mask: true });
+    const api = require('../../utils/api');
+    api.request({ url: '/auth/login', method: 'POST', data: {
+      deviceId: 'wx-' + Date.now(),
+      platform: 'wx小程序',
+      version: '1.0.0'
+    }})
+    .then(res => {
+      // res should contain token and userInfo
+      if (res.token) {
+        wx.setStorageSync('token', res.token);
+        wx.setStorageSync('hasLogin', true);
+      }
+      wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => {
-        wx.switchTab({
-          url: '/pages/index/index'
-        });
-      }, 1500);
-      
+        wx.switchTab({ url: '/pages/index/index' });
+      }, 1200);
+    })
+    .finally(() => {
+      wx.hideLoading();
       this.setData({ isLogging: false });
-    }, 1500);
+    });
   },
 
   // 微信登录
   wechatLogin: function() {
-    wx.showToast({
-      title: '微信登录功能开发中',
-      icon: 'none'
-    });
+    wx.showToast({ title: '尚未实现', icon: 'none' });
+    // 可以调用 /api/auth/wechat 接口
   },
 
   // 手机号登录
   phoneLogin: function() {
-    wx.showToast({
-      title: '手机号登录功能开发中',
-      icon: 'none'
-    });
+    wx.showToast({ title: '尚未实现', icon: 'none' });
+    // 可以调用 /api/auth/phone 接口
   },
 
   // 查看用户协议
