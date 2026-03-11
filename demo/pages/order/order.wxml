@@ -1,19 +1,15 @@
-
-
+<!-- 商店信息 -->
 <view class="shop-info">
-  <view class="shop-name">省委二办便民服务</view>
-  <view class="shop-details">
-    <view class="shop-address">
+  <view class="shop-header">
+    <view class="shop-name">
       <text class="icon">📍</text>
-      <text>省委二办便民服务</text>
+      农场直购
     </view>
-    <view class="shop-hours">
-      <text>00:00-23:59</text>
-    </view>
+    <text class="shop-hours">00:00-23:59</text>
   </view>
   <view class="contact-buttons">
-    <button class="contact-btn">联系商家</button>
-    <button class="contact-btn">联系商家</button>
+    <text class="contact-btn">联系商家</text>
+    <text class="contact-btn">联系商家</text>
   </view>
 </view>
 
@@ -52,7 +48,7 @@
             <text class="stock">仅剩 {{item.stock}}份</text>
           </view>
           <view class="goods-bottom">
-            <view class="goods-price">¥{{item.price.toFixed(2)}}</view>
+            <view class="goods-price">¥{{item.price}}</view>
             <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
           </view>
         </view>

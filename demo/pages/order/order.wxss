@@ -13,16 +13,24 @@ page {
   margin-bottom: 10px;
 }
 
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 .shop-name {
   font-size: 16px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .shop-details {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 10px;
 }
@@ -91,45 +99,55 @@ page {
 .goods-list {
   flex: 1;
   padding: 10px;
+  box-sizing: border-box;
 }
 
 .goods-item {
   display: flex;
-  padding: 10px;
+  padding: 15px;
   border-bottom: 1px solid #eee;
   margin-bottom: 10px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .goods-image {
   width: 80px;
   height: 80px;
   border-radius: 4px;
-  margin-right: 10px;
+  margin-right: 15px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
 }
 
 .goods-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
 }
 
 .goods-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 5px;
+  word-break: break-word;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 .goods-sales {
   display: flex;
   gap: 10px;
   font-size: 12px;
-  color: #999;
-  margin-bottom: 5px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .sold {
@@ -144,12 +162,15 @@ page {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 5px;
+  flex-shrink: 0;
 }
 
 .goods-price {
   font-size: 16px;
   font-weight: bold;
   color: #ff6b6b;
+  flex-shrink: 0;
 }
 
 .add-btn {
@@ -163,6 +184,8 @@ page {
   justify-content: center;
   font-size: 18px;
   font-weight: bold;
+  flex-shrink: 0;
+  margin-left: 10px;
 }
 
 /* 分类标题 */
@@ -246,11 +269,6 @@ page {
 }
 
 /* 调整商品图片大小和布局 */
-.goods-image {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-}
 
 /* 确保页面内容不被底部栏遮挡 */
 .content {
