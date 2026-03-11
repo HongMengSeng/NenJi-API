@@ -23,26 +23,26 @@
       {
         "pagePath": "pages/index/index",
         "text": "首页",
-        "iconPath": "/images/room.png",
-        "selectedIconPath": "/images/room_r.png"
+        "iconPath": "/images/rroom.png",
+        "selectedIconPath": "/images/rroomm.png"
       },
       {
         "pagePath": "pages/activity/activity",
         "text": "活动",
-        "iconPath": "/images/forest.png",
-        "selectedIconPath": "/images/forest_r.png"
+        "iconPath": "/images/tyyyyy.png",
+        "selectedIconPath": "/images/tyyyyyyyy.png"
       },
       {
         "pagePath": "pages/cart/cart",
         "text": "购物车",         
-        "iconPath": "/images/shopping_r.png",
-        "selectedIconPath": "/images/shopping.png"
+        "iconPath": "/images/shoppingg.png",
+        "selectedIconPath": "/images/tyyy.png"
       },
       {
         "pagePath": "pages/profile/profile",
         "text": "我的",
-        "iconPath": "/images/people.png",
-        "selectedIconPath": "/images/people_r.png"
+        "iconPath": "/images/ty.png",
+        "selectedIconPath": "/images/tyy.png"
       }
     ],
     "color": "#999",
