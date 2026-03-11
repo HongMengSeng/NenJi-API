@@ -13,6 +13,8 @@ namespace WebApplication1.Data
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<Commodity> Commodities { get; set; } = null!;
+        public DbSet<ShippingAddress> ShippingAddresses { get; set; } = null!;
+        public DbSet<OrderMain> Orders { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,6 +71,47 @@ namespace WebApplication1.Data
                 b.Property(x => x.ImageData)
                     .HasColumnName("image_data")
                     .HasColumnType("longblob");
+            });
+
+            modelBuilder.Entity<ShippingAddress>(b =>
+            {
+                b.ToTable("shipping_address");
+                b.HasKey(x => x.AddressId);
+                b.Property(x => x.AddressId).HasColumnName("address_id");
+                b.Property(x => x.UserId).HasColumnName("user_id");
+                b.Property(x => x.ContentName).HasColumnName("content_name");
+                b.Property(x => x.Province).HasColumnName("province");
+                b.Property(x => x.City).HasColumnName("city");
+                b.Property(x => x.MunicipalDistricts).HasColumnName("municipal_districts");
+                b.Property(x => x.Town).HasColumnName("town");
+                b.Property(x => x.HouseNumber).HasColumnName("house_number");
+            });
+
+            modelBuilder.Entity<OrderMain>(b =>
+            {
+                b.ToTable("order");
+                b.HasKey(x => x.OrderId);
+                b.Property(x => x.OrderId).HasColumnName("order_id");
+                b.Property(x => x.OrderNumber).HasColumnName("order_number");
+                b.Property(x => x.UserId).HasColumnName("user_id");
+                b.Property(x => x.ActualPayment).HasColumnName("actual_payment");
+                b.Property(x => x.AddressId).HasColumnName("address_id");
+                b.Property(x => x.OrderType).HasColumnName("order_type");
+                b.Property(x => x.TotalAmount).HasColumnName("total_amount");
+                b.Property(x => x.OrderStatus).HasColumnName("order_status");
+                b.Property(x => x.PaymentStatus).HasColumnName("payment_status");
+                b.Property(x => x.DeliveryMethods).HasColumnName("delivery_methods");
+                b.Property(x => x.ShippingAddress).HasColumnName("shipping_address");
+                b.Property(x => x.ContactPerson).HasColumnName("contact_person");
+                b.Property(x => x.ContactNumber).HasColumnName("contact_number");
+                b.Property(x => x.OrderCreateTime).HasColumnName("order_create_time");
+                b.Property(x => x.PaymentTime).HasColumnName("payment_time");
+                b.Property(x => x.PaymentMethods).HasColumnName("payment_methods");
+                b.Property(x => x.OrderFormId).HasColumnName("order_form_id");
+                b.Property(x => x.SnapshotReceiverName).HasColumnName("snapshot_receiver_name");
+                b.Property(x => x.SnapshotReceiverPhone).HasColumnName("snapshot_receiver_phone");
+                b.Property(x => x.SnapshotDeliveryAddress).HasColumnName("snapshot_delivery_address");
+                b.Property(x => x.SnapshotUserNickname).HasColumnName("snapshot_user_nickname");
             });
         }
     }
