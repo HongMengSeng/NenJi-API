@@ -100,5 +100,13 @@ Page({
     this.setData({
       activeTab: tab
     })
+  },
+
+  // 跳转到活动详情页面
+  navigateToActivityDetail: function(e) {
+    const activityId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: '/pages/activity-detail/activity-detail?id=' + activityId
+    });
   }
 })

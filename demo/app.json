@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/index/index",
     "pages/activity/activity",
+    "pages/activity-detail/activity-detail",
     "pages/cart/cart",
     "pages/profile/profile",
     "pages/acre/acre",
