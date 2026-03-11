@@ -123,7 +123,7 @@
   <!-- 热销菜品 -->
   <view class="section-title">
     <text style="color: #F44336;">热销菜品</text>
-    <text class="more">查看更多</text>
+    <text class="more" bindtap="navigateToOrder">查看更多</text>
   </view>
   <view class="goods-list">
     <view class="goods-item" bindtap="navigateToGoodsDetail" data-id="13">
