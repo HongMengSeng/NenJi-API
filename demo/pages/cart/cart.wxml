@@ -44,7 +44,7 @@
   <view class="cart-bottom">
     <view class="cart-badge">
       <text class="cart-icon">🛒</text>
-      <view class="badge" wx:if="{{cartList.length > 0}}">{{cartList.length}}</view>
+      <view class="badge" wx:if="{{selectedCount > 0}}">{{selectedCount}}</view>
     </view>
     <view class="total-price">合计: ¥{{totalPrice}}</view>
     <view class="settle-btn" bindtap="handleSettle">

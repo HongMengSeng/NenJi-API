@@ -110,12 +110,18 @@ Page({
     // 🌟 弹窗点击确认购买
     handleConfirmPurchase() {
       // 这里执行购买逻辑（例如生成订单）
-      wx.showToast({ title: "购买成功！", icon: "success" });
-      this.setData({ showModal: false });
-      
-      // 👉 接下来你要添加的新功能：
-      // 1. 跳转订单详情页
-      // wx.navigateTo({ url: "/pages/order/order" });
+      this.setData({ showModal: false }, () => {
+        // 跳转到支付页面
+        wx.navigateTo({ 
+          url: "../buy/buy",
+          success: function(res) {
+            console.log("跳转成功");
+          },
+          fail: function(res) {
+            console.log("跳转失败", res);
+          }
+        });
+      });
       
       // 2. 清空购物车或更新订单状态
     },

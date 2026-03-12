@@ -1,53 +1,54 @@
 {
-  "pages": [
-    "pages/login/login",
-    "pages/index/index",
-    "pages/activity/activity",
-    "pages/activity-detail/activity-detail",
-    "pages/cart/cart",
-    "pages/profile/profile",
-    "pages/acre/acre",
-    "pages/acre-detail/acre-detail",
-    "pages/farm-goods/farm-goods",
-    "pages/order/order",
-    "pages/goods-detail/goods-detail"
-  ],
-  "window": {
-    "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "商品",
-    "navigationBarTextStyle": "black"
-  },
-  "tabBar": {
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "/images/rroom.png",
-        "selectedIconPath": "/images/rroomm.png"
-      },
-      {
-        "pagePath": "pages/activity/activity",
-        "text": "活动",
-        "iconPath": "/images/tyyyyy.png",
-        "selectedIconPath": "/images/tyyyyyyyy.png"
-      },
-      {
-        "pagePath": "pages/cart/cart",
-        "text": "购物车",         
-        "iconPath": "/images/shoppingg.png",
-        "selectedIconPath": "/images/tyyy.png"
-      },
-      {
-        "pagePath": "pages/profile/profile",
-        "text": "我的",
-        "iconPath": "/images/ty.png",
-        "selectedIconPath": "/images/tyy.png"
-      }
+    "pages": [
+        "pages/login/login",
+        "pages/index/index",
+        "pages/activity/activity",
+        "pages/activity-detail/activity-detail",
+        "pages/cart/cart",
+        "pages/profile/profile",
+        "pages/acre/acre",
+        "pages/acre-detail/acre-detail",
+        "pages/farm-goods/farm-goods",
+        "pages/order/order",
+        "pages/goods-detail/goods-detail",
+        "pages/buy/buy"
     ],
-    "color": "#999",
-    "selectedColor": "#e64340",
-    "backgroundColor": "#fff",
-    "borderStyle": "black"
-  }
+    "window": {
+        "backgroundTextStyle": "light",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTitleText": "商品",
+        "navigationBarTextStyle": "black"
+    },
+    "tabBar": {
+        "list": [
+            {
+                "pagePath": "pages/index/index",
+                "text": "首页",
+                "iconPath": "/images/rroom.png",
+                "selectedIconPath": "/images/rroomm.png"
+            },
+            {
+                "pagePath": "pages/activity/activity",
+                "text": "活动",
+                "iconPath": "/images/tyyyyy.png",
+                "selectedIconPath": "/images/tyyyyyyyy.png"
+            },
+            {
+                "pagePath": "pages/cart/cart",
+                "text": "购物车",
+                "iconPath": "/images/shoppingg.png",
+                "selectedIconPath": "/images/tyyy.png"
+            },
+            {
+                "pagePath": "pages/profile/profile",
+                "text": "我的",
+                "iconPath": "/images/ty.png",
+                "selectedIconPath": "/images/tyy.png"
+            }
+        ],
+        "color": "#999",
+        "selectedColor": "#e64340",
+        "backgroundColor": "#fff",
+        "borderStyle": "black"
+    }
 }
