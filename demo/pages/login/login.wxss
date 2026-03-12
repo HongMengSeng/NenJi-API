@@ -136,6 +136,13 @@
   transition: all 0.3s ease;
   padding: 20rpx;
   border-radius: 12rpx;
+  background: transparent;
+  border: none;
+  line-height: normal;
+}
+
+.login-method::after {
+  border: none;
 }
 
 .login-method:hover {

@@ -24,10 +24,10 @@
           <text class="method-icon">�</text>
           <text class="method-text">微信登录</text>
         </view>
-        <view class="login-method" bindtap="phoneLogin">
+        <button class="login-method" open-type="getPhoneNumber" bind:getphonenumber="getPhoneNumber">
           <text class="method-icon">📞</text>
           <text class="method-text">手机号登录</text>
-        </view>
+        </button>
       </view>
     </view>
   </view>

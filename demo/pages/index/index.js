@@ -8,6 +8,8 @@ Page({
     farmGoods: [],
     // 热销菜品数据
     hotDishes: [],
+    // 认购一亩田项目数据
+    acreProjects: [],
     // 加载状态
     loading: true
   },
@@ -22,131 +24,52 @@ Page({
   getHomeData: function () {
     wx.showLoading({ title: '加载中...' })
     
-    // 模拟后台API请求
-    setTimeout(() => {
-      // 模拟后台返回的数据
-      const data = {
-        swiperList: [
-          {
-            id: 1,
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=delicious%20roast%20chicken%20with%20vegetables&image_size=landscape_16_9'
-          },
-          {
-            id: 2,
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%20and%20fruits&image_size=landscape_16_9'
-          },
-          {
-            id: 3,
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20farm%20products&image_size=landscape_16_9'
-          }
-        ],
-        functionButtons: [
-          {
-            id: 1,
-            name: '认购一亩田',
-            color: '#4CAF50',
-            path: '/pages/activity/activity'
-          },
-          {
-            id: 2,
-            name: '农场优选',
-            color: '#FF9800',
-            path: '/pages/index/index'
-          },
-          {
-            id: 3,
-            name: '点餐',
-            color: '#F44336',
-            path: '/pages/index/index'
-          },
-          {
-            id: 4,
-            name: '活动中心',
-            color: '#2196F3',
-            path: '/pages/activity/activity'
-          }
-        ],
-        farmGoods: [
-          {
-            id: 1,
-            name: '甜腻玉米500g',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20sweet%20corn&image_size=square',
-            price: 8.9,
-            originalPrice: 9.9,
-            tags: ['软糯香甜', '颗粒饱满'],
-            stock: 464646
-          },
-          {
-            id: 2,
-            name: '甜腻玉米500g',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20potatoes&image_size=square',
-            price: 8.9,
-            originalPrice: 9.9,
-            tags: ['软糯香甜', '颗粒饱满'],
-            stock: 464646
-          },
-          {
-            id: 3,
-            name: '甜腻玉米500g',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20apples%20and%20oranges&image_size=square',
-            price: 8.9,
-            originalPrice: 9.9,
-            tags: ['软糯香甜', '颗粒饱满'],
-            stock: 464646
-          },
-          {
-            id: 4,
-            name: '甜腻玉米500g',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square',
-            price: 8.9,
-            originalPrice: 9.9,
-            tags: ['软糯香甜', '颗粒饱满'],
-            stock: 464646
-          }
-        ],
-        hotDishes: [
-          {
-            id: 1,
-            name: '剁椒鱼头',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square',
-            price: 8.9,
-            tags: ['月销10000份']
-          },
-          {
-            id: 2,
-            name: '剁椒鱼头',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square',
-            price: 8.9,
-            tags: ['月销10000份']
-          },
-          {
-            id: 3,
-            name: '剁椒鱼头',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square',
-            price: 8.9,
-            tags: ['月销10000份']
-          },
-          {
-            id: 4,
-            name: '剁椒鱼头',
-            image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish&image_size=square',
-            price: 8.9,
-            tags: ['月销10000份']
-          }
-        ]
+    const api = require('../../utils/api')
+    api.request({ 
+      url: '/DemoApi/home', 
+      method: 'GET' 
+    })
+    .then(data => {
+      // 清理数据中的图片路径（去除反引号和空格）
+      const cleanData = {
+        swiperList: (data.swiperList || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        })),
+        functionButtons: data.functionButtons || [],
+        farmGoods: (data.farmGoods || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        })),
+        hotDishes: (data.hotDishes || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        })),
+        acreProjects: (data.acreProjects || []).map(item => ({
+          ...item,
+          image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+        }))
       }
       
-      // 更新数据
       this.setData({
-        swiperList: data.swiperList,
-        functionButtons: data.functionButtons,
-        farmGoods: data.farmGoods,
-        hotDishes: data.hotDishes,
+        swiperList: cleanData.swiperList,
+        functionButtons: cleanData.functionButtons,
+        farmGoods: cleanData.farmGoods,
+        hotDishes: cleanData.hotDishes,
+        acreProjects: cleanData.acreProjects,
         loading: false
       })
-      
       wx.hideLoading()
-    }, 1000)
+    })
+    .catch(err => {
+      console.error('获取首页数据失败:', err)
+      wx.hideLoading()
+      wx.showToast({ 
+        title: '加载失败，请重试', 
+        icon: 'none' 
+      })
+      this.setData({ loading: false })
+    })
   },
 
   // 搜索功能
@@ -158,6 +81,17 @@ Page({
   },
 
   // 功能按钮点击事件
+  onFunctionBtnClick: function (e) {
+    const item = e.currentTarget.dataset.item
+    if (item && item.path) {
+      if (item.path.indexOf('/pages/index/index') !== -1 || item.path.indexOf('/pages/activity/activity') !== -1) {
+        wx.switchTab({ url: item.path })
+      } else {
+        wx.navigateTo({ url: item.path })
+      }
+    }
+  },
+
   functionBtnClick: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showToast({

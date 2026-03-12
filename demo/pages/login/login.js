@@ -51,14 +51,74 @@ Page({
 
   // 微信登录
   wechatLogin: function() {
-    wx.showToast({ title: '尚未实现', icon: 'none' });
-    // 可以调用 /api/auth/wechat 接口
+    if (this.data.isLogging) return;
+    this.setData({ isLogging: true });
+
+    const api = require('../../utils/api');
+
+    wx.showLoading({ title: '微信登录中...', mask: true });
+
+    wx.login({
+      success: (res) => {
+        if (!res.code) {
+          wx.showToast({ title: '微信登录失败，请重试', icon: 'none' });
+          return;
+        }
+
+        api.request({
+          url: '/auth/wechat',
+          method: 'POST',
+          data: {
+            code: res.code
+          }
+        })
+        .then(data => {
+          if (data && data.token) {
+            wx.setStorageSync('token', data.token);
+            wx.setStorageSync('hasLogin', true);
+          }
+          wx.showToast({ title: '登录成功', icon: 'success' });
+          setTimeout(() => {
+            wx.switchTab({ url: '/pages/index/index' });
+          }, 1200);
+        })
+        .finally(() => {
+          wx.hideLoading();
+          this.setData({ isLogging: false });
+        });
+      },
+      fail: () => {
+        wx.hideLoading();
+        this.setData({ isLogging: false });
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
+      }
+    });
   },
 
   // 手机号登录
-  phoneLogin: function() {
-    wx.showToast({ title: '尚未实现', icon: 'none' });
-    // 可以调用 /api/auth/phone 接口
+  getPhoneNumber(e) {
+    if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+      wx.showToast({ title: '您拒绝了授权', icon: 'none' });
+      return;
+    }
+
+    const code = e.detail.code;
+    wx.request({
+      url: 'http://192.168.1.12:5141/api/GetPhone',
+      method: 'POST',
+      data: { code: code },
+      success: (res) => {
+        if (res.data.success) {
+          wx.showToast({ title: '获取成功', icon: 'success' });
+          console.log('手机号：', res.data.purePhoneNumber);
+        } else {
+          wx.showToast({ title: res.data.msg, icon: 'none' });
+        }
+      },
+      fail: () => {
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      }
+    });
   },
 
   // 查看用户协议
