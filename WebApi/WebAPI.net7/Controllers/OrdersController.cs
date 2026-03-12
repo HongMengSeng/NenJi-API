@@ -89,7 +89,9 @@ namespace WebApplication1.Controllers
                     orderNo = o.OrderNumber,
                     totalPrice = o.TotalAmount ?? 0m,
                     status = (o.OrderStatus ?? 0).ToString(),
-                    createTime = o.OrderCreateTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+                    createTime = o.OrderCreateTime.HasValue
+     ? o.OrderCreateTime.Value.ToString("yyyy-MM-dd HH:mm:ss")
+     : ""
                 })
                 .ToListAsync();
 
