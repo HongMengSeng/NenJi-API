@@ -35,14 +35,14 @@ namespace WebApplication1.Controllers
                 name = "认购一亩田",
                 description = "新型农场推出的共享农业体验项目",
                 price = 99999,
-                image = "https://example.com/farm1.jpg"
+                image = "https://tse2.mm.bing.net/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?rs=1&pid=ImgDetMain&o=7&rm=3"
             },
             new {
                 id = 2,
                 name = "某某农场",
                 description = "新型农场推出的共享农业体验项目",
                 price = 88888,
-                image = "https://example.com/farm2.jpg"
+                image = "https://tse2.mm.bing.net/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?rs=1&pid=ImgDetMain&o=7&rm=3"
             }
         },
 
