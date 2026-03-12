@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\WebAPI",
+    "\\WebAPI\\Common",
+    "\\WebAPI\\Controllers",
+    "\\WebAPI\\Data",
+    "\\WebAPI\\Dtos",
+    "\\WebAPI\\Entities",
+    "\\WebAPI\\Middleware",
+    "\\WebAPI\\Options",
+    "\\WebAPI\\Properties"
+  ],
+  "SelectedNode": "\\WebAPI",
+  "PreviewInSolutionExplorer": false
+}
