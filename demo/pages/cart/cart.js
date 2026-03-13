@@ -1,47 +1,38 @@
 Page({
     data: {
-      // 模拟商品数据
-      cartList: [
-        {
-          id: 1,
-          name: "【广东直邮】白糯玉米 800g",
-          image: "/images/activity-active.png",
-          tag: "包邮",
-          price: 69.99,
-          count: 1,
-          checked: false
-        },
-        {
-          id: 2,
-          name: "黄花鱼鱼味鲜美，肉嫩滑且肉质呈蒜瓣状...",
-          image: "/images/activity-active.png",
-          tag: "顺丰包邮",
-          price: 169.00,
-          count: 1,
-          checked: false
-        },
-        {
-          id: 3,
-          name: "清真农家散养三黄鸡新鲜生鸡整只...",
-          image: "/images/activity-active.png",
-          tag: "包邮",
-          price: 219.00,
-          count: 1,
-          checked: false
-        }
-      ],
+      cartList: [],
       totalPrice: "0.00",
       selectedCount: 0,
       showModal: false // 控制弹窗显示
     },
   
     onLoad() {
-      this.calcTotal();
+      this.getCartList();
     },
     
     onShow() {
-      // 页面显示时更新购物车角标
-      this.calcTotal();
+      // 页面显示时更新购物车数据和角标
+      this.getCartList();
+    },
+    
+    // 从API获取购物车数据
+    getCartList() {
+      wx.request({
+        url: 'http://localhost:5162/api/DemoApi/cart',
+        method: 'GET',
+        success: (res) => {
+          console.log('获取购物车数据成功:', res.data);
+          if (res.data.code === 0) {
+            this.setData({
+              cartList: res.data.data.cartList
+            });
+            this.calcTotal();
+          }
+        },
+        fail: (err) => {
+          console.error('获取购物车数据失败:', err);
+        }
+      });
     },
   
     // 数量减
