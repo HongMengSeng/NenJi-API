@@ -97,17 +97,17 @@ public class Program
         builder.Services.AddScoped<JwtHelper>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAppService, AppService>();
-        builder.Services.AddScoped<AppDataSeeder>();
+ 
         builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
 
         var app = builder.Build();
 
-        using (var scope = app.Services.CreateScope())
-        {
-            var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
-            seeder.SeedAsync().GetAwaiter().GetResult();
-        }
+        //using (var scope = app.Services.CreateScope())
+        //{
+        //    var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
+        //    seeder.SeedAsync().GetAwaiter().GetResult();
+        //}
 
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
