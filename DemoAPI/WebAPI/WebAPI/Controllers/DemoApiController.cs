@@ -14,9 +14,9 @@ public class DemoApiController : ControllerBase
         {
             swiperList = new[]
             {
-                new { id = 1, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" },
-                new { id = 2, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" },
-                new { id = 3, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" }
+                new { id = 1, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" },
+                new { id = 2, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" },
+                new { id = 3, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" }
             },
             functionButtons = new[]
             {
@@ -103,9 +103,9 @@ public class DemoApiController : ControllerBase
     {
         var swiperList = new[]
         {
-            new { id = 1, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" },
-            new { id = 2, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" },
-            new { id = 3, image = "https://th.bing.com/th/id/OIP.7Mx2bUZRQOkkrDY8-4XGtQAAAA?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" }
+            new { id = 1, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" },
+            new { id = 2, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" },
+            new { id = 3, image = "https://www.bing.com/th/id/OIP.g7_zd90IADVKDX8bq_uyRgHaHr?w=196&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2" }
         };
 
 

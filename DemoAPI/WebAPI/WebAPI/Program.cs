@@ -27,6 +27,15 @@ public class Program
         Directory.CreateDirectory(dataProtectionPath);
 
         builder.Services.AddControllers();
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AdminCors", policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
         builder.Services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
         builder.Services.AddEndpointsApiExplorer();
@@ -112,6 +121,7 @@ public class Program
         {
             app.UseHttpsRedirection();
         }
+        app.UseCors("AdminCors");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

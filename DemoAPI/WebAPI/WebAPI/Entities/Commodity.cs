@@ -33,4 +33,18 @@ public class Commodity
     [Column("image_url")]
     [MaxLength(255)]
     public string? ImageUrl { get; set; }
+
+    [Column("unit_price")]
+    public decimal UnitPrice { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("storage_condition")]
+    [MaxLength(100)]
+    public string? StorageCondition { get; set; }
+
+    [Column("weight_unit")]
+    [MaxLength(20)]
+    public string? WeightUnit { get; set; }
 }

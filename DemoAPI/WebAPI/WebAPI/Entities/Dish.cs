@@ -46,4 +46,13 @@ public class Dish
 
     [Column("user_purchase_limit")]
     public int UserPurchaseLimit { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("carousel_images")]
+    public string? CarouselImages { get; set; }
+
+    [Column("spec_images")]
+    public string? SpecImages { get; set; }
 }

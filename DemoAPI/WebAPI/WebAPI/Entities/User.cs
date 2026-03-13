@@ -35,4 +35,11 @@ public class User
 
     [Column("role_id")]
     public int RoleId { get; set; }
+
+    [Column("gender")]
+    [MaxLength(10)]
+    public string? Gender { get; set; }
+
+    [Column("status")]
+    public int Status { get; set; }
 }
