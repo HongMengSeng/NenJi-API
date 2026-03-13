@@ -22,9 +22,7 @@
     <view class="divider"></view>
     
     <view class="acre-description">
-      <view class="desc-item">本地块为标准型农业用地，实测面积整一亩（666.7平方米）</view>
-      <view class="desc-item">地形状方正规整，四至清晰，无边角零碎、无低洼坑洼，整体地势平坦</view>
-      <view class="desc-item">开阔，南北通透，采光通风条件绝佳，属于优质良田范畴</view>
+      <view class="desc-item">{{acreDetail.description}}</view>
     </view>
     
     <view class="divider"></view>
