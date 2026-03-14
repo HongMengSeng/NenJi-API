@@ -1,33 +1,21 @@
 <view class="container">
-  <!-- 登录页面标题 -->
-  <view class="login-header">
-    <view class="logo">
-      <text class="logo-icon">🌾</text>
-      <text class="logo-text">能记农场</text>
-    </view>
-    <text class="login-title">欢迎回来</text>
-    <text class="login-subtitle">登录后享受更多优质服务</text>
-  </view>
-  
-  <!-- 一键登录按钮 -->
-  <view class="login-content">
-    <view class="login-btn" bindtap="oneClickLogin">
-      <text class="login-btn-icon">📱</text>
-      <text class="login-btn-text">一键登录</text>
+  <!-- 登录卡片 -->
+  <view class="login-card">
+    <!-- 登录页面标题 -->
+    <view class="login-header">
+      <view class="logo">
+        <text class="logo-icon">🌾</text>
+        <text class="logo-text">能记农场</text>
+      </view>
+      <text class="login-title">欢迎回来</text>
+      <text class="login-subtitle">登录后享受更多优质服务</text>
     </view>
     
-    <!-- 其他登录方式 -->
-    <view class="other-login">
-      <text class="other-login-text">其他登录方式</text>
-      <view class="login-methods">
-        <view class="login-method" bindtap="wechatLogin">
-          <text class="method-icon">�</text>
-          <text class="method-text">微信登录</text>
-        </view>
-        <button class="login-method" open-type="getPhoneNumber" bind:getphonenumber="getPhoneNumber">
-          <text class="method-icon">📞</text>
-          <text class="method-text">手机号登录</text>
-        </button>
+    <!-- 一键登录按钮 -->
+    <view class="login-content">
+      <view class="login-btn" bindtap="oneClickLogin">
+        <text class="login-btn-icon">📱</text>
+        <text class="login-btn-text">一键登录</text>
       </view>
     </view>
   </view>

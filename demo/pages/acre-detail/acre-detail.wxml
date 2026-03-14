@@ -24,34 +24,7 @@
     <view class="acre-description">
       <view class="desc-item">{{acreDetail.description}}</view>
     </view>
-    
     <view class="divider"></view>
-    
-    <view class="purchase-process">
-      <view class="process-title">购买流程</view>
-      <view class="process-steps">
-        <view class="step-item">
-          <view class="step-number">1</view>
-          <view class="step-text">选择地块</view>
-        </view>
-        <view class="step-item">
-          <view class="step-number">2</view>
-          <view class="step-text">确认购买</view>
-        </view>
-        <view class="step-item">
-          <view class="step-number">3</view>
-          <view class="step-text">签订合同</view>
-        </view>
-        <view class="step-item">
-          <view class="step-number">4</view>
-          <view class="step-text">支付款项</view>
-        </view>
-        <view class="step-item">
-          <view class="step-number">5</view>
-          <view class="step-text">领取证书</view>
-        </view>
-      </view>
-    </view>
   </view>
   
   <view class="bottom-button">
