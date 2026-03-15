@@ -10,7 +10,7 @@ public class User
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("user_no")]
+    [Column("user_guid")]
     [MaxLength(45)]
     public string UserNo { get; set; } = string.Empty;
 
@@ -36,10 +36,4 @@ public class User
     [Column("role_id")]
     public int RoleId { get; set; }
 
-    [Column("gender")]
-    [MaxLength(10)]
-    public string? Gender { get; set; }
-
-    [Column("status")]
-    public int Status { get; set; }
 }
