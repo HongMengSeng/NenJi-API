@@ -276,8 +276,18 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 10rpx;
-  margin: 0 20rpx;
+}
+
+/* 加载更多样式 */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx 0;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 20rpx;
+  margin-bottom: 20rpx;
 }
 
 /* 分类导航样式 */

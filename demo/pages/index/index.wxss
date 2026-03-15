@@ -46,6 +46,18 @@
   object-fit: cover;
 }
 
+/* 加载更多样式 */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx 0;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 20rpx;
+  margin-bottom: 20rpx;
+}
+
 /* 功能按钮样式 */
 .function-buttons {
   display: flex;

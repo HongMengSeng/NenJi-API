@@ -11,7 +11,14 @@ Page({
     // 认购一亩田项目数据
     acreProjects: [],
     // 加载状态
-    loading: true
+    loading: true,
+    // 加载更多状态
+    loadingMore: false,
+    // 分页参数
+    page: 1,
+    pageSize: 10,
+    // 是否还有更多数据
+    hasMore: true
   },
 
   onLoad: function () {
@@ -160,5 +167,64 @@ Page({
     wx.navigateTo({
       url: '/pages/goods-detail/goods-detail?id=' + id
     });
+  },
+
+  // 滚动到底部加载更多
+  onReachBottom: function() {
+    if (!this.data.loadingMore && this.data.hasMore) {
+      this.loadMoreData();
+    }
+  },
+
+  // 加载更多数据
+  loadMoreData: function() {
+    if (!this.data.hasMore) return;
+
+    this.setData({ loadingMore: true });
+
+    // 模拟加载更多数据
+    setTimeout(() => {
+      const api = require('../../utils/api');
+      api.request({ 
+        url: '/api/DemoApi/home', 
+        method: 'GET',
+        data: {
+          page: this.data.page + 1,
+          pageSize: this.data.pageSize
+        }
+      })
+      .then(data => {
+        // 清理数据中的图片路径
+        const cleanData = {
+          farmGoods: (data.farmGoods || []).map(item => ({
+            ...item,
+            image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+          })),
+          hotDishes: (data.hotDishes || []).map(item => ({
+            ...item,
+            image: item.image ? item.image.replace(/[`\s]/g, '') : ''
+          }))
+        };
+        
+        // 合并数据
+        const newFarmGoods = [...this.data.farmGoods, ...cleanData.farmGoods];
+        const newHotDishes = [...this.data.hotDishes, ...cleanData.hotDishes];
+        
+        // 检查是否还有更多数据
+        const hasMore = cleanData.farmGoods.length > 0 || cleanData.hotDishes.length > 0;
+        
+        this.setData({
+          farmGoods: newFarmGoods,
+          hotDishes: newHotDishes,
+          page: this.data.page + 1,
+          loadingMore: false,
+          hasMore: hasMore
+        });
+      })
+      .catch(err => {
+        console.error('加载更多数据失败:', err);
+        this.setData({ loadingMore: false });
+      });
+    }, 1000);
   }
 })

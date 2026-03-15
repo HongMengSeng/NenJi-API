@@ -11,7 +11,11 @@ Page({
     hotGoods: [],
     categoryGoods: {},
     currentCategoryGoods: [],
-    loading: true
+    loading: true,
+    loadingMore: false,
+    page: 1,
+    pageSize: 20,
+    hasMore: true
   },
 
   onLoad: function() {
@@ -55,23 +59,39 @@ Page({
       });
   },
 
-  loadCategoryGoods: function(categoryId) {
+  loadCategoryGoods: function(categoryId, isLoadMore = false) {
+    if (!isLoadMore) {
+      this.setData({ loading: true, page: 1, hasMore: true });
+    } else {
+      this.setData({ loadingMore: true });
+    }
+
     api.request({
       url: '/api/farm-goods/category',
       method: 'GET',
       data: {
         categoryId,
-        page: 1,
-        pageSize: 20
+        page: isLoadMore ? this.data.page + 1 : 1,
+        pageSize: this.data.pageSize
       }
     })
       .then(data => {
+        const goodsList = data.goodsList || [];
+        const newGoodsList = isLoadMore 
+          ? [...this.data.currentCategoryGoods, ...goodsList] 
+          : goodsList;
+
         this.setData({
           currentCategory: categoryId,
-          currentCategoryGoods: data.goodsList || []
+          currentCategoryGoods: newGoodsList,
+          loading: false,
+          loadingMore: false,
+          page: isLoadMore ? this.data.page + 1 : 1,
+          hasMore: goodsList.length === this.data.pageSize
         });
       })
       .catch(err => {
+        this.setData({ loading: false, loadingMore: false });
         wx.showToast({
           title: err.message || '分类商品加载失败',
           icon: 'none'
@@ -124,5 +144,12 @@ Page({
     wx.navigateTo({
       url: '/pages/goods-detail/goods-detail?id=' + goodsId
     });
+  },
+
+  // 滚动到底部加载更多
+  onReachBottom: function() {
+    if (this.data.showCategoryView && !this.data.loadingMore && this.data.hasMore) {
+      this.loadCategoryGoods(this.data.currentCategory, true);
+    }
   }
 });
