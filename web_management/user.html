@@ -168,6 +168,67 @@
 			background-color: #4caf50;
 			color: white;
 		}
+		
+		/* 身份标签样式 */
+		.role-tag {
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.role-tag.admin {
+			background-color: #2196f3;
+			color: white;
+		}
+		
+		.role-tag.user {
+			background-color: #4caf50;
+			color: white;
+		}
+		
+		/* 分页样式 */
+		.pagination{
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: 20px;
+			gap: 10px;
+		}
+		
+		.pagination-info{
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.pagination-btn{
+			padding: 6px 12px;
+			border: 1px solid #e0e0e0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			transition: all 0.3s;
+		}
+		
+		.pagination-btn:hover{
+			background: #2196f3;
+			color: white;
+			border-color: #2196f3;
+		}
+		
+		.pagination-btn:disabled{
+			background: #f5f5f5;
+			color: #cbd5e0;
+			cursor: not-allowed;
+		}
+		
+		.pagination-btn.active{
+			background: #2196f3;
+			color: white;
+			border-color: #2196f3;
+		}
 	</style>
 </head>
 <body>
@@ -216,6 +277,7 @@
 							<th>登录时间</th>
 							<th>性别</th>
 							<th>地址信息</th>
+							<th>身份</th>
 							<th>状态</th>
 						</tr>
 					</thead>
@@ -229,6 +291,11 @@
 							<td>{{ user.gender }}</td>
 							<td>{{ user.address }}</td>
 							<td>
+								<span :class="['role-tag', user.role === '管理员' ? 'admin' : 'user']">
+									{{ user.role }}
+								</span>
+							</td>
+							<td>
 								<button :class="['status-btn', user.status === '禁用' ? 'disabled' : 'enabled']" @click="toggleStatus(user)">
 									{{ user.status }}
 								</button>
@@ -236,6 +303,13 @@
 						</tr>
 					</tbody>
 				</table>
+				
+				<!-- 分页 -->
+				<div class="pagination">
+					<span class="pagination-info">共 {{ totalUsers }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+					<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+					<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+				</div>
 			</main>
 		</div>
 	</div>
@@ -248,7 +322,30 @@
 			data() {
 				return {
 					selectAll: false,
-					users: [
+					// 所有用户列表
+					allUsers: [],
+					// 当前显示的用户列表（分页后）
+					users: [],
+					// 当前页码
+					currentPage: 1,
+					// 每页显示数量
+					pageSize: 15,
+					// 总页数
+					totalPages: 1,
+					// 总用户数量
+					totalUsers: 0
+				}
+			},
+			
+			mounted() {
+				// 从localStorage加载用户数据
+				this.loadUsersFromLocalStorage();
+			},
+			
+			methods: {
+				// 获取默认用户数据
+				getDefaultUsers() {
+					return [
 						{
 							id: 'U20260101120017',
 							phone: '13758428019',
@@ -256,6 +353,7 @@
 							loginTime: '2026/1/1 17:00',
 							gender: '男',
 							address: '筲箕村',
+							role: '管理员',
 							status: '禁用',
 							selected: false
 						},
@@ -266,6 +364,7 @@
 							loginTime: '2026/1/1 17:00',
 							gender: '男',
 							address: '龙洞',
+							role: '管理员',
 							status: '启用',
 							selected: false
 						},
@@ -276,6 +375,7 @@
 							loginTime: '2026/1/1 17:00',
 							gender: '男',
 							address: '嘉禾望岗',
+							role: '普通用户',
 							status: '启用',
 							selected: false
 						},
@@ -286,28 +386,219 @@
 							loginTime: '2026/1/1 17:00',
 							gender: '女',
 							address: '科教城',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120022',
+							phone: '13812345678',
+							nickname: '钱七',
+							loginTime: '2026/1/2 10:00',
+							gender: '男',
+							address: '天河区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120023',
+							phone: '13987654321',
+							nickname: '孙八',
+							loginTime: '2026/1/3 14:30',
+							gender: '女',
+							address: '越秀区',
+							role: '管理员',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120024',
+							phone: '13567890123',
+							nickname: '周九',
+							loginTime: '2026/1/4 09:15',
+							gender: '男',
+							address: '海珠区',
+							role: '普通用户',
+							status: '禁用',
+							selected: false
+						},
+						{
+							id: 'U20260101120025',
+							phone: '13709876543',
+							nickname: '吴十',
+							loginTime: '2026/1/5 16:45',
+							gender: '女',
+							address: '荔湾区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120026',
+							phone: '13654321098',
+							nickname: '郑十一',
+							loginTime: '2026/1/6 11:20',
+							gender: '男',
+							address: '白云区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120027',
+							phone: '13876543210',
+							nickname: '王十二',
+							loginTime: '2026/1/7 13:55',
+							gender: '女',
+							address: '番禺区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120028',
+							phone: '13543210987',
+							nickname: '冯十三',
+							loginTime: '2026/1/8 08:40',
+							gender: '男',
+							address: '黄埔区',
+							role: '管理员',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120029',
+							phone: '13765432109',
+							nickname: '陈十四',
+							loginTime: '2026/1/9 15:30',
+							gender: '女',
+							address: '花都区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120030',
+							phone: '13698765432',
+							nickname: '楚十五',
+							loginTime: '2026/1/10 12:10',
+							gender: '男',
+							address: '南沙区',
+							role: '普通用户',
+							status: '禁用',
+							selected: false
+						},
+						{
+							id: 'U20260101120031',
+							phone: '13832109876',
+							nickname: '魏十六',
+							loginTime: '2026/1/11 10:50',
+							gender: '女',
+							address: '增城区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120032',
+							phone: '13510987654',
+							nickname: '蒋十七',
+							loginTime: '2026/1/12 14:25',
+							gender: '男',
+							address: '从化区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120033',
+							phone: '13765432198',
+							nickname: '沈十八',
+							loginTime: '2026/1/13 09:00',
+							gender: '女',
+							address: '萝岗区',
+							role: '普通用户',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120034',
+							phone: '13698765421',
+							nickname: '韩十九',
+							loginTime: '2026/1/14 16:15',
+							gender: '男',
+							address: '天河区',
+							role: '管理员',
+							status: '启用',
+							selected: false
+						},
+						{
+							id: 'U20260101120035',
+							phone: '13876543219',
+							nickname: '杨二十',
+							loginTime: '2026/1/15 11:40',
+							gender: '女',
+							address: '越秀区',
+							role: '普通用户',
 							status: '启用',
 							selected: false
 						}
-					]
-				}
-			},
-			
-				mounted() {
-					// 将用户数据存储到localStorage中
-					this.saveUsersToLocalStorage();
+					];
 				},
 				
-				methods: {
-					// 将用户数据保存到localStorage
-					saveUsersToLocalStorage() {
-						localStorage.setItem('users', JSON.stringify(this.users));
-					},
-					
-					// 跳转到指定页面
-					navigateTo(page) {
-						window.location.href = page;
-					},
+				// 从localStorage加载用户数据
+				loadUsersFromLocalStorage() {
+					try {
+						// 直接使用最新的默认数据，确保数据更新
+						this.allUsers = this.getDefaultUsers();
+						this.saveUsersToLocalStorage();
+						console.log('加载最新默认用户数据:', this.allUsers);
+						this.updatePagination();
+					} catch (error) {
+						console.error('数据加载失败:', error);
+						// 加载失败时使用默认数据
+						this.allUsers = this.getDefaultUsers();
+						this.updatePagination();
+					}
+				},
+				
+				// 更新分页
+				updatePagination() {
+					this.totalUsers = this.allUsers.length;
+					this.totalPages = Math.ceil(this.totalUsers / this.pageSize) || 1;
+					if (this.currentPage > this.totalPages) {
+						this.currentPage = this.totalPages;
+					}
+					const startIndex = (this.currentPage - 1) * this.pageSize;
+					const endIndex = startIndex + this.pageSize;
+					this.users = this.allUsers.slice(startIndex, endIndex);
+					console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, usersCount: this.users.length });
+				},
+				
+				// 切换页面
+				changePage(page) {
+					if (page >= 1 && page <= this.totalPages) {
+						this.currentPage = page;
+						this.updatePagination();
+					}
+				},
+				
+				// 将用户数据保存到localStorage
+				saveUsersToLocalStorage() {
+					try {
+						localStorage.setItem('users', JSON.stringify(this.allUsers));
+						console.log('用户数据保存成功:', this.allUsers);
+					} catch (error) {
+						console.error('数据保存失败:', error);
+						alert('数据保存失败，请检查浏览器存储权限');
+					}
+				},
+				
+				// 跳转到指定页面
+				navigateTo(page) {
+					window.location.href = page;
+				},
 				
 				// 新增用户
 				addUser() {
@@ -328,14 +619,25 @@
 				deleteUser() {
 					const selectedUsers = this.users.filter(user => user.selected);
 					if (selectedUsers.length > 0) {
-						this.users = this.users.filter(user => !user.selected);
+						const selectedIds = selectedUsers.map(user => user.id);
+						this.allUsers = this.allUsers.filter(user => !selectedIds.includes(user.id));
+						this.saveUsersToLocalStorage();
+						this.updatePagination();
+						alert('用户删除成功！');
 					}
 				},
 				
 				// 刷新数据
 				refreshData() {
-					// 模拟刷新数据
-					alert('数据已刷新');
+					try {
+						console.log('开始刷新数据...');
+						this.loadUsersFromLocalStorage();
+						this.currentPage = 1;
+						this.selectAll = false;
+						console.log('数据刷新成功');
+					} catch (error) {
+						console.error('数据刷新失败:', error);
+					}
 				},
 				
 				// 切换全选状态
@@ -343,18 +645,26 @@
 					this.users.forEach(user => {
 						user.selected = this.selectAll;
 					});
+					this.updateSelectedUser();
 				},
 				
 				// 更新选中用户
 				updateSelectedUser() {
-					this.selectAll = this.users.every(user => user.selected);
+					const selected = this.users.filter(user => user.selected);
+					this.selectAll = this.users.length > 0 && selected.length === this.users.length;
 				},
 				
 				// 切换用户状态
 				toggleStatus(user) {
-					user.status = user.status === '启用' ? '禁用' : '启用';
-					// 模拟保存状态
-					alert('状态已更新');
+					try {
+						user.status = user.status === '启用' ? '禁用' : '启用';
+						this.saveUsersToLocalStorage();
+						this.updatePagination();
+						console.log('用户状态更新成功:', user);
+					} catch (error) {
+						console.error('更新用户状态失败:', error);
+						alert('更新用户状态失败，请重试');
+					}
 				}
 			}
 		}).mount('#app')
