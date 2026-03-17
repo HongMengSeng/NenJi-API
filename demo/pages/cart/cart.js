@@ -42,7 +42,7 @@ Page({
       const itemIndex = cartList.findIndex(function(i) {
         return i.id === id;
       });
-      if (itemIndex !== -1 && cartList[itemIndex].count > 1) {
+      if (itemIndex !== -1 && cartList[itemIndex].count > 0) {
         cartList[itemIndex].count--;
         this.setData({ cartList: cartList });
         this.calcTotal();

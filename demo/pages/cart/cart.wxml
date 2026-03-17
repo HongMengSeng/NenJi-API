@@ -1,11 +1,4 @@
 <view class="container {{showModal ? 'fixed' : ''}}">
-  <!-- 1. 购物车标题区域 -->
-  <view class="cart-header">
-    <text class="cart-icon">🛒</text>
-    <text class="cart-title">购物车</text>
-  </view>
-
-  <!-- 2. 商品列表区域 -->
   <view class="cart-list">
     <!-- 空购物车提示 -->
     <view class="empty-cart" wx:if="{{cartList.length === 0}}">
