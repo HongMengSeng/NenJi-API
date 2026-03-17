@@ -1,6 +1,6 @@
 {
     "pages": [
-        "pages/login/login",
+
         "pages/index/index",
         "pages/activity/activity",
         "pages/activity-detail/activity-detail",
@@ -10,6 +10,8 @@
         "pages/acre-detail/acre-detail",
         "pages/farm-goods/farm-goods",
         "pages/order/order",
+        "pages/confirm-order/confirm-order",
+        "pages/pay/pay",
         "pages/goods-detail/goods-detail",
         "pages/buy/buy"
     ],

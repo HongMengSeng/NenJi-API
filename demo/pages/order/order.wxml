@@ -56,6 +56,14 @@
       <block wx:if="{{!goodsList[activeCategory] || goodsList[activeCategory].length === 0}}">
         <view class="empty">暂无商品</view>
       </block>
+      
+      <!-- 懒加载提示 -->
+      <block wx:if="{{lazyLoading}}">
+        <view class="lazy-loading">
+          <view class="loading-spinner"></view>
+          <view class="loading-text">加载中...</view>
+        </view>
+      </block>
     </block>
   </view>
 </view>
