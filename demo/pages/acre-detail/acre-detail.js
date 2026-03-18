@@ -9,33 +9,24 @@ Page({
   },
   
   loadAcreDetail: function(id) {
+    const api = require('../../utils/api');
+    
     wx.showLoading({
       title: '加载中...',
     });
     
-    wx.request({
-      url: 'http://localhost:5162/api/DemoApi/acres/' + id,
-      method: 'GET',
-      success: (res) => {
-        wx.hideLoading();
-        if (res.data.code === 0) {
-          this.setData({
-            acreDetail: res.data.data
-          });
-        } else {
-          wx.showToast({
-            title: '加载失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        wx.hideLoading();
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        });
-      }
+    api.request({
+      url: '/api/DemoApi/acres/' + id,
+      method: 'GET'
+    })
+    .then(res => {
+      wx.hideLoading();
+      this.setData({
+        acreDetail: res
+      });
+    })
+    .catch(err => {
+      wx.hideLoading();
     });
   },
   

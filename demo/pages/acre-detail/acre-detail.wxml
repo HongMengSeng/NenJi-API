@@ -4,12 +4,6 @@
       <swiper-item>
         <image src="{{acreDetail.image}}" class="swiper-image" />
       </swiper-item>
-      <swiper-item>
-        <image src="https://img.freepik.com/free-photo/agriculture-field-with-growing-crops_23-2148872538.jpg" class="swiper-image" />
-      </swiper-item>
-      <swiper-item>
-        <image src="https://img.freepik.com/free-photo/wheat-field_1127-3185.jpg" class="swiper-image" />
-      </swiper-item>
     </swiper>
   </view>
   
