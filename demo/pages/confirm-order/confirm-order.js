@@ -30,6 +30,8 @@ Page({
       totalPrice += item.price * item.quantity;
       totalCount += item.quantity;
     });
+    // 保留两位小数
+    totalPrice = parseFloat(totalPrice.toFixed(2));
     
     // 更新订单信息
     this.setData({

@@ -39,174 +39,36 @@ Page({
 
   // 获取点餐数据
   getOrderData: function() {
-    wx.showLoading({ title: '加载中...' });
-    
-    // // 使用虚拟API数据
-    // setTimeout(() => {
-    //   const mockData = {
-    //     categories: [
-    //       { id: 'vegetables', name: '新鲜蔬菜' },
-    //       { id: 'meat', name: '肉类产品' },
-    //       { id: 'eggs', name: '禽蛋产品' },
-    //       { id: 'dairy', name: '乳制品' },
-    //       { id: 'staple', name: '主食' }
-    //     ],
-    //     goodsList: {
-    //       vegetables: [
-    //         {
-    //           id: 1,
-    //           name: '有机生菜',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20organic%20lettuce&image_size=square',
-    //           price: 30,
-    //           sold: 150,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 2,
-    //           name: '农家西红柿',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes&image_size=square',
-    //           price: 30,
-    //           sold: 200,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 3,
-    //           name: '新鲜黄瓜',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers&image_size=square',
-    //           price: 30,
-    //           sold: 180,
-    //           stock: 30
-    //         }
-    //       ],
-    //       meat: [
-    //         {
-    //           id: 4,
-    //           name: '土猪肉',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pork%20meat&image_size=square',
-    //           price: 30,
-    //           sold: 100,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 5,
-    //           name: '农家土鸡',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20chicken&image_size=square',
-    //           price: 30,
-    //           sold: 80,
-    //           stock: 30
-    //         }
-    //       ],
-    //       eggs: [
-    //         {
-    //           id: 6,
-    //           name: '土鸡蛋',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20eggs&image_size=square',
-    //           price: 30,
-    //           sold: 300,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 7,
-    //           name: '鸭蛋',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20duck%20eggs&image_size=square',
-    //           price: 30,
-    //           sold: 150,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 8,
-    //           name: '鹅蛋',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20goose%20eggs&image_size=square',
-    //           price: 30,
-    //           sold: 50,
-    //           stock: 30
-    //         }
-    //       ],
-    //       dairy: [
-    //         {
-    //           id: 9,
-    //           name: '新鲜牛奶',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20milk&image_size=square',
-    //           price: 30,
-    //           sold: 200,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 10,
-    //           name: '农家酸奶',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=homemade%20yogurt&image_size=square',
-    //           price: 30,
-    //           sold: 180,
-    //           stock: 30
-    //         }
-    //       ],
-    //       staple: [
-    //         {
-    //           id: 11,
-    //           name: '农家大米',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20rice&image_size=square',
-    //           price: 30,
-    //           sold: 250,
-    //           stock: 30
-    //         },
-    //         {
-    //           id: 12,
-    //           name: '手工面条',
-    //           image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=homemade%20noodles&image_size=square',
-    //           price: 30,
-    //           sold: 150,
-    //           stock: 30
-    //         }
-    //       ]
-    //     }
-    //   };
-      
-    //   // 使用虚拟数据
-    //   this.setData({
-    //     categories: mockData.categories,
-    //     goodsList: mockData.goodsList,
-    //     loading: false
-    //   });
-      
-    //   wx.hideLoading();
-    // }, 500);
-    
-    // 真实API调用（已注释，需要时取消注释）
+    wx.showLoading({ title: '加载中...', mask: true });
 
     api.request({
-      url: 'http://localhost:5162/api/order/getOrderData',
+      url: 'http://192.168.203.56/api/order/getOrderData',
       method: 'GET'
-    }).then(res => {
-      // 核心修复：真实API数据在res.data.data中，先校验数据合法性
-      if (!res || !res.data || !res.data.data) {
-        throw new Error('接口返回数据格式异常，缺少data字段');
-      }
+    })
+      .then(data => {
+        // 解析API返回的数据结构
+        const apiData = data.data.data;
+        const categories = apiData.categories || [];
+        const goodsList = apiData.goodsList || {};
+        const currentCategory = categories.length > 0 ? categories[0].id : '';
 
-      const { categories, goodsList } = res.data.data;
-      
-      // 校验分类和商品数据是否存在
-      if (!Array.isArray(categories) || Object.keys(goodsList).length === 0) {
-        throw new Error('分类或商品列表数据为空');
-      }
-      
-      // 更新数据
-      this.setData({
-        categories: categories,
-        goodsList: goodsList,
-        loading: false
+        this.setData({
+          categories: categories,
+          goodsList: goodsList,
+          activeCategory: currentCategory,
+          loading: false
+        });
+      })
+      .catch(err => {
+        this.setData({ loading: false });
+        wx.showToast({
+          title: err.message || '点餐数据加载失败',
+          icon: 'none'
+        });
+      })
+      .finally(() => {
+        wx.hideLoading();
       });
-      
-      wx.hideLoading();
-    }).catch(err => {
-      console.error('获取点餐数据失败:', err);
-      this.setData({ loading: false });
-      wx.hideLoading();
-      wx.showToast({ 
-        title: '数据加载失败，请重试', 
-        icon: 'none',
-        duration: 2000
-      });
-    });
   },
 
   // 切换分类
@@ -265,6 +127,8 @@ Page({
       cartCount += newCart[item].quantity;
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
+    // 保留两位小数
+    totalPrice = parseFloat(totalPrice.toFixed(2));
     
     // 将购物车对象转换为数组（用于显示）
     const cartItems = Object.values(newCart);
@@ -337,24 +201,21 @@ Page({
     const updates = this.data.pendingUpdates;
     if (Object.keys(updates).length === 0) return;
     
-    // 虚拟API：只打印日志，不实际调用API
-    console.log('待更新的商品数量:', updates);
+    // 调用真实API更新商品数量
+    console.log('调用API更新商品数量:', updates);
     
-    // 真实API调用（已注释，需要时取消注释）
-    /*
-    wx.request({
-      url: 'http://localhost:5162/api/order/updateGoodsQuantity',
-      method: 'POST',
-      data: { updates },
-      success: (res) => {
-        console.log('商品数量更新成功:', res.data);
-      },
-      fail: (err) => {
-        console.error('商品数量更新失败:', err);
-        // 错误处理：不影响前端显示
-      }
-    });
-    */
+    // 这里可以添加真实的API调用
+    // api.request({
+    //   url: '/api/order/updateGoodsQuantity',
+    //   method: 'POST',
+    //   data: { updates }
+    // })
+    //   .then(res => {
+    //     console.log('商品数量更新成功:', res);
+    //   })
+    //   .catch(err => {
+    //     console.error('商品数量更新失败:', err);
+    //   });
   },
 
   // 隐藏购物车详情弹窗
@@ -417,6 +278,8 @@ Page({
       cartCount += newCart[item].quantity;
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
+    // 保留两位小数
+    totalPrice = parseFloat(totalPrice.toFixed(2));
     
     // 将购物车对象转换为数组（用于显示）
     const cartItems = Object.values(newCart);
@@ -448,13 +311,30 @@ Page({
     if (this.data.isProcessing) return;
     this.setData({ isProcessing: true });
     
-    const goodsId = e.currentTarget.dataset.id;
-    const cart = this.data.cart;
-    const goods = cart[goodsId];
+    let goodsId;
+    let goods;
+    
+    // 检查是从商品列表还是购物车弹窗调用
+    if (e.currentTarget.dataset.category && e.currentTarget.dataset.index !== undefined) {
+      // 从商品列表调用
+      const { category, index } = e.currentTarget.dataset;
+      goods = this.data.goodsList[category][index];
+      goodsId = goods.id;
+    } else {
+      // 从购物车弹窗调用
+      goodsId = e.currentTarget.dataset.id;
+      goods = this.data.cart[goodsId];
+    }
+    
+    // 检查商品是否在购物车中
+    if (!this.data.cart[goodsId]) {
+      this.setData({ isProcessing: false });
+      return;
+    }
     
     // 更新购物车
     const newCart = JSON.parse(JSON.stringify(this.data.cart));
-    if (goods.quantity <= 1) {
+    if (newCart[goodsId].quantity <= 1) {
       // 从购物车中移除
       delete newCart[goodsId];
     } else {
@@ -469,6 +349,8 @@ Page({
       cartCount += newCart[item].quantity;
       totalPrice += newCart[item].price * newCart[item].quantity;
     }
+    // 保留两位小数
+    totalPrice = parseFloat(totalPrice.toFixed(2));
     
     // 将购物车对象转换为数组（用于显示）
     const cartItems = Object.values(newCart);

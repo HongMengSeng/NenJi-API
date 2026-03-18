@@ -37,19 +37,23 @@
         wx:for="{{goodsList[activeCategory]}}" 
         wx:key="id"
         class="goods-item"
-        bindtap="navigateToGoodsDetail"
-        data-id="{{item.id}}"
       >
-        <image class="goods-image" src="{{item.image}}" />
+        <view class="goods-image-container">
+          <image class="goods-image" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+          <view class="goods-price">¥{{item.price}}</view>
+        </view>
         <view class="goods-info">
-          <view class="goods-name">{{item.name}}</view>
+          <view class="goods-name" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">{{item.name}}</view>
           <view class="goods-sales">
             <text class="sold">已售 {{item.sold}}</text>
             <text class="stock">仅剩 {{item.stock}}份</text>
           </view>
           <view class="goods-bottom">
-            <view class="goods-price">¥{{item.price}}</view>
-            <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
+            <view class="quantity-control">
+              <view class="quantity-btn" catchtap="decreaseQuantity" data-category="{{activeCategory}}" data-index="{{index}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
+              <view class="quantity-input" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">{{cart[item.id].quantity}}</view>
+              <view class="add-btn" catchtap="addToCart" data-category="{{activeCategory}}" data-index="{{index}}">+</view>
+            </view>
           </view>
         </view>
       </view>

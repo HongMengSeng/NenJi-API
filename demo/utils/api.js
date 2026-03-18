@@ -11,8 +11,10 @@ function request({ url, method = 'GET', data = {} }) {
       header.Authorization = 'Bearer ' + token;
     }
 
+    const requestUrl = /^https?:\/\//i.test(url) ? url : BASE_URL + url;
+
     wx.request({
-      url: BASE_URL + url,
+      url: requestUrl,
       method,
       data,
       header,
