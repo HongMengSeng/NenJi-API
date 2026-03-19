@@ -710,6 +710,26 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebApplication1.Controllers.FarmController",
+    "Method": "GetIntro",
+    "RelativePath": "api/Farm/intro",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "WebApplication1.Models.ApiResponse\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "WebAPI.Controllers.GoodsController",
     "Method": "Detail",
     "RelativePath": "api/goods/detail",
