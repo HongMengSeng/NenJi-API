@@ -1,136 +1,65 @@
-.container {
-  background-color: #f5f5f5;
+.page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background: #f6f6f6;
 }
 
-.swiper-container {
+.detail-swiper {
   width: 100%;
-  height: 400rpx;
+  height: 420rpx;
+  background: #eeeeee;
 }
 
-.swiper-image {
+.detail-swiper-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
 }
 
-.acre-info {
-  flex: 1;
-  background-color: #fff;
+.detail-card {
   margin: 20rpx;
-  border-radius: 10rpx;
-  padding: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
 }
 
-.name-price {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.detail-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333333;
   margin-bottom: 20rpx;
 }
 
-.acre-name {
+.detail-price {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.acre-price {
-  font-size: 30rpx;
-  font-weight: bold;
   color: #e64340;
-}
-
-.divider {
-  height: 2rpx;
-  background-color: #f0f0f0;
-  margin: 20rpx 0;
-}
-
-.acre-description {
   margin-bottom: 20rpx;
 }
 
-.desc-item {
-  font-size: 24rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 10rpx;
-}
-
-.purchase-process {
-  margin-top: 20rpx;
-}
-
-.process-title {
+.detail-desc {
   font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
+  color: #666666;
+  line-height: 1.7;
+  margin-bottom: 30rpx;
 }
 
-.process-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20rpx;
-}
-
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100rpx;
-}
-
-.step-number {
-  width: 50rpx;
-  height: 50rpx;
-  border-radius: 50%;
-  background-color: #1890ff;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-}
-
-.step-text {
-  font-size: 20rpx;
-  color: #666;
-  text-align: center;
-}
-
-.bottom-button {
+.bottom-bar {
+  position: fixed;
+  bottom: 50rpx;
+  left: 20rpx;
+  right: 20rpx;
   padding: 20rpx;
-  background-color: #fff;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-top: 1rpx solid #eeeeee;
+  border-radius: 16rpx;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
-.confirm-button {
-  background-color: #1890ff;
-  color: #fff;
-  border: none;
-  border-radius: 8rpx;
-  padding: 15rpx;
-  font-size: 28rpx;
-  font-weight: bold;
+.buy-btn {
+  background: #4caf50;
+  color: #ffffff;
+  border-radius: 12rpx;
   width: 100%;
   height: 80rpx;
-  line-height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.confirm-button:hover {
-  background-color: #40a9ff;
-}
-
-.confirm-button:active {
-  background-color: #096dd9;
+  font-size: 32rpx;
+  font-weight: 600;
 }
