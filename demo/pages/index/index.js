@@ -175,6 +175,13 @@ Page({
     });
   },
 
+  // 跳转到农场介绍页面
+  navigateToFarmIntro: function() {
+    wx.navigateTo({
+      url: '/pages/farm-intro/farm-intro'
+    });
+  },
+
   // 滚动到底部加载更多
   onReachBottom: function() {
     console.log('首页触发 onReachBottom');

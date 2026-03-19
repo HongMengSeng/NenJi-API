@@ -13,7 +13,9 @@
         "pages/confirm-order/confirm-order",
         "pages/pay/pay",
         "pages/goods-detail/goods-detail",
-        "pages/buy/buy"
+        "pages/buy/buy",
+        "pages/farm-intro/farm-intro"
+
     ],
     "window": {
         "backgroundTextStyle": "light",
