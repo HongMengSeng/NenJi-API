@@ -190,5 +190,23 @@ Page({
       checked: selectAll
     }));
     this.syncCart(cartList);
+  },
+
+  handleClearCart() {
+    wx.showModal({
+      title: '确认清空',
+      content: '确定要清空购物车吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({ 
+            cartList: [],
+            selectAll: false
+          });
+          this.calcTotal();
+          wx.removeStorageSync('cartList');
+          wx.showToast({ title: '购物车已清空', icon: 'success' });
+        }
+      }
+    });
   } 
 });
