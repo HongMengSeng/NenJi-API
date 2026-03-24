@@ -37,6 +37,6 @@ public class Commodity
     [NotMapped]
     public decimal UnitPrice { get; set; }
 
-    [Column("image_data")]
+    [NotMapped]
     public byte[]? ImageData { get; set; }
 }

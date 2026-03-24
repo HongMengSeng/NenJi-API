@@ -259,6 +259,54 @@
         }
       }
     },
+    "/api/AppCart/Appcart": {
+      "post": {
+        "tags": [
+          "AppCart"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppCartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppCartRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppCartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Auth/wxlogin": {
       "post": {
         "tags": [
@@ -514,6 +562,24 @@
             "schema": {
               "type": "string",
               "default": "all"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 6
             }
           }
         ],
@@ -925,6 +991,34 @@
       "get": {
         "tags": [
           "DemoApi"
+        ],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "vegetables"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 6
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -1339,6 +1433,93 @@
         }
       }
     },
+    "/api/pay/methods": {
+      "get": {
+        "tags": [
+          "Pay"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pay/info": {
+      "get": {
+        "tags": [
+          "Pay"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pay/confirm": {
+      "post": {
+        "tags": [
+          "Pay"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPayRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPayRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPayRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pay/status": {
+      "get": {
+        "tags": [
+          "Pay"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/user/profile": {
       "get": {
         "tags": [
@@ -1499,6 +1680,19 @@
         },
         "additionalProperties": false
       },
+      "AppCartRequest": {
+        "type": "object",
+        "properties": {
+          "cartList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItemRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CancelOrderRequest": {
         "type": "object",
         "properties": {
@@ -1533,6 +1727,35 @@
         },
         "additionalProperties": false
       },
+      "CartItemRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "checked": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CartUpdateRequest": {
         "type": "object",
         "properties": {
@@ -1543,6 +1766,24 @@
           "count": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmPayRequest": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "paymentMethod": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
