@@ -85,6 +85,16 @@
   line-height: 40rpx;
 }
 
+.detail-value.highlight {
+  color: #e64340;
+  font-weight: bold;
+}
+
+.detail-value.success {
+  color: #52c41a;
+  font-weight: bold;
+}
+
 /* 活动图片展示 */
 .activity-gallery {
   background-color: #fff;
