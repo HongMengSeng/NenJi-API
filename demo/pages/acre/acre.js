@@ -17,7 +17,7 @@ Page({
     });
     
     api.request({
-      url: '/api/DemoApi/acres',
+      url: '/api/acres/index',
       method: 'GET'
     })
     .then(res => {

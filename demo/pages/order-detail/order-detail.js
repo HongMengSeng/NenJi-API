@@ -2,33 +2,33 @@ const api = require('../../utils/api');
 
 Page({
   data: {
-    goods: {
+    dish: {
       id: '',
       name: '',
       price: 0,
       image: '',
       detailImage: '',
       description: '',
-      weight: '',
-      storage: ''
+      ingredients: '',
+      cookingTime: ''
     },
     loading: true,
     cartCount: 0
   },
 
   onLoad(options) {
-    const goodsId = options.id;
+    const dishId = options.id;
 
-    if (!goodsId) {
+    if (!dishId) {
       this.setData({ loading: false });
       wx.showToast({
-        title: '缺少商品ID',
+        title: '缺少菜品ID',
         icon: 'none'
       });
       return;
     }
 
-    this.getGoodsDetail(goodsId);
+    this.getDishDetail(dishId);
     this.updateCartCount();
   },
 
@@ -36,30 +36,30 @@ Page({
     this.updateCartCount();
   },
 
-  getGoodsDetail(goodsId) {
+  getDishDetail(dishId) {
     wx.showLoading({ title: '加载中...' });
 
     api.request({
-      url: `/api/goods/${goodsId}`,
+      url: `/api/dishes/${dishId}`,
       method: 'GET'
     })
       .then((data) => {
         this.setData({
-          goods: {
-            id: data.id || goodsId,
+          dish: {
+            id: data.id || dishId,
             name: data.name || '',
             price: Number(data.price || 0),
             image: data.image || '',
             detailImage: data.detailImage || data.image || '',
             description: data.description || '',
-            weight: data.weight || '',
-            storage: data.storage || ''
+            ingredients: data.ingredients || '',
+            cookingTime: data.cookingTime || ''
           },
           loading: false
         });
       })
       .catch((err) => {
-        console.error('获取商品详情失败:', err);
+        console.error('获取菜品详情失败:', err);
         this.setData({ loading: false });
       })
       .finally(() => {
@@ -68,10 +68,10 @@ Page({
   },
 
   addToCart() {
-    const goods = this.data.goods;
+    const dish = this.data.dish;
     const currentCart = wx.getStorageSync('cartList') || [];
     const nextCart = currentCart.map(item => ({ ...item }));
-    const targetId = String(goods.id);
+    const targetId = String(dish.id);
     const existingIndex = nextCart.findIndex(item => String(item.id) === targetId);
 
     if (existingIndex > -1) {
@@ -80,10 +80,9 @@ Page({
     } else {
       nextCart.push({
         id: targetId,
-        name: goods.name,
-        price: Number(goods.price || 0),
-        image: goods.image,
-        tag: goods.tag || '',
+        name: dish.name,
+        price: Number(dish.price || 0),
+        image: dish.image,
         count: 1,
         checked: true
       });
@@ -113,7 +112,7 @@ Page({
       })
       .catch((err) => {
         console.error('加入购物车失败:', err);
-        // 即使 API 调用失败，也将商品添加到本地购物车
+        // 即使 API 调用失败，也将菜品添加到本地购物车
         wx.setStorageSync('cartList', nextCart);
         this.updateCartCount();
         wx.showToast({

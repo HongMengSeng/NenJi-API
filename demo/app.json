@@ -1,5 +1,6 @@
 {
     "pages": [
+        
         "pages/login/login",
         "pages/index/index",
         "pages/activity/activity",
@@ -14,7 +15,10 @@
         "pages/pay/pay",
         "pages/goods-detail/goods-detail",
         "pages/buy/buy",
-        "pages/farm-intro/farm-intro"
+        "pages/farm-intro/farm-intro",
+        "pages/order-detail/order-detail"
+       
+
     ],
     "window": {
         "backgroundTextStyle": "light",

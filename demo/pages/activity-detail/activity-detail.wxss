@@ -85,6 +85,17 @@
   line-height: 40rpx;
 }
 
+/* 参加人数和剩余名额特殊样式 */
+.detail-value.highlight {
+  color: #e64340;
+  font-weight: 600;
+}
+
+.detail-value.success {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
 /* 已卖完提示 */
 .sold-out {
   margin-top: 20rpx;

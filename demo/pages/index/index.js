@@ -10,6 +10,8 @@ Page({
     hotDishes: [],
     // 认购一亩田项目数据
     acreProjects: [],
+    // 视频数据
+    videos: [],
     // 加载状态
     loading: true
   },
@@ -25,8 +27,10 @@ Page({
     wx.showLoading({ title: '加载中...' })
     
     const api = require('../../utils/api')
+    
+    // 获取首页轮播图、功能按钮、商品等数据
     api.request({ 
-      url: '/api/DemoApi/home', 
+      url: '/api/home', 
       method: 'GET',
       data: {
         page: 1,
@@ -75,6 +79,27 @@ Page({
         icon: 'none' 
       })
       this.setData({ loading: false })
+    })
+
+    // 获取视频数据
+    api.request({
+      url: '/api/home/video',
+      method: 'GET'
+    })
+    .then(data => {
+      // 清理数据中的图片和视频路径（去除反引号和空格）
+      const videos = (data.items || []).map(item => ({
+        ...item,
+        coverImage: item.coverImage ? item.coverImage.replace(/[`\s]/g, '') : '',
+        videoUrl: item.videoUrl ? item.videoUrl.replace(/[`\s]/g, '') : ''
+      }))
+      
+      this.setData({
+        videos: videos
+      })
+    })
+    .catch(err => {
+      console.error('获取视频数据失败:', err)
     })
   },
 

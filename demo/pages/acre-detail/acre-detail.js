@@ -1,6 +1,7 @@
 Page({
   data: {
-    acreDetail: {}
+    acreDetail: {},
+    swiperList: []
   },
   
   onLoad: function(options) {
@@ -16,21 +17,22 @@ Page({
     });
     
     api.request({
-      url: '/api/DemoApi/acres/' + id,
+      url: '/api/acres/' + id,
       method: 'GET'
     })
     .then(res => {
       wx.hideLoading();
-      // 确保数据结构完整
+      // 确保数据结构完整，根据实际返回数据结构解析
       const acreDetail = {
-        ...res,
-        videoUrl: res.videoUrl || 'https://example.com/farm-video.mp4', // 视频URL
-        remainingAcres: res.remainingAcres || 50, // 剩余亩数
-        soldAcres: res.soldAcres || 150, // 已售亩数
-        longExampleImage: res.longExampleImage || '/images/forest.png' // 农场示例图片
+        ...res.acreDetail,
+        videoUrl: res.videoUrl , // 视频URL
+        remainingAcres: res.acreDetail.remainingAcres , // 剩余亩数
+        soldAcres: res.acreDetail.soldAcres, // 已售亩数
+        longExampleImage: res.acreDetail.longExampleImage  // 农场示例图片
       };
       this.setData({
-        acreDetail: acreDetail
+        acreDetail: acreDetail,
+        swiperList: res.swiperList || [] // 轮播图数据
       });
     })
     .catch(err => {
@@ -44,12 +46,12 @@ Page({
           videoUrl: 'https://example.com/farm-video.mp4',
           remainingAcres: 50,
           soldAcres: 150,
-          swiperList: [
-            { id: 1, image: '/images/forest.png' },
-            { id: 2, image: '/images/we.png' }
-          ],
           longExampleImage: '/images/forest.png' // 4张图拼成的长图
-        }
+        },
+        swiperList: [
+          { id: 1, image: '/images/forest.png' },
+          { id: 2, image: '/images/we.png' }
+        ]
       });
     });
   },
@@ -75,8 +77,7 @@ Page({
     }
     
     wx.showModal({
-      title: '选择购买亩数',
-      content: `当前剩余 ${remainingAcres} 亩`,
+      title: `当前剩余 ${remainingAcres} 亩`,
       editable: true,
       placeholderText: '请输入亩数',
       success: function(res) {

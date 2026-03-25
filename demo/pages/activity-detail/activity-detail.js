@@ -55,12 +55,12 @@ Page({
 
   registerActivity: function() {
     const activity = this.data.activity;
-    const maxPeople = parseInt(activity.people) || 0;
+    const remainingSlots = parseInt(activity.remainingSlots) || 0;
     
     // 检查是否已卖完
-    if (maxPeople <= 0) {
+    if (remainingSlots <= 0) {
       wx.showToast({
-        title: '活动已卖完',
+        title: '活动人数已达上限',
         icon: 'none'
       });
       return;
@@ -70,7 +70,7 @@ Page({
     
     // 直接显示数量输入弹窗
     wx.showModal({
-      title: `你要买几张卷？（还剩${maxPeople}张）`,
+      title: `你要买几张卷？（还剩${remainingSlots}张）`,
 
       editable: true,
       placeholderText: '请输入数量',
@@ -93,9 +93,9 @@ Page({
             return;
           }
           
-          if (quantity > maxPeople) {
+          if (quantity > remainingSlots) {
             wx.showToast({
-              title: `购买数量不能超过活动限制的${maxPeople}人`,
+              title: `购买数量不能超过活动限制的${remainingSlots}人`,
               icon: 'none'
             });
             return;

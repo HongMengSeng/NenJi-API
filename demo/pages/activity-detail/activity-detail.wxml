@@ -32,12 +32,20 @@
       <view class="detail-value">限{{activity.people}}人</view>
     </view>
     <view class="detail-item">
+      <view class="detail-label">已参加人数</view>
+      <view class="detail-value highlight">{{activity.participants || 0}}人</view>
+    </view>
+    <view class="detail-item">
+      <view class="detail-label">剩余名额</view>
+      <view class="detail-value success">{{activity.remainingSlots || 0}}人</view>
+    </view>
+    <view class="detail-item">
       <view class="detail-label">活动内容</view>
       <view class="detail-value">{{activity.content}}</view>
     </view>
     
     <!-- 已卖完提示 -->
-    <view wx:if="{{activity.people <= 0}}" class="sold-out">
+    <view wx:if="{{activity.remainingSlots <= 0}}" class="sold-out">
       已卖完
     </view>
   </view>
@@ -61,9 +69,9 @@
     <button 
       class="register-btn" 
       bindtap="registerActivity"
-      disabled="{{activity.people <= 0}}"
+      disabled="{{activity.remainingSlots <= 0}}"
     >
-      {{activity.people <= 0 ? '已卖完' : '立即报名'}}
+      {{activity.remainingSlots <= 0 ? '已卖完' : '立即报名'}}
     </button>
   </view>
 </view>
