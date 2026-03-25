@@ -3,6 +3,22 @@
   "WorkspaceRootPath": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\paycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\paycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -13,14 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\paycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\paycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A7809C53-0C35-4BB4-A62F-DBB339234F55}|WebAPI\\WebAPI.csproj|e:\\webapi\\webapi\\kuade-nengjifarm\\demoapi\\webapi\\webapi\\entities\\orderentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -63,6 +71,32 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Controllers\\HomeController.cs",
+              "ToolTip": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "WebAPI\\Controllers\\HomeController.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAcwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-25T08:52:14.636Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "UserController.cs",
+              "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\UserController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Controllers\\UserController.cs",
+              "ToolTip": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\UserController.cs",
+              "RelativeToolTip": "WebAPI\\Controllers\\UserController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-25T08:52:08.705Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "appsettings.json",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\appsettings.json",
               "RelativeDocumentMoniker": "WebAPI\\appsettings.json",
@@ -75,7 +109,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 5,
               "Title": "Program.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Program.cs",
               "RelativeDocumentMoniker": "WebAPI\\Program.cs",
@@ -83,12 +117,11 @@
               "RelativeToolTip": "WebAPI\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T08:47:02.94Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T08:47:02.94Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 6,
               "Title": "launchSettings.json",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "WebAPI\\Properties\\launchSettings.json",
@@ -96,25 +129,24 @@
               "RelativeToolTip": "WebAPI\\Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvxAAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-25T08:46:56.572Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T08:46:56.572Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "OrderController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\OrderController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\OrderController.cs",
               "ToolTip": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\OrderController.cs",
               "RelativeToolTip": "WebAPI\\Controllers\\OrderController.cs",
-              "ViewState": "AgIAAMAAAAAAAAAAAAAewLMAAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAAOEAAAAAAAAAAAAewLMAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-25T08:23:21.165Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "PayController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\PayController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\PayController.cs",
@@ -127,7 +159,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "OrderEntity.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Entities\\OrderEntity.cs",
               "RelativeDocumentMoniker": "WebAPI\\Entities\\OrderEntity.cs",
@@ -135,12 +167,11 @@
               "RelativeToolTip": "WebAPI\\Entities\\OrderEntity.cs",
               "ViewState": "AgIAABQAAAAAAAAAAAAUwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T08:00:27.874Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T08:00:27.874Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "OrderDetail.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Entities\\OrderDetail.cs",
               "RelativeDocumentMoniker": "WebAPI\\Entities\\OrderDetail.cs",
@@ -148,12 +179,11 @@
               "RelativeToolTip": "WebAPI\\Entities\\OrderDetail.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T08:00:15.36Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T08:00:15.36Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "FarmGoodsController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\FarmGoodsController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\FarmGoodsController.cs",
@@ -161,12 +191,11 @@
               "RelativeToolTip": "WebAPI\\Controllers\\FarmGoodsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T07:55:52.228Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T07:55:52.228Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "GoodsController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\GoodsController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\GoodsController.cs",
@@ -174,12 +203,11 @@
               "RelativeToolTip": "WebAPI\\Controllers\\GoodsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T07:55:51.354Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T07:55:51.354Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "AuthController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\AuthController.cs",
@@ -187,12 +215,11 @@
               "RelativeToolTip": "WebAPI\\Controllers\\AuthController.cs",
               "ViewState": "AgIAADAAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T07:31:17.244Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T07:31:17.244Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "ActivityController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\ActivityController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\ActivityController.cs",
@@ -200,12 +227,11 @@
               "RelativeToolTip": "WebAPI\\Controllers\\ActivityController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T07:31:16.701Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T07:31:16.701Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "FarmController.cs",
               "DocumentMoniker": "E:\\WebAPI\\WebAPI\\Kuade-NengJiFarm\\DemoAPI\\WebAPI\\WebAPI\\Controllers\\FarmController.cs",
               "RelativeDocumentMoniker": "WebAPI\\Controllers\\FarmController.cs",
@@ -213,8 +239,7 @@
               "RelativeToolTip": "WebAPI\\Controllers\\FarmController.cs",
               "ViewState": "AgIAACoAAAAAAAAAAAAAwEMAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-25T07:27:33.641Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-25T07:27:33.641Z"
             }
           ]
         }
