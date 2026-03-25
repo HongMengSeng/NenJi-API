@@ -28,10 +28,6 @@
       <view class="detail-value">{{activity.price}}</view>
     </view>
     <view class="detail-item">
-      <view class="detail-label">活动人数</view>
-      <view class="detail-value">{{activity.people}}</view>
-    </view>
-    <view class="detail-item">
       <view class="detail-label">已参加人数</view>
       <view class="detail-value highlight">{{activity.participants || 0}}人</view>
     </view>
@@ -60,7 +56,9 @@
   
   <!-- 底部按钮 -->
   <view class="bottom-buttons">
-    <button class="contact-btn">联系客服</button>
-    <button class="register-btn">立即报名</button>
+    <button class="contact-btn" bindtap="contactService">联系客服</button>
+    <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
+      {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
+    </button>
   </view>
 </view>

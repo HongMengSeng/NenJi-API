@@ -69,7 +69,7 @@ Page({
     });
 
     api.request({
-      url: '/api/farm-goods/index',
+      url: '/api/farm-goods',
       method: 'GET',
       data: {
         category: 'all'
@@ -137,7 +137,7 @@ Page({
 
   fetchCategoryGoods(categoryId) {
     return api.request({
-      url: '/api/farm-goods',
+      url: '/api/farm-goods/category',
       method: 'GET',
       data: {
         category: categoryId

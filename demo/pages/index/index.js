@@ -10,6 +10,8 @@ Page({
     hotDishes: [],
     // 认购一亩田项目数据
     acreProjects: [],
+
+    videos:[],
     // 加载状态
     loading: true
   },
@@ -26,7 +28,7 @@ Page({
     
     const api = require('../../utils/api')
     api.request({ 
-      url: 'http://127.0.0.1:5000/api/home?page=1&pageSize=6', 
+      url: '/api/home', 
       method: 'GET',
       data: {
         page: 1,
@@ -76,7 +78,31 @@ Page({
       })
       this.setData({ loading: false })
     })
+
+
+    api.request({
+      url: '/api/home/video',
+      method: 'GET'
+    })
+    .then(data => {
+      // 清理数据中的图片和视频路径（去除反引号和空格）
+      const videos = (data.items || []).map(item => ({
+        ...item,
+        coverImage: item.coverImage ? item.coverImage.replace(/[`\s]/g, '') : '',
+        videoUrl: item.videoUrl ? item.videoUrl.replace(/[`\s]/g, '') : ''
+      }))
+      
+      this.setData({
+        videos: videos
+      })
+    })
+    .catch(err => {
+      console.error('获取视频数据失败:', err)
+    })
+
   },
+
+  
 
   // 搜索功能
   search: function () {

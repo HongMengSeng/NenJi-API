@@ -1,5 +1,7 @@
 Page({
   data: {
+    acreDetail: {},
+    swiperList: [],
     acreDetail: {}
   },
   
@@ -16,7 +18,7 @@ Page({
     });
     
     api.request({
-      url: 'http://127.0.0.1:5000/api/acres/index' + id,
+      url: '/api/acres' + id,
       method: 'GET'
     })
     .then(res => {
@@ -24,32 +26,23 @@ Page({
       // 确保数据结构完整
       const acreDetail = {
         ...res,
-        videoUrl: res.videoUrl || 'https://example.com/farm-video.mp4', // 视频URL
-        remainingAcres: res.remainingAcres || 50, // 剩余亩数
-        soldAcres: res.soldAcres || 150, // 已售亩数
-        longExampleImage: res.longExampleImage || '/images/forest.png' // 农场示例图片
+        videoUrl: res.videoUrl , // 视频URL
+        remainingAcres: res.remainingAcres , // 剩余亩数
+        soldAcres: res.soldAcres , // 已售亩数
+        longExampleImage: res.longExampleImage  // 农场示例图片
       };
       this.setData({
-        acreDetail: acreDetail
+        acreDetail: acreDetail,
+        swiperList: res.swiperList || [] // 轮播图数据
+
+
       });
     })
     .catch(err => {
       wx.hideLoading();
       // 模拟数据，确保页面正常显示
       this.setData({
-        acreDetail: {
-          name: '有机农场认购',
-          price: '¥1980/亩',
-          description: '认购一亩有机农场，体验种植乐趣，收获绿色健康农产品。',
-          videoUrl: 'https://example.com/farm-video.mp4',
-          remainingAcres: 50,
-          soldAcres: 150,
-          swiperList: [
-            { id: 1, image: '/images/forest.png' },
-            { id: 2, image: '/images/we.png' }
-          ],
-          longExampleImage: '/images/forest.png' // 4张图拼成的长图
-        }
+        
       });
     });
   },

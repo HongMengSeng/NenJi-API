@@ -17,7 +17,7 @@ Page({
     });
     
     api.request({
-      url: 'http://127.0.0.1:5000/api/acres/index',
+      url: '/api/acres/index',
       method: 'GET'
     })
     .then(res => {

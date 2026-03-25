@@ -24,6 +24,11 @@ Page({
   },
 
   onLoad() {
+     // 恢复购物车
+     const cart = wx.getStorageSync('orderCart') || {};
+     this.restoreCart(cart);
+     // 获取桌台
+ 
     try {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
@@ -35,7 +40,7 @@ Page({
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
     api.request({
-      url: 'http://127.0.0.1:5000/api/order?categoryId=vegetables&page=1&pageSize=6',
+      url: '/api/DemoApi/orders',
       method: 'GET',
       data: {
         categoryId: this.data.activeCategory,
@@ -43,6 +48,7 @@ Page({
         pageSize: this.data.pageSize
       }
     }).then(data => {
+      console.log("后端返回:", data)
       const categories = data.categories || []
       const currentCategory = data.currentCategory || 'vegetables'
       const goods = data.goodsList || []
@@ -50,6 +56,17 @@ Page({
       this.setData({
         activeCategory: currentCategory,
         categories: categories,
+        goodsList: {
+          [currentCategory]: goods
+        },
+        pageMap: {
+          [currentCategory]: 1
+        },
+        hasMoreMap: {
+          [currentCategory]: !!data.hasMore
+        },
+
+
         goodsList: { [currentCategory]: goods },
         pageMap: { [currentCategory]: 1 },
         hasMoreMap: { [currentCategory]: !!data.hasMore },
@@ -59,6 +76,8 @@ Page({
       console.error("加载失败", err)
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })
+  
+
     }).finally(() => wx.hideLoading())
   },
 
@@ -77,7 +96,7 @@ Page({
 
     setTimeout(() => {
       api.request({
-        url: 'http://127.0.0.1:5000/api/order?categoryId=vegetables&page=1&pageSize=6',
+        url: '/api/DemoApi/orders',
         method: 'GET',
         data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
       }).then(data => {
