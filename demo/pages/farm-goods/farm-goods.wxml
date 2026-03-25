@@ -9,7 +9,6 @@
 
       <view class="category-btn" bindtap="toggleCategory">
         <text class="category-icon">📂</text>
-        <text>商品分类</text>
       </view>
     </view>
   </view>

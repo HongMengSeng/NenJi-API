@@ -20,7 +20,7 @@
       />
     </swiper-item>
     <!-- 其他轮播项显示图片 -->
-    <block wx:for="{{swiperList}}" wx:key="id">
+    <block wx:for="{{acreDetail.swiperList}}" wx:key="id">
       <swiper-item>
         <image
           class="detail-swiper-image"

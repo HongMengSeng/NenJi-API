@@ -40,7 +40,7 @@ Page({
     wx.showLoading({ title: '加载中...' });
 
     api.request({
-      url: `/api/goods/${goodsId}`,
+      url: `/api/order/status-list${goodsId}`,
       method: 'GET'
     })
       .then((data) => {

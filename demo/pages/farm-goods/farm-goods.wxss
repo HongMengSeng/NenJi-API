@@ -96,12 +96,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e64340;
-  border-radius: 32rpx;
-  padding: 0 28rpx;
+  background-color: transparent;
+  border-radius: 50%;
+  padding: 0;
   white-space: nowrap;
   flex-shrink: 0;
-  height: 60rpx;
+  width: 80rpx;
+  height: 80rpx;
   position: relative;
   overflow: hidden;
   transform: translateZ(0);
@@ -109,9 +110,9 @@
 }
 
 .category-btn .category-icon {
-  font-size: 22rpx;
-  color: #fff;
-  margin-right: 10rpx;
+  font-size: 40rpx;
+  color: #333;
+  margin-right: 0;
 }
 
 .category-btn text {

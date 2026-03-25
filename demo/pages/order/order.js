@@ -18,30 +18,24 @@ Page({
     lazyLoading: false,
     showCartModal: false,
 
-    // 你原来的桌台功能 👇
     tableNumber: null,
     showTableModal: false,
     tableList: []
   },
 
   onLoad() {
-    // 恢复购物车
-    const cart = wx.getStorageSync('orderCart') || {};
-    this.restoreCart(cart);
-    // 获取桌台
+    try {
+      const cart = wx.getStorageSync('orderCart') || {};
+      this.restoreCart(cart);
+    } catch (e) {}
     this.getTableList();
-    // 获取商品数据
     this.getOrderData();
   },
 
-  // ======================
-  // 后端接口获取数据（已修复）
-  // ======================
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
-
     api.request({
-      url: '/api/DemoApi/orders',
+      url: 'http://127.0.0.1:5000/api/order?categoryId=vegetables&page=1&pageSize=6',
       method: 'GET',
       data: {
         categoryId: this.data.activeCategory,
@@ -49,8 +43,6 @@ Page({
         pageSize: this.data.pageSize
       }
     }).then(data => {
-      console.log("后端返回:", data)
-
       const categories = data.categories || []
       const currentCategory = data.currentCategory || 'vegetables'
       const goods = data.goodsList || []
@@ -58,66 +50,39 @@ Page({
       this.setData({
         activeCategory: currentCategory,
         categories: categories,
-        goodsList: {
-          [currentCategory]: goods
-        },
-        pageMap: {
-          [currentCategory]: 1
-        },
-        hasMoreMap: {
-          [currentCategory]: !!data.hasMore
-        },
+        goodsList: { [currentCategory]: goods },
+        pageMap: { [currentCategory]: 1 },
+        hasMoreMap: { [currentCategory]: !!data.hasMore },
         loading: false
       })
     }).catch(err => {
-      console.error("加载失败:", err)
+      console.error("加载失败", err)
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })
-    }).finally(() => {
-      wx.hideLoading()
-    })
+    }).finally(() => wx.hideLoading())
   },
 
-  // ======================
-  // 切换分类
-  // ======================
   switchCategory(e) {
     const category = e.currentTarget.dataset.category
     if (category === this.data.activeCategory) return
-
     this.setData({ activeCategory: category })
-
-    if (this.data.goodsList[category]) {
-      return
-    }
-
+    if (this.data.goodsList[category]) return
     this.loadCategoryGoods(category, false)
   },
 
   loadCategoryGoods(category, isLoadMore) {
     if (isLoadMore && this.data.lazyLoading) return
-
     const nextPage = isLoadMore ? (this.data.pageMap[category] || 0) + 1 : 1
+    this.setData({ loading: !isLoadMore, lazyLoading: isLoadMore })
 
-    this.setData({
-      loading: !isLoadMore,
-      lazyLoading: isLoadMore
-    })
-
-    // 添加200ms延迟，让客户看到加载中弹窗
     setTimeout(() => {
       api.request({
-        url: '/api/DemoApi/orders',
+        url: 'http://127.0.0.1:5000/api/order?categoryId=vegetables&page=1&pageSize=6',
         method: 'GET',
-        data: {
-          categoryId: category,
-          page: nextPage,
-          pageSize: this.data.pageSize
-        }
+        data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
       }).then(data => {
         const newGoods = data.goodsList || []
         const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
-
         this.setData({
           [`goodsList.${category}`]: oldGoods.concat(newGoods),
           [`pageMap.${category}`]: nextPage,
@@ -131,92 +96,75 @@ Page({
     }, 200)
   },
 
-  // ======================
-  // 购物车逻辑（完全保留你原来的）
-  // ======================
   addToCart(e) {
     const { category, index } = e.currentTarget.dataset
     const goods = this.data.goodsList[category][index]
     if (!goods) return
-
     const key = String(goods.id)
-    const newCart = JSON.parse(JSON.stringify(this.data.cart))
+    const newCart = { ...this.data.cart }
 
     if (newCart[key]) {
       if (newCart[key].quantity >= goods.stock) {
-        wx.showToast({ title: '已达到库存上限', icon: 'none' })
+        wx.showToast({ title: '库存不足', icon: 'none' })
         return
       }
       newCart[key].quantity += 1
     } else {
-      if (1 > goods.stock) {
-        wx.showToast({ title: '已达到库存上限', icon: 'none' })
-        return
-      }
       newCart[key] = { ...goods, quantity: 1 }
     }
-
     this.syncCartState(newCart)
   },
 
   increaseQuantity(e) {
     const id = e.currentTarget.dataset.id + ''
-    const newCart = JSON.parse(JSON.stringify(this.data.cart))
+    const newCart = { ...this.data.cart }
     if (!newCart[id]) return
-
     if (newCart[id].quantity >= newCart[id].stock) {
-      wx.showToast({ title: '已达到库存上限', icon: 'none' })
+      wx.showToast({ title: '库存不足', icon: 'none' })
       return
     }
-
     newCart[id].quantity += 1
     this.syncCartState(newCart)
   },
 
   decreaseQuantity(e) {
     const id = e.currentTarget.dataset.id + ''
-    const newCart = JSON.parse(JSON.stringify(this.data.cart))
+    const newCart = { ...this.data.cart }
     if (!newCart[id]) return
-
     if (newCart[id].quantity <= 1) {
       delete newCart[id]
     } else {
       newCart[id].quantity -= 1
     }
-
     this.syncCartState(newCart)
   },
 
   syncCartState(newCart) {
-    let count = 0
-    let total = 0
-    for (let k in newCart) {
-      count += newCart[k].quantity
-      total += newCart[k].price * newCart[k].quantity
-    }
-
+    let count = 0, total = 0
+    Object.values(newCart).forEach(item => {
+      count += item.quantity
+      total += item.price * item.quantity
+    })
     this.setData({
       cart: newCart,
       cartItems: Object.values(newCart),
       cartCount: count,
-      totalPrice: total
+      totalPrice: parseFloat(total.toFixed(2))
     })
-
-    wx.setStorageSync('orderCart', newCart)
+    try { wx.setStorageSync('orderCart', newCart) } catch (e) {}
   },
 
   restoreCart(cart) {
-    let count = 0
-    let total = 0
-    for (let k in cart) {
-      count += cart[k].quantity
-      total += cart[k].price * cart[k].quantity
-    }
+    let count = 0, total = 0
+    Object.values(cart || {}).forEach(item => {
+      count += item.quantity || 0
+      total += (item.price || 0) * (item.quantity || 0)
+    })
     this.setData({
-      cart,
-      cartItems: Object.values(cart),
+      cart: cart || {},
+      cartItems: Object.values(cart || {}),
       cartCount: count,
-      totalPrice: total
+      totalPrice: parseFloat(total.toFixed(2))
     })
   },
 
@@ -225,18 +173,11 @@ Page({
       wx.showToast({ title: '购物车为空', icon: 'none' })
       return
     }
-    this.setData({
-      cartItems: Object.values(this.data.cart),
-      showCartModal: true
-    })
+    this.setData({ showCartModal: true })
   },
 
   hideCartModal() {
     this.setData({ showCartModal: false })
-  },
-
-  stopPropagation() {
-    // 阻止事件冒泡
   },
 
   checkout() {
@@ -258,9 +199,6 @@ Page({
     this.loadCategoryGoods(cat, true)
   },
 
-  // ======================
-  // 你原来的 桌台 + 扫码 功能（完全保留）
-  // ======================
   selectTable() {
     this.setData({ showTableModal: true })
   },
@@ -271,10 +209,7 @@ Page({
 
   selectTableNumber(e) {
     const tableId = e.currentTarget.dataset.tableId
-    this.setData({
-      tableNumber: tableId,
-      showTableModal: false
-    })
+    this.setData({ tableNumber: tableId, showTableModal: false })
   },
 
   testScanCode() {
@@ -291,5 +226,9 @@ Page({
         { id: '7', name: '桌台7' },{ id: '8', name: '桌台8' }
       ]
     })
+  },
+
+  stopAll() {
+    return false
   }
 })
