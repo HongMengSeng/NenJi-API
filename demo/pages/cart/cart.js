@@ -6,11 +6,15 @@ Page({
     totalPrice: '0.00', 
     selectedCount: 0, 
     showModal: false,
-    selectAll: false
+    showCartDetail: false,
+    selectAll: false,
+    addresses: [],
+    selectedAddressId: null
   }, 
 
   onLoad() { 
     this.restoreCart(); 
+    this.loadAddresses(); 
   }, 
 
   onShow() { 
@@ -26,7 +30,19 @@ Page({
 
     this.setData({ cartList }); 
     this.calcTotal(); 
-  }, 
+  },
+
+  loadAddresses() {
+    // 模拟加载地址列表
+    const addresses = [
+      { id: 1, name: '张三', phone: '138****1234', address: '北京市朝阳区xxx街道xxx号' },
+      { id: 2, name: '李四', phone: '139****5678', address: '上海市浦东新区xxx街道xxx号' }
+    ];
+    this.setData({ 
+      addresses: addresses,
+      selectedAddressId: addresses.length > 0 ? addresses[0].id : null
+    });
+  },
 
   syncCart(cartList) { 
     const normalizedCartList = cartList 
@@ -45,7 +61,7 @@ Page({
     wx.setStorageSync('cartList', normalizedCartList); 
 
     api.request({ 
-      url: '/api/AppCart/Appcart', 
+      url: '/api/cart/items', 
       method: 'POST', 
       data: { 
         cartList: normalizedCartList 
@@ -89,17 +105,26 @@ Page({
     this.syncCart(cartList); 
   }, 
 
-  handlePlus(e) { 
-    const id = String(e.currentTarget.dataset.id); 
-    const cartList = this.data.cartList.map(item => ({ ...item })); 
-    const itemIndex = cartList.findIndex(item => String(item.id) === id); 
+  handlePlus(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const cartList = this.data.cartList.map(item => ({ ...item }));
+    const itemIndex = cartList.findIndex(item => String(item.id) === id);
 
-    if (itemIndex === -1) { 
-      return; 
-    } 
+    if (itemIndex === -1) {
+      return;
+    }
 
-    cartList[itemIndex].count += 1; 
-    this.syncCart(cartList); 
+    // 确保商品数量不超过库存上限
+    const stock = cartList[itemIndex].stock || 10;
+    if (cartList[itemIndex].count < stock) {
+      cartList[itemIndex].count += 1;
+      this.syncCart(cartList);
+    } else {
+      wx.showToast({ 
+        title: '已达到库存上限', 
+        icon: 'none' 
+      });
+    }
   }, 
 
   toggleSelect(e) { 
@@ -134,6 +159,7 @@ Page({
       selectAll
     }); 
 
+    // 更新标签栏徽章
     if (selectedCount > 0) { 
       wx.setTabBarBadge({ 
         index: 2, 
@@ -155,19 +181,30 @@ Page({
       return; 
     } 
 
+    // 先关闭购物车详情弹窗
+    if (this.data.showCartDetail) {
+      this.setData({ showCartDetail: false });
+    }
+
+    // 然后显示结算弹窗
     this.setData({ showModal: true }); 
   }, 
 
   handleConfirmPurchase() { 
     this.setData({ showModal: false }, () => { 
       wx.navigateTo({ 
-        url: '../buy/buy' 
+        url: '../buy/buy?orderId=1' 
       }); 
     }); 
   }, 
 
   handleCancelModal() { 
     this.setData({ showModal: false }); 
+  },
+
+  selectAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    this.setData({ selectedAddressId: addressId });
   }, 
 
   navTo(e) { 
@@ -208,5 +245,13 @@ Page({
         }
       }
     });
+  },
+
+  handleCartIconClick() {
+    this.setData({ showCartDetail: true });
+  },
+
+  handleCloseCartDetail() {
+    this.setData({ showCartDetail: false });
   } 
 });
