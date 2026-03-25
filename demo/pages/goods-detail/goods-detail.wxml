@@ -4,13 +4,9 @@
   </view>
 
   <view class="goods-info">
-    <view class="goods-price">${{goods.price}}</view>
+    <view class="goods-price">￥{{goods.price}}</view>
     <view class="goods-name">{{goods.name}}</view>
-    <view class="goods-tags">
-      <view class="tag">促销</view>
-      <view class="tag">立减</view>
-    </view>
-
+   
     <view class="goods-description">
       {{goods.description}}
     </view>

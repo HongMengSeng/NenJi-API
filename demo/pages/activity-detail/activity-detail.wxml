@@ -29,11 +29,16 @@
     </view>
     <view class="detail-item">
       <view class="detail-label">活动人数</view>
-      <view class="detail-value">{{activity.people}}</view>
+      <view class="detail-value">限{{activity.people}}人</view>
     </view>
     <view class="detail-item">
       <view class="detail-label">活动内容</view>
       <view class="detail-value">{{activity.content}}</view>
+    </view>
+    
+    <!-- 已卖完提示 -->
+    <view wx:if="{{activity.people <= 0}}" class="sold-out">
+      已卖完
     </view>
   </view>
   
@@ -53,6 +58,12 @@
   <!-- 底部按钮 -->
   <view class="bottom-buttons">
     <button class="contact-btn" bindtap="contactService" >联系客服</button>
-    <button class="register-btn" bindtap="registerActivity" >立即报名</button>
+    <button 
+      class="register-btn" 
+      bindtap="registerActivity"
+      disabled="{{activity.people <= 0}}"
+    >
+      {{activity.people <= 0 ? '已卖完' : '立即报名'}}
+    </button>
   </view>
 </view>

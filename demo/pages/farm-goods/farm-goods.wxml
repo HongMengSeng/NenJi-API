@@ -6,7 +6,7 @@
       <input class="search-input" placeholder="搜索商品" />
     </view>
     <view class="button-group">
-      <view class="search-btn" bindtap="search">搜索</view>
+
       <view class="category-btn" bindtap="toggleCategory">
         <text class="category-icon">📂</text>
         <text>商品分类</text>

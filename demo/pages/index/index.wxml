@@ -35,7 +35,6 @@
         <view class="project-description-small">{{item.description}}</view>
         <view class="project-price-row">
           <view class="project-price-small">￥{{item.price}}</view>
-          <button class="buy-btn-small" bindtap="navigateToAcreDetail" data-id="{{item.id}}">立即购买</button>
         </view>
       </view>
     </view>

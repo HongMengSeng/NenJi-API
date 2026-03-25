@@ -2,7 +2,6 @@
   <!-- 搜索栏 -->
   <view class="search-bar">
     <input class="search-input" placeholder="搜索活动" />
-    <view class="search-btn" bindtap="search">搜索</view>
   </view>
   
   <!-- 选项卡 -->

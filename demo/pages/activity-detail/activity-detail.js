@@ -46,15 +46,70 @@ Page({
   },
 
   contactService: function() {
-    wx.showToast({
-      title: '联系客服功能开发中',
-      icon: 'none'
+    wx.showModal({
+      title: '能记家庭农场客服',
+      content: '手机号：15876534944\n微信号：njjtnc15876534944',
+      showCancel: false
     });
   },
 
   registerActivity: function() {
-    wx.navigateTo({
-      url: '/pages/buy/buy'
+    const activity = this.data.activity;
+    const maxPeople = parseInt(activity.people) || 0;
+    
+    // 检查是否已卖完
+    if (maxPeople <= 0) {
+      wx.showToast({
+        title: '活动已卖完',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    const ticketPrice = 198; // 卷的价格
+    
+    // 直接显示数量输入弹窗
+    wx.showModal({
+      title: `你要买几张卷？（还剩${maxPeople}张）`,
+
+      editable: true,
+      placeholderText: '请输入数量',
+      success: (res) => {
+        if (res.confirm) {
+          if (!res.content || res.content.trim() === '') {
+            wx.showToast({
+              title: '请输入购买数量',
+              icon: 'none'
+            });
+            return;
+          }
+          
+          const quantity = parseInt(res.content);
+          if (quantity <= 0) {
+            wx.showToast({
+              title: '请输入有效的数量',
+              icon: 'none'
+            });
+            return;
+          }
+          
+          if (quantity > maxPeople) {
+            wx.showToast({
+              title: `购买数量不能超过活动限制的${maxPeople}人`,
+              icon: 'none'
+            });
+            return;
+          }
+          
+          // 计算总价格
+          const totalPrice = ticketPrice * quantity;
+          
+          // 跳转到支付页面
+          wx.navigateTo({
+            url: `/pages/pay/pay?totalPrice=${totalPrice}`
+          });
+        }
+      }
     });
   },
 

@@ -85,6 +85,18 @@
   line-height: 40rpx;
 }
 
+/* 已卖完提示 */
+.sold-out {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #e64340;
+}
+
 /* 活动图片展示 */
 .activity-gallery {
   background-color: #fff;
