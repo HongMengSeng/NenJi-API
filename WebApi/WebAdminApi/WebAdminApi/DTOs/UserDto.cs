@@ -5,15 +5,15 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class UserListItemDto
     {
-        public string Id { get; set; } = null!;
-        public string Phone { get; set; } = null!;
-        public string Nickname { get; set; } = null!;
-        public string LoginTime { get; set; } = null!;
-        public string Gender { get; set; } = null!;
-        public string Address { get; set; } = null!;
-        public string Role { get; set; } = null!;
-        public string Status { get; set; } = null!;
-        public bool Selected { get; set; } = false;
+        public string admin_id { get; set; } = null!;
+        public string phone { get; set; } = null!;
+        public string nickname { get; set; } = null!;
+        //public string LoginTime { get; set; } = null!;
+        public string gender { get; set; } = null!;
+        public string address { get; set; } = null!;
+        //public string Role { get; set; } = null!;
+        public string status { get; set; } = null!;
+        //public bool Selected { get; set; } = false;
     }
 
     /// <summary>

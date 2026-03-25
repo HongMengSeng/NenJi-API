@@ -1,4 +1,6 @@
-using WebAdminApi.Middleware;
+using Microsoft.EntityFrameworkCore;
+
+using WebAdminApi.DBs;
 using WebAdminApi.Services;
 
 namespace WebAdminApi
@@ -15,6 +17,13 @@ namespace WebAdminApi
             builder.Services.AddSwaggerGen();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseMySql(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+                )
+            );
 
             var app = builder.Build();
 
