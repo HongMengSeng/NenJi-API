@@ -25,6 +25,7 @@ obj/
 **/.vs/
 **/bin/
 **/obj/
+.cr/
 
 # 临时文件
 temp/

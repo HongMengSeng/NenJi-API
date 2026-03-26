@@ -2,26 +2,47 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApplication1.Models.Entities
+namespace WebAdminApi.Entities
 {
     [Table("admin_staff")]
-    public class User
+    public class AdminStaffs
     {
         [Key]
         public int id { get; set; }
 
-        public string admin_id { get; set; } = null!;
-        public string phone { get; set; } = null!;
-        public string nickname { get; set; } = null!;
-        public string? gender { get; set; }
-        public string? address { get; set; }
-        //public string role { get; set; } = "普通用户";
-        public string status { get; set; } = "启用";
-        //public string? password { get; set; }
-        //public DateTime? loginTime { get; set; }
-        //public DateTime registerTime { get; set; } = DateTime.Now;
-        //public DateTime? updateTime { get; set; }
-        //public string? WxOpenId { get; set; }
-        //public string? WxImage { get; set; }
+        [Column("admin_id")]
+        public int AdminId { get; set; }
+        [Column("phone")]
+        public string Phone { get; set; } = "未设置";
+        [Column("nickname")]
+        public string NickName { get; set; } = "";
+        [Column("gender")]
+        public string Gender { get; set; } = "保密";
+        [Column("address")]
+        public string Address { get; set; } = "未设置";
+        [Column("role_id")]    
+        public int Role { get; set; }
+        [Column("status")]
+        public string Status { get; set; } = "启用";
+        [Column("register_time")]
+        public DateTime RegisterTime { get; set; } = DateTime.Now;
+        [Column("token")]
+        public string Token { get; set; } = "";
+    }
+
+    [Table("users")]
+    public class WeChatUser
+    {
+        [Key]
+        public int user_id { get; set; }
+
+        public string phone_number { get; set; } = "未设置";
+        public DateTime register_time { get; set; } = DateTime.Now;
+        public string wx_open_id { get; set; } = "未设置";
+        public string wx_image { get; set; } = "未设置";   
+        public string wx_name { get; set; } = "未设置";
+
+        public int role_id { get; set; }
+
     }
 }

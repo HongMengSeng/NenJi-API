@@ -5,9 +5,9 @@ namespace WebAdminApi.Services
     public interface IUserService
     {
         List<UserListItemDto> GetUserList(string? keyword);
-        bool AddUser(AddUserDto dto);
-        bool EditUser(EditUserDto dto);
-        bool ChangeUserStatus(string userId, string status);
-        bool DeleteUser(string userId);
+        Task<bool> AddUser(AddUserDto dto);
+        Task<bool> EditUser(EditUserDto dto);
+        Task<bool> ChangeUserStatus(int userId, string status);
+        Task<bool> DeleteUser(int userId);
     }
 }

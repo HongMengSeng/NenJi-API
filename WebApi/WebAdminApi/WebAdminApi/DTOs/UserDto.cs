@@ -5,15 +5,15 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class UserListItemDto
     {
-        public string admin_id { get; set; } = null!;
+        public int admin_id { get; set; }
         public string phone { get; set; } = null!;
         public string nickname { get; set; } = null!;
-        //public string LoginTime { get; set; } = null!;
         public string gender { get; set; } = null!;
         public string address { get; set; } = null!;
-        //public string Role { get; set; } = null!;
+        public int role { get; set; }
         public string status { get; set; } = null!;
-        //public bool Selected { get; set; } = false;
+
+        public DateTime register_time = DateTime.Now;
     }
 
     /// <summary>
@@ -21,12 +21,13 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class AddUserDto
     {
-        public string Phone { get; set; } = null!;
-        public string Nickname { get; set; } = null!;
-        public string Gender { get; set; } = null!;
-        public string? Address { get; set; }
-        public string Role { get; set; } = null!;
-        public string Status { get; set; } = null!;
+        public int AdminId { get; set; }
+        public string Phone { get; set; } = "Î´ÉèÖÃ";
+        public string Nickname { get; set; } = "Î´ÉèÖÃ";
+        public string Gender { get; set; } = "Î´ÉèÖÃ";
+        public string Address { get; set; } = "Î´ÉèÖÃ";
+        public int Role { get; set; }
+        public string Status { get; set; } = "½ûÓÃ";
     }
 
     /// <summary>
@@ -34,12 +35,13 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class EditUserDto
     {
-        public string Id { get; set; } = null!;
-        public string? Nickname { get; set; }
-        public string? Gender { get; set; }
-        public string? Address { get; set; }
-        public string? Role { get; set; }
-        public string? Status { get; set; }
+        public int AdminId { get; set; } 
+        public string Phone { get; set; } = "Î´ÉèÖÃ";
+        public string Nickname { get; set; } = "Î´ÉèÖÃ";
+        public string Gender { get; set; } = "Î´ÉèÖÃ";
+        public string Address { get; set; } = "Î´ÉèÖÃ";
+        public int Role { get; set; }
+        public string Status { get; set; } = "½ûÓÃ";
     }
 
     /// <summary>
@@ -47,8 +49,8 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class ChangeStatusDto
     {
-        public string Id { get; set; } = null!;
-        public string Status { get; set; } = null!;
+        public int Id { get; set; }
+        public int Status { get; set; }
     }
 
     /// <summary>

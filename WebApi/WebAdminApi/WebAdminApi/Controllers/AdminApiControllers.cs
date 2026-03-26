@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models.Entities;
+
+using WebAdminApi.Entities;
 
 namespace WebAdminApi.Controllers
 {
@@ -25,7 +26,7 @@ namespace WebAdminApi.Controllers
         public class RoleController : ControllerBase
         {
             [HttpPost("add")]
-            public IActionResult AddRole([FromBody] Role role)
+            public IActionResult AddRole([FromBody] Roles role)
             {
                 if (role == null)
                 {

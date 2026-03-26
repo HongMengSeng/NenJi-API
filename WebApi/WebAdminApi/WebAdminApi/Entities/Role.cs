@@ -1,8 +1,25 @@
-namespace WebApplication1.Models.Entities
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WebAdminApi.Entities
 {
-    public class Role
+    [Table("role")]
+    public class Roles
     {
+        [Key]
+        [Column("role_id")]
         public int RoleId { get; set; }
-        public string RoleName { get; set; } = null!;
+        [Column("role_name")]
+        public string RoleName { get; set; } = "Œ¥…Ë÷√";
+    }
+
+    [Table("role_staff")]
+    public class Role_Staffs
+    {
+        [Key]
+        [Column("role_id")]
+        public int RoleId { get; set; }
+        [Column("role_name")]
+        public string RoleName { get; set; } = "Œ¥…Ë÷√";
     }
 }

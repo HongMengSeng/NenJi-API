@@ -51,7 +51,7 @@ namespace WebAdminApi.Controllers
         /// 接口2：新增用户
         /// </summary>
         [HttpPost("add")]
-        public IActionResult AddUser([FromBody] AddUserDto dto)
+        public async Task<IActionResult> AddUser([FromBody] AddUserDto dto)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace WebAdminApi.Controllers
                 }
 
                 _logger.LogInformation($"新增用户，手机号: {dto.Phone}，昵称: {dto.Nickname}");
-                _userService.AddUser(dto);
+                await _userService.AddUser(dto);
 
                 return Ok(new ApiResponse
                 {
@@ -98,11 +98,11 @@ namespace WebAdminApi.Controllers
         /// 接口3：编辑用户
         /// </summary>
         [HttpPost("edit")]
-        public IActionResult EditUser([FromBody] EditUserDto dto)
+        public async Task<IActionResult> EditUser([FromBody] EditUserDto dto)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.Id))
+                if (dto.AdminId <= 0)
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -111,8 +111,8 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                _logger.LogInformation($"编辑用户，用户ID: {dto.Id}");
-                _userService.EditUser(dto);
+                _logger.LogInformation($"编辑用户，用户ID: {dto.AdminId}");
+                await _userService.EditUser(dto);
 
                 return Ok(new ApiResponse
                 {
@@ -135,11 +135,11 @@ namespace WebAdminApi.Controllers
         /// 接口4：修改用户状态（启用/禁用）
         /// </summary>
         [HttpPost("changeStatus")]
-        public IActionResult ChangeStatus([FromBody] ChangeStatusDto dto)
+        public async Task<IActionResult> ChangeStatus([FromBody] ChangeStatusDto dto)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.Id))
+                if (dto.Id <= 0)
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -148,7 +148,7 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                if (dto.Status != "启用" && dto.Status != "禁用")
+                if (dto.Status != 1 && dto.Status != 0)
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -158,7 +158,7 @@ namespace WebAdminApi.Controllers
                 }
 
                 _logger.LogInformation($"修改用户状态，用户ID: {dto.Id}，目标状态: {dto.Status}");
-                _userService.ChangeUserStatus(dto.Id, dto.Status);
+                await _userService.ChangeUserStatus(dto.Id, dto.Status == 1 ? "启用" : "禁用");
 
                 return Ok(new ApiResponse
                 {
@@ -181,7 +181,7 @@ namespace WebAdminApi.Controllers
         /// 接口5：删除用户
         /// </summary>
         [HttpPost("delete")]
-        public IActionResult DeleteUser([FromBody] DeleteUserDto dto)
+        public async Task<IActionResult> DeleteUser([FromBody] DeleteUserDto dto)
         {
             try
             {
@@ -195,7 +195,7 @@ namespace WebAdminApi.Controllers
                 }
 
                 _logger.LogInformation($"删除用户，用户ID: {dto.Id}");
-                _userService.DeleteUser(dto.Id);
+                await _userService.DeleteUser(int.Parse(dto.Id));
 
                 return Ok(new ApiResponse
                 {

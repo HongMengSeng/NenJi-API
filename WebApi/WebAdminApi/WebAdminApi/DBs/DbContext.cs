@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebApplication1.Models.Entities;
+
+using WebAdminApi.Entities;
 
 
 namespace WebAdminApi.DBs
@@ -10,6 +11,9 @@ namespace WebAdminApi.DBs
         {
         }
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<AdminStaffs> AdminStaffs { get; set; }
+        public DbSet<WeChatUser> WeChatUsers { get; set; }
+        public DbSet<Roles> Roles { get; set; }
+        public DbSet<Role_Staffs> Role_Staffs { get; set; }
     }
 }
