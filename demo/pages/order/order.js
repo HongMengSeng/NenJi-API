@@ -28,6 +28,10 @@ Page({
      const cart = wx.getStorageSync('orderCart') || {};
      this.restoreCart(cart);
      // 获取桌台
+     const tableNumber = wx.getStorageSync('tableNumber');
+     if (tableNumber) {
+       this.setData({ tableNumber });
+     }
  
     try {
       const cart = wx.getStorageSync('orderCart') || {};
@@ -35,6 +39,18 @@ Page({
     } catch (e) {}
     this.getTableList();
     this.getOrderData();
+  },
+
+  onShow() {
+    // 页面显示时更新购物车数据和桌台号码
+    try {
+      const cart = wx.getStorageSync('orderCart') || {};
+      this.restoreCart(cart);
+      const tableNumber = wx.getStorageSync('tableNumber');
+      if (tableNumber) {
+        this.setData({ tableNumber });
+      }
+    } catch (e) {}
   },
 
   getOrderData() {
@@ -116,6 +132,10 @@ Page({
   },
 
   addToCart(e) {
+    if (!this.data.tableNumber) {
+      wx.showToast({ title: '请选择桌台号码', icon: 'none' })
+      return
+    }
     const { category, index } = e.currentTarget.dataset
     const goods = this.data.goodsList[category][index]
     if (!goods) return
@@ -204,6 +224,10 @@ Page({
       wx.showToast({ title: '购物车为空', icon: 'none' })
       return
     }
+    if (!this.data.tableNumber) {
+      wx.showToast({ title: '请选择桌台号码', icon: 'none' })
+      return
+    }
     wx.navigateTo({ url: '/pages/confirm-order/confirm-order' })
   },
 
@@ -229,10 +253,12 @@ Page({
   selectTableNumber(e) {
     const tableId = e.currentTarget.dataset.tableId
     this.setData({ tableNumber: tableId, showTableModal: false })
+    wx.setStorageSync('tableNumber', tableId)
   },
 
   testScanCode() {
     this.setData({ tableNumber: '5' })
+    wx.setStorageSync('tableNumber', '5')
     wx.showToast({ title: '扫码成功', icon: 'success' })
   },
 

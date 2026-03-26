@@ -50,32 +50,70 @@ Page({
   },
 
   onSearchInput: function(e) {
-    this.setData({
-      searchKeyword: e.detail.value
-    });
+    const keyword = e.detail.value;
+    this.setData({ searchKeyword: keyword });
+
+    if (keyword.trim()) {
+      this.performSearch(keyword.trim());
+    } else {
+      // 使用原始数据的深拷贝，避免引用问题
+      const originalActivities = this.data.originalActivities || {};
+      this.setData({
+        activities: {
+          all: Array.isArray(originalActivities.all) ? [...originalActivities.all] : [],
+          picking: Array.isArray(originalActivities.picking) ? [...originalActivities.picking] : [],
+          camping: Array.isArray(originalActivities.camping) ? [...originalActivities.camping] : []
+        }
+      });
+    }
   },
 
   onSearch: function() {
     const keyword = this.data.searchKeyword.trim();
-    const originalActivities = this.data.originalActivities;
-
-    if (!keyword) {
+    if (keyword) {
+      this.performSearch(keyword);
+    } else {
       this.setData({
-        activities: originalActivities
+        activities: this.data.originalActivities
       });
-      return;
     }
+  },
+
+  performSearch: function(keyword) {
+    wx.showLoading({ title: '搜索中...' });
+
+    const originalActivities = this.data.originalActivities || {};
 
     // 过滤活动列表
     const filteredActivities = {
-      all: originalActivities.all.filter(item => item.title && item.title.includes(keyword)),
-      picking: originalActivities.picking.filter(item => item.title && item.title.includes(keyword)),
-      camping: originalActivities.camping.filter(item => item.title && item.title.includes(keyword))
+      all: (Array.isArray(originalActivities.all) ? originalActivities.all : []).filter(item => {
+        const title = item.title || '';
+        return title.includes(keyword);
+      }),
+      picking: (Array.isArray(originalActivities.picking) ? originalActivities.picking : []).filter(item => {
+        const title = item.title || '';
+        return title.includes(keyword);
+      }),
+      camping: (Array.isArray(originalActivities.camping) ? originalActivities.camping : []).filter(item => {
+        const title = item.title || '';
+        return title.includes(keyword);
+      })
     };
 
     this.setData({
       activities: filteredActivities
     });
+
+    wx.hideLoading();
+
+    // 如果搜索结果为空，显示提示信息
+    const currentTabActivities = filteredActivities[this.data.activeTab];
+    if (currentTabActivities && currentTabActivities.length === 0) {
+      wx.showToast({
+        title: '没有找到相关活动',
+        icon: 'none'
+      });
+    }
   },
 
   switchTab: function(e) {

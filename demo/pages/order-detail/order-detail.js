@@ -47,6 +47,18 @@ Page({
     })
       .then((data) => {
         this.setData({
+<<<<<<< HEAD
+          dish: {
+            id: data.id || dishId,
+            name: data.name || '',
+            price: Number(data.price || 0),
+            image: data.image || '',
+            detailImage: data.detailImage || data.image || '',
+            description: data.description || '',
+            ingredients: data.ingredients || '',
+            cookingTime: data.cookingTime || '',
+            stock: data.stock || 0
+=======
           order: data.order || {
             id: orderId,
             status: '',
@@ -64,6 +76,7 @@ Page({
             items: [],
             paymentMethod: null,
             transactionId: null
+>>>>>>> 69fb92a4f1e5da4e997a2ae2b3fa15b390dec831
           },
           loading: false
         });
@@ -71,14 +84,61 @@ Page({
       .catch((err) => {
         console.error('获取订单详情失败:', err);
         this.setData({ loading: false });
+<<<<<<< HEAD
+=======
         wx.showToast({
           title: '获取订单详情失败',
           icon: 'none'
         });
+>>>>>>> 69fb92a4f1e5da4e997a2ae2b3fa15b390dec831
       })
       .finally(() => {
         wx.hideLoading();
       });
+<<<<<<< HEAD
+  },
+
+  addToCart() {
+    // 检查桌台号码
+    const tableNumber = wx.getStorageSync('tableNumber');
+    if (!tableNumber) {
+      wx.showToast({
+        title: '请先选择桌台号码',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const dish = this.data.dish;
+    const currentCart = wx.getStorageSync('orderCart') || {};
+    const newCart = { ...currentCart };
+    const key = String(dish.id);
+
+    // 检查库存
+    const currentQuantity = newCart[key] ? newCart[key].quantity : 0;
+    const stock = dish.stock || 0;
+    if (currentQuantity >= stock) {
+      wx.showToast({ title: '库存不足', icon: 'none' });
+      return;
+    }
+
+    if (newCart[key]) {
+      newCart[key].quantity += 1;
+    } else {
+      newCart[key] = { 
+        ...dish, 
+        quantity: 1 
+      };
+    }
+
+    wx.setStorageSync('orderCart', newCart);
+    this.updateCartCount();
+    wx.showToast({
+      title: '已加入购物车',
+      icon: 'success'
+    });
+=======
+>>>>>>> 69fb92a4f1e5da4e997a2ae2b3fa15b390dec831
   },
 
   payOrder() {
@@ -130,6 +190,20 @@ Page({
     });
   },
 
+<<<<<<< HEAD
+  updateCartCount() {
+    const cart = wx.getStorageSync('orderCart') || {};
+    let totalCount = 0;
+    Object.values(cart).forEach(item => {
+      totalCount += item.quantity || 0;
+    });
+    this.setData({ cartCount: totalCount });
+  },
+
+  goToCart() {
+    wx.navigateBack({
+      delta: 1
+=======
   // 确认收货
   confirmReceipt() {
     wx.showModal({
@@ -156,6 +230,7 @@ Page({
           });
         }
       }
+>>>>>>> 69fb92a4f1e5da4e997a2ae2b3fa15b390dec831
     });
   }
 });
