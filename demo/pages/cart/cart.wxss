@@ -347,6 +347,12 @@
     width: 90%;
     max-height: 80vh;
   }
+  
+  /* 结算弹窗样式 */
+  .modal-content {
+    width: 90%;
+    max-height: 80vh;
+  }
   .cart-detail-list {
     max-height: 400rpx;
     overflow-y: auto;

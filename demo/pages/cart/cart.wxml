@@ -51,7 +51,6 @@
   <view class="cart-bottom">
     <view class="cart-badge" bindtap="handleCartIconClick">
       <text class="cart-icon">🛒</text>
-      <view class="badge" wx:if="{{selectedCount > 0}}">{{selectedCount}}</view>
     </view>
     <view class="total-price">合计: ¥{{totalPrice}}</view>
     <view class="settle-btn" bindtap="handleSettle">
@@ -70,17 +69,16 @@
       <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCancelModal"></icon>
     </view>
     <view class="modal-body">
-      <!-- 地址选择 -->
-      <view class="address-section">
-        <text class="section-title">收货地址</text>
-        <view class="address-list">
-          <view class="address-item" wx:for="{{addresses}}" wx:key="id" bindtap="selectAddress" data-id="{{item.id}}" style="{{selectedAddressId === item.id ? 'border-color: #e64340; background-color: #fef0f0;' : ''}}">
-            <view class="address-info">
-              <view class="address-name">{{item.name}} {{item.phone}}</view>
-              <view class="address-detail">{{item.address}}</view>
-            </view>
-            <view class="address-check" wx:if="{{selectedAddressId === item.id}}">✓</view>
+      <!-- 商品详细信息 -->
+      <view class="cart-detail-list">
+        <view class="cart-detail-item" wx:for="{{cartList}}" wx:key="id" wx:if="{{item.checked}}">
+          <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="detail-item-info">
+            <view class="detail-item-name">{{item.name}}</view>
+            <view class="detail-item-tag">{{item.tag}}</view>
+            <view class="detail-item-price">¥{{item.price}}</view>
           </view>
+          <view class="detail-item-quantity">×{{item.count}}</view>
         </view>
       </view>
       

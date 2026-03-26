@@ -7,14 +7,11 @@ Page({
     selectedCount: 0, 
     showModal: false,
     showCartDetail: false,
-    selectAll: false,
-    addresses: [],
-    selectedAddressId: null
+    selectAll: false
   }, 
 
   onLoad() { 
     this.restoreCart(); 
-    this.loadAddresses(); 
   }, 
 
   onShow() { 
@@ -32,17 +29,7 @@ Page({
     this.calcTotal(); 
   },
 
-  loadAddresses() {
-    // 模拟加载地址列表
-    const addresses = [
-      { id: 1, name: '张三', phone: '138****1234', address: '北京市朝阳区xxx街道xxx号' },
-      { id: 2, name: '李四', phone: '139****5678', address: '上海市浦东新区xxx街道xxx号' }
-    ];
-    this.setData({ 
-      addresses: addresses,
-      selectedAddressId: addresses.length > 0 ? addresses[0].id : null
-    });
-  },
+
 
   syncCart(cartList) { 
     const normalizedCartList = cartList 
@@ -159,17 +146,7 @@ Page({
       selectAll
     }); 
 
-    // 更新标签栏徽章
-    if (selectedCount > 0) { 
-      wx.setTabBarBadge({ 
-        index: 2, 
-        text: selectedCount.toString() 
-      }); 
-    } else { 
-      wx.removeTabBarBadge({ 
-        index: 2 
-      }); 
-    } 
+ 
   }, 
 
   handleSettle() { 
@@ -202,10 +179,7 @@ Page({
     this.setData({ showModal: false }); 
   },
 
-  selectAddress(e) {
-    const addressId = e.currentTarget.dataset.id;
-    this.setData({ selectedAddressId: addressId });
-  }, 
+ 
 
   navTo(e) { 
     const pageMap = { 
