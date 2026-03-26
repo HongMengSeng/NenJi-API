@@ -13,7 +13,10 @@ Page({
       storage: ''
     },
     loading: true,
-    cartCount: 0
+    cartCount: 0,
+    showBuyModal: false,
+    addressList: [],
+    selectedAddress: null
   },
 
   onLoad(options) {
@@ -30,6 +33,7 @@ Page({
 
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
+    this.getAddressList();
   },
 
   onShow() {
@@ -127,14 +131,104 @@ Page({
   },
 
   buyNow() {
-    wx.navigateTo({
-      url: '../buy/buy',
-      success: function(res) {
-        console.log("跳转成功");
-      },
-      fail: function(res) {
-        console.log("跳转失败", res);
+    this.setData({ showBuyModal: true });
+  },
+
+  hideBuyModal() {
+    this.setData({ showBuyModal: false });
+  },
+
+  getAddressList() {
+    api.request({
+      url: '/api/address/list',
+      method: 'GET'
+    }).then((data) => {
+      const addressList = Array.isArray(data.addressList) ? data.addressList : [];
+      this.setData({
+        addressList,
+        selectedAddress: addressList.length > 0 ? addressList[0].id : null
+      });
+    }).catch((err) => {
+      console.error('获取地址列表失败:', err);
+      // 使用默认地址
+      this.setData({
+        addressList: [
+          {
+            id: '1',
+            name: '张三',
+            phone: '13800138000',
+            address: '北京市朝阳区某某街道123号'
+          }
+        ],
+        selectedAddress: '1'
+      });
+    });
+  },
+
+  selectAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    this.setData({ selectedAddress: addressId });
+  },
+
+  addAddress() {
+    wx.showToast({
+      title: '添加地址功能开发中',
+      icon: 'none'
+    });
+  },
+
+  confirmBuy() {
+    if (!this.data.selectedAddress) {
+      wx.showToast({
+        title: '请选择收货地址',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const selectedAddressInfo = this.data.addressList.find(
+      item => item.id === this.data.selectedAddress
+    );
+
+    if (!selectedAddressInfo) {
+      wx.showToast({
+        title: '地址信息错误',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.showLoading({ title: '提交订单中...' });
+
+    api.request({
+      url: '/api/order/create',
+      method: 'POST',
+      data: {
+        goodsId: this.data.goods.id,
+        goodsName: this.data.goods.name,
+        price: this.data.goods.price,
+        quantity: 1,
+        address: selectedAddressInfo
       }
+    }).then((data) => {
+      wx.hideLoading();
+      this.setData({ showBuyModal: false });
+      wx.showToast({
+        title: '订单创建成功',
+        icon: 'success'
+      });
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/orders/orders'
+        });
+      }, 1500);
+    }).catch((err) => {
+      wx.hideLoading();
+      console.error('创建订单失败:', err);
+      wx.showToast({
+        title: '订单创建失败',
+        icon: 'none'
+      });
     });
   },
 

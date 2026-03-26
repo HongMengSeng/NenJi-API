@@ -2,7 +2,10 @@ const api = require('../../utils/api');
 
 const FALLBACK_CATEGORIES = [
   { id: 'all', name: '全部商品', color: '#4CAF50', icon: '全' },
-  { id: 'new', name: '新品上市', color: '#FF9800', icon: '新' }
+  { id: 'vegetables', name: '蔬菜', color: '#4CAF50', icon: '菜' },
+  { id: 'fruits', name: '水果', color: '#FF9800', icon: '果' },
+  { id: 'meat', name: '肉类', color: '#F44336', icon: '肉' },
+  { id: 'grains', name: '粮油', color: '#9C27B0', icon: '粮' }
 ];
 
 Page({
@@ -10,62 +13,45 @@ Page({
     showCategory: false,
     showCategoryView: false,
     currentCategory: 'all',
-    swiperList: [],
     categories: FALLBACK_CATEGORIES,
-    todayGoods: [],
-    hotGoods: [],
     currentCategoryGoods: [],
     loading: true,
     loadingMore: false,
-    loadingTodayMore: false,
     page: 1,
-    todayPage: 1,
-    pageSize: 6,
-    todayPageSize: 4,
+    pageSize: 10,
     hasMore: true,
-    hasTodayMore: true,
-    goodsCache: {}
+    goodsCache: {},
+    searchKeyword: '',
+    searchResults: [],
+    showFilterDrawer: false,
+    minPrice: '',
+    maxPrice: '',
+    cartCount: 0,
+    cart: {}
   },
 
   onLoad() {
     this.getFarmGoodsData();
+    this.updateCartCount();
   },
 
-  buildFallbackSwiperList(items, serverSwiperList) {
-    if (Array.isArray(serverSwiperList) && serverSwiperList.length > 0) {
-      return serverSwiperList
-        .filter(item => item && item.image)
-        .map((item, index) => ({
-          id: item.id || index + 1,
-          image: item.image
-        }));
-    }
-
-    const images = (items || [])
-      .filter(item => item && item.image)
-      .slice(0, 3)
-      .map((item, index) => ({
-        id: item.id || index + 1,
-        image: item.image
-      }));
-
-    return images;
+  onShow() {
+    this.updateCartCount();
   },
 
   getFarmGoodsData() {
-    wx.showLoading({ title: '加载中...', mask: true });
+    wx.showLoading({
+      title: '加载中...',
+      mask: true
+    });
 
     this.setData({
       currentCategory: 'all',
       currentCategoryGoods: [],
-      todayGoods: [],
       loading: true,
       loadingMore: false,
-      loadingTodayMore: false,
       page: 1,
-      todayPage: 1,
-      hasMore: true,
-      hasTodayMore: true
+      hasMore: true
     });
 
     api.request({
@@ -74,42 +60,31 @@ Page({
       data: {
         category: 'all'
       }
-    })
-      .then((data) => {
-        const items = Array.isArray(data.items) ? data.items : [];
-        const firstPageGoods = this.sliceGoodsPage(items, 1);
-        const swiperList = this.buildFallbackSwiperList(items, data.swiperList);
-        const todayFirstPage = items.slice(0, this.data.todayPageSize);
+    }).then((data) => {
+      const items = Array.isArray(data.items) ? data.items : [];
+      const firstPageGoods = this.sliceGoodsPage(items, 1);
 
-        this.setData({
-          swiperList,
-          categories: Array.isArray(data.categories) && data.categories.length ? data.categories : FALLBACK_CATEGORIES,
-          todayGoods: todayFirstPage,
-          hotGoods: items.slice(0, 4),
-          currentCategory: data.category || 'all',
-          currentCategoryGoods: firstPageGoods,
-          goodsCache: {
-            ...this.data.goodsCache,
-            all: items,
-            today: items
-          },
-          loading: false,
-          page: 1,
-          todayPage: 1,
-          hasMore: items.length > this.data.pageSize,
-          hasTodayMore: items.length > this.data.todayPageSize
-        });
-      })
-      .catch((err) => {
-        this.setData({ loading: false });
-        wx.showToast({
-          title: err.message || '农场优选加载失败',
-          icon: 'none'
-        });
-      })
-      .finally(() => {
-        wx.hideLoading();
+      this.setData({
+        categories: Array.isArray(data.categories) && data.categories.length ? data.categories : FALLBACK_CATEGORIES,
+        currentCategory: data.category || 'all',
+        currentCategoryGoods: firstPageGoods,
+        goodsCache: {
+          ...this.data.goodsCache,
+          all: items
+        },
+        loading: false,
+        page: 1,
+        hasMore: items.length > this.data.pageSize
       });
+    }).catch((err) => {
+      this.setData({ loading: false });
+      wx.showToast({
+        title: err.message || '农场优选加载失败',
+        icon: 'none'
+      });
+    }).finally(() => {
+      wx.hideLoading();
+    });
   },
 
   sliceGoodsPage(goodsList, page) {
@@ -155,7 +130,6 @@ Page({
       } else {
         this.setData({ loading: true });
       }
-
       this.applyCategoryPage(categoryId, nextPage);
       return;
     }
@@ -172,31 +146,185 @@ Page({
       });
     }
 
-    this.fetchCategoryGoods(categoryId)
-      .then((goodsList) => {
-        this.setData({
-          goodsCache: {
-            ...this.data.goodsCache,
-            [categoryId]: goodsList
-          }
-        });
-
-        this.applyCategoryPage(categoryId, nextPage);
-      })
-      .catch((err) => {
-        this.setData({ loading: false, loadingMore: false });
-        wx.showToast({
-          title: err.message || '分类商品加载失败',
-          icon: 'none'
-        });
+    this.fetchCategoryGoods(categoryId).then((goodsList) => {
+      this.setData({
+        goodsCache: {
+          ...this.data.goodsCache,
+          [categoryId]: goodsList
+        }
       });
+      this.applyCategoryPage(categoryId, nextPage);
+    }).catch((err) => {
+      this.setData({ loading: false, loadingMore: false });
+      wx.showToast({
+        title: err.message || '分类商品加载失败',
+        icon: 'none'
+      });
+    });
   },
 
   search() {
-    wx.showToast({
-      title: '当前页面未接入搜索输入框',
-      icon: 'none'
+    const keyword = this.data.searchKeyword.trim();
+    if (keyword) {
+      this.performSearch(keyword);
+    } else {
+      this.loadCategoryGoods(this.data.currentCategory);
+    }
+  },
+
+  onSearchInput(e) {
+    const keyword = e.detail.value;
+    this.setData({ searchKeyword: keyword });
+
+    if (keyword.trim()) {
+      this.performSearch(keyword.trim());
+    } else {
+      this.loadCategoryGoods(this.data.currentCategory);
+    }
+  },
+
+  // ====================== 修复完毕的万能模糊搜索 ======================
+  performSearch(keyword) {
+    wx.showLoading({ title: '搜索中...' });
+
+    // 从所有分类里拿全部商品
+    let allGoods = [];
+    Object.values(this.data.goodsCache).forEach(list => {
+      if (Array.isArray(list)) {
+        allGoods = allGoods.concat(list);
+      }
     });
+
+    // 兜底：没有缓存就用当前列表
+    if (allGoods.length === 0) {
+      allGoods = this.data.currentCategoryGoods || [];
+    }
+
+    // 只要名字里包含你输入的字，就出来（万能模糊）
+    const result = allGoods.filter(item => {
+      const name = item.name || '';
+      return name.includes(keyword);
+    });
+
+    this.setData({
+      searchResults: result,
+      currentCategoryGoods: result
+    });
+
+    wx.hideLoading();
+
+    // 如果没有搜索结果，显示提示信息
+    if (result.length === 0) {
+      wx.showToast({
+        title: '目前没找到您搜索的商品',
+        icon: 'none'
+      });
+    }
+  },
+  // ===================================================================
+
+  showFilterDrawer() {
+    this.setData({ showFilterDrawer: true });
+    wx.setPageStyle({ style: { overflow: 'hidden' } });
+  },
+
+  hideFilterDrawer() {
+    this.setData({ showFilterDrawer: false });
+    wx.setPageStyle({ style: { overflow: 'auto' } });
+  },
+
+  onMinPriceInput(e) {
+    this.setData({ minPrice: e.detail.value });
+  },
+
+  onMaxPriceInput(e) {
+    this.setData({ maxPrice: e.detail.value });
+  },
+
+  resetFilter() {
+    this.setData({ minPrice: '', maxPrice: '' });
+  },
+
+  applyFilter() {
+    const { minPrice, maxPrice, currentCategory } = this.data;
+    let filteredGoods = this.data.goodsCache[currentCategory] || [];
+
+    if (minPrice) {
+      filteredGoods = filteredGoods.filter(item => item.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      filteredGoods = filteredGoods.filter(item => item.price <= parseFloat(maxPrice));
+    }
+
+    this.setData({ currentCategoryGoods: filteredGoods });
+    this.hideFilterDrawer();
+  },
+
+  increaseQuantity(e) {
+    const id = e.currentTarget.dataset.id;
+    const goods = this.data.currentCategoryGoods.find(item => item.id === id);
+    if (!goods) return;
+
+    const newCart = { ...this.data.cart };
+    const key = String(id);
+
+    if (newCart[key]) {
+      if (newCart[key].quantity >= goods.stock) {
+        wx.showToast({ title: '库存不足', icon: 'none' });
+        return;
+      }
+      newCart[key].quantity += 1;
+    } else {
+      newCart[key] = { ...goods, quantity: 1 };
+    }
+
+    this.syncCartState(newCart);
+  },
+
+  decreaseQuantity(e) {
+    const id = e.currentTarget.dataset.id;
+    const newCart = { ...this.data.cart };
+    const key = String(id);
+
+    if (!newCart[key]) return;
+
+    if (newCart[key].quantity <= 1) {
+      delete newCart[key];
+    } else {
+      newCart[key].quantity -= 1;
+    }
+
+    this.syncCartState(newCart);
+  },
+
+  syncCartState(newCart) {
+    let count = 0;
+    Object.values(newCart).forEach(item => {
+      count += item.quantity;
+    });
+
+    this.setData({ cart: newCart, cartCount: count });
+
+    try {
+      wx.setStorageSync('cartList', Object.values(newCart));
+    } catch (e) {}
+  },
+
+  updateCartCount() {
+    const cartList = wx.getStorageSync('cartList') || [];
+    let totalCount = 0;
+    cartList.forEach(item => {
+      totalCount += item.quantity || 0;
+    });
+    this.setData({ cartCount: totalCount });
+  },
+
+  goToCart() {
+    wx.switchTab({ url: '/pages/cart/cart' });
+  },
+
+  stopPropagation() {
+    return false;
   },
 
   toggleCategory() {
@@ -217,7 +345,7 @@ Page({
   },
 
   getCurrentCategoryName() {
-    const category = this.data.categories.find((item) => item.id === this.data.currentCategory);
+    const category = this.data.categories.find(item => item.id === this.data.currentCategory);
     return category ? category.name : '商品分类';
   },
 
@@ -226,62 +354,17 @@ Page({
       showCategory: false,
       showCategoryView: true
     });
-
     this.loadCategoryGoods(this.data.currentCategory || 'all');
   },
 
   viewGoodsDetail(e) {
     const goodsId = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/pages/goods-detail/goods-detail?id=' + goodsId
-    });
+    wx.navigateTo({ url: '/pages/goods-detail/goods-detail?id=' + goodsId });
   },
 
   onReachBottom() {
-    if (this.data.showCategoryView) {
-      if (!this.data.loadingMore && this.data.hasMore) {
-        this.loadCategoryGoods(this.data.currentCategory, true);
-      }
-    } else {
-      if (!this.data.loadingTodayMore && this.data.hasTodayMore) {
-        this.loadMoreTodayGoods();
-      }
+    if (!this.data.loadingMore && this.data.hasMore) {
+      this.loadCategoryGoods(this.data.currentCategory, true);
     }
-  },
-
-  onCategoryScrollToLower() {
-    if (!this.data.showCategoryView || this.data.loadingMore || !this.data.hasMore) {
-      return;
-    }
-
-    this.loadCategoryGoods(this.data.currentCategory, true);
-  },
-
-  onTodayGoodsScrollToLower() {
-    if (this.data.showCategoryView || this.data.loadingTodayMore || !this.data.hasTodayMore) {
-      return;
-    }
-
-    this.loadMoreTodayGoods();
-  },
-
-  loadMoreTodayGoods() {
-    this.setData({ loadingTodayMore: true });
-
-    const todayGoods = this.data.goodsCache.today || [];
-    const currentPage = this.data.todayPage;
-    const nextPage = currentPage + 1;
-    const start = currentPage * this.data.todayPageSize;
-    const end = nextPage * this.data.todayPageSize;
-    const newItems = todayGoods.slice(start, end);
-
-    setTimeout(() => {
-      this.setData({
-        todayGoods: [...this.data.todayGoods, ...newItems],
-        todayPage: nextPage,
-        hasTodayMore: todayGoods.length > end,
-        loadingTodayMore: false
-      });
-    }, 500);
   }
 });

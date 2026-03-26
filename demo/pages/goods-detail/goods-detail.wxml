@@ -13,7 +13,7 @@
 
     <view class="delivery-info">
       <view class="delivery-label">配送</view>
-      <view class="delivery-text">立即下单，预计明日 07:00-07:30 送达</view>
+      <view class="delivery-text">包邮</view>
     </view>
 
     <view class="service-info">
@@ -41,7 +41,58 @@
   </view>
 
   <view class="goods-detail-images">
-    <image class="detail-image" src="{{goods.detailImage}}" />
+    <view class="detail-image-container">
+      <image class="detail-image" src="{{goods.detailImage}}" />
+      <image class="detail-image" src="{{goods.image}}" />
+    </view>
+  </view>
+
+  <!-- 立即购买弹窗 -->
+  <view class="buy-modal" hidden="{{!showBuyModal}}">
+    <view class="buy-mask" bindtap="hideBuyModal"></view>
+    <view class="buy-content">
+      <view class="buy-header">
+        <view class="buy-title">确认购买</view>
+        <view class="buy-close" bindtap="hideBuyModal">✕</view>
+      </view>
+      <view class="buy-body">
+        <view class="buy-goods-info">
+          <image class="buy-goods-image" src="{{goods.image}}" />
+          <view class="buy-goods-details">
+            <view class="buy-goods-name">{{goods.name}}</view>
+            <view class="buy-goods-price">￥{{goods.price}}</view>
+          </view>
+        </view>
+        
+        <view class="buy-address-section">
+          <view class="buy-section-title">收货地址</view>
+          <view class="buy-address-list">
+            <view class="buy-address-item {{selectedAddress === item.id ? 'active' : ''}}" 
+                  wx:for="{{addressList}}" 
+                  wx:key="id" 
+                  bindtap="selectAddress" 
+                  data-id="{{item.id}}">
+              <view class="address-info">
+                <view class="address-name">{{item.name}}</view>
+                <view class="address-phone">{{item.phone}}</view>
+                <view class="address-detail">{{item.address}}</view>
+              </view>
+              <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
+            </view>
+          </view>
+          <button class="add-address-btn" bindtap="addAddress">添加新地址</button>
+        </view>
+        
+        <view class="buy-total">
+          <view class="total-label">总计</view>
+          <view class="total-price">￥{{goods.price}}</view>
+        </view>
+      </view>
+      <view class="buy-footer">
+        <button class="buy-cancel-btn" bindtap="hideBuyModal">取消</button>
+        <button class="buy-confirm-btn" bindtap="confirmBuy">确认购买</button>
+      </view>
+    </view>
   </view>
 
   <view class="bottom-bar">
