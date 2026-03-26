@@ -108,10 +108,10 @@
       </view>
     </view>
   </view>
+</view>
 
-  <!-- 购物车按钮 -->
-  <view class="cart-button" bindtap="goToCart">
-    <text class="cart-icon">🛒</text>
-    <view class="cart-badge" wx:if="{{cartCount > 0}}">{{cartCount}}</view>
-  </view>
+<!-- 购物车按钮 -->
+<view class="cart-button" bindtap="goToCart">
+  <text class="cart-icon">🛒</text>
+  <view class="cart-badge" wx:if="{{cartCount > 0}}">{{cartCount}}</view>
 </view>
