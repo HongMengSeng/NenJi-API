@@ -313,10 +313,12 @@ Page({
   updateCartCount() {
     const cartList = wx.getStorageSync('cartList') || [];
     let totalCount = 0;
+    const cart = {};
     cartList.forEach(item => {
       totalCount += item.quantity || 0;
+      cart[String(item.id)] = item;
     });
-    this.setData({ cartCount: totalCount });
+    this.setData({ cart, cartCount: totalCount });
   },
 
   goToCart() {
