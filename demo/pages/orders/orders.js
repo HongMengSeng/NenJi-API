@@ -8,7 +8,6 @@ Page({
       { key: 'pending', name: '待支付' },
       { key: 'paid', name: '已支付' },
       { key: 'shipping', name: '待收货' },
-      { key: 'refund', name: '退款/售后' }
     ],
     orders: [],
     loading: true
