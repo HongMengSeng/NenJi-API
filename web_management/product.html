@@ -96,6 +96,8 @@
 		.user-info{
 			display: flex;
 			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
 		}
 		
 		.user-avatar{
@@ -107,7 +109,8 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			margin-right: 10px;
+			flex-shrink: 0;
+			font-weight: 600;
 		}
 		
 		/* 操作按钮 */
@@ -147,6 +150,12 @@
 		.btn-default{
 			background: #e2e8f0;
 			color: #333;
+		}
+
+		.btn:disabled{
+			background: #cbd5e0;
+			color: white;
+			cursor: not-allowed;
 		}
 		
 		/* 表格样式 */
@@ -366,7 +375,7 @@
 				<main class="content">
 					<!-- 顶部导航 -->
 					<header class="top-nav">
-						<div>微信用户1773052556</div>
+						<div>农场管理后台-产品管理</div>
 						<div class="user-info">
 							<div class="user-avatar">用</div>
 							<div>用户12312</div>
@@ -378,7 +387,7 @@
 						<div class="content-container">
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-danger" @click="deleteProduct">删除</button>
+								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 								<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
 							</div>
@@ -810,7 +819,10 @@
 						if (product) {
 							// 跳转到编辑页面
 							window.location.href = 'product-edit.html?id=' + product.id;
-						} else {
+							return;
+						}
+						const selectedProducts = this.products.filter(item => item.selected);
+						if (selectedProducts.length > 1) {
 							alert('请选择要编辑的产品');
 						}
 					},

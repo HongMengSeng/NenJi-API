@@ -94,17 +94,21 @@
 		.user-info{
 			display: flex;
 			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
 		}
 		
 		.user-avatar{
-			width: 32px;
-			height: 32px;
+			width: 40px;
+			height: 40px;
 			border-radius: 50%;
-			background-color: #e0e0e0;
+			background: #3182ce;
+			color: white;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			margin-right: 8px;
+			flex-shrink: 0;
+			font-weight: 600;
 		}
 		
 		/* 操作按钮区域 */
@@ -141,6 +145,12 @@
 		.btn-default {
 			background-color: #e0e0e0;
 			color: #333;
+		}
+
+		.btn:disabled {
+			background-color: #cbd5e0;
+			color: white;
+			cursor: not-allowed;
 		}
 		
 		/* 表格样式 */
@@ -355,7 +365,7 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增</button>
-							<button class="btn btn-danger" @click="deleteUser">删除</button>
+							<button class="btn btn-danger" @click="deleteUser" :disabled="selectedUsers.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -480,6 +490,12 @@
 			mounted() {
 				// 从API加载用户数据
 				this.loadUsersFromAPI();
+			},
+
+			computed: {
+				selectedUsers() {
+					return this.users.filter(user => user.selected);
+				}
 			},
 			
 			methods: {
@@ -615,7 +631,7 @@
 					const selectedUsers = this.users.filter(item => item.selected);
 					if (selectedUsers.length === 1) {
 						window.location.href = 'user-edit.html?id=' + selectedUsers[0].id;
-					} else {
+					} else if (selectedUsers.length > 1) {
 						alert('请选择一个要编辑的用户');
 					}
 				},

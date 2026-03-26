@@ -103,17 +103,20 @@
 			display: flex;
 			align-items: center;
 			gap: 10px;
+			flex-shrink: 0;
 		}
 		
 		.user-avatar {
-			width: 32px;
-			height: 32px;
+			width: 40px;
+			height: 40px;
 			border-radius: 50%;
-			background-color: #4caf50;
+			background: #3182ce;
 			color: white;
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			flex-shrink: 0;
+			font-weight: 600;
 		}
 		
 		/* 操作按钮 */
@@ -150,6 +153,12 @@
 		.btn-default {
 			background-color: #e0e0e0;
 			color: #333;
+		}
+
+		.btn:disabled {
+			background-color: #cbd5e0;
+			color: white;
+			cursor: not-allowed;
 		}
 		
 		/* 表格样式 */
@@ -236,6 +245,57 @@
 			cursor: not-allowed;
 		}
 
+		.modal-overlay{
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.modal{
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			max-width: 400px;
+			width: 90%;
+		}
+
+		.modal-header{
+			padding: 20px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.modal-title{
+			font-size: 18px;
+			font-weight: 600;
+			color: #2d3748;
+		}
+
+		.modal-body{
+			padding: 20px;
+			color: #4a5568;
+			line-height: 1.5;
+		}
+
+		.modal-footer{
+			padding: 15px 20px;
+			border-top: 1px solid #e2e8f0;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+		}
+
+		.modal-warning{
+			color: #e53e3e;
+			font-weight: 500;
+		}
+
 		.table-actions {
 			display: flex;
 			gap: 5px;
@@ -280,7 +340,7 @@
 					<div class="content-container">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="navigateToAdd">新增</button>
-							<button class="btn btn-danger" @click="deleteCoupon">删除</button>
+							<button class="btn btn-danger" @click="deleteCoupon" :disabled="selectedCoupons.length === 0">删除</button>
 							<button class="btn btn-default" @click="refreshData">刷新数据</button>
 						</div>
 						
@@ -342,6 +402,26 @@
 				</div>
 			</main>
 		</div>
+
+		<!-- 删除确认弹窗 -->
+		<div class="modal-overlay" v-if="showDeleteModal">
+			<div class="modal">
+				<div class="modal-header">
+					<h3 class="modal-title">删除确认</h3>
+				</div>
+				<div class="modal-body">
+					<div style="text-align: center;">
+						<p style="margin-bottom: 10px;">确定要删除券类吗？</p>
+						<p class="modal-warning">{{ selectedCoupon ? selectedCoupon.name : '' }}</p>
+						<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-default" @click="cancelDelete">取消</button>
+					<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+				</div>
+			</div>
+		</div>
 	</div>
 	
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
@@ -370,6 +450,9 @@
 					
 					// 选中的券类
 					selectedCoupon: null,
+					selectedCoupon: null,
+					// 控制删除确认弹窗的显示状态。
+					showDeleteModal: false,
 					selectAll: false,
 					// 跳转页码
 					jumpPage: 1
@@ -441,32 +524,46 @@
 				editCoupon(coupon = this.selectedCoupon) {
 					if (coupon) {
 						window.location.href = 'coupon-edit.html?id=' + coupon.id;
-					} else {
+						return;
+					}
+					const selectedCoupons = this.coupons.filter(item => item.selected);
+					if (selectedCoupons.length > 1) {
 						alert('请选择要编辑的券类');
 					}
 				},
 				
 				// 删除券类
+				// 为当前项打开删除确认弹窗。
 				deleteCoupon(coupon = this.selectedCoupon) {
 					if (coupon) {
-						if (confirm('确定要删除选中的券类吗？')) {
-							const index = this.allCoupons.findIndex(c => c.id === coupon.id);
-							if (index !== -1) {
-								this.allCoupons.splice(index, 1);
-								const originalIndex = this.originalCoupons.findIndex(c => c.id === coupon.id);
-								if (originalIndex !== -1) {
-									this.originalCoupons.splice(originalIndex, 1);
-								}
-								if (this.selectedCoupon && this.selectedCoupon.id === coupon.id) {
-									this.selectedCoupon = null;
-								}
-								this.saveCouponsToLocalStorage();
-								this.updatePagination();
-								this.updateSelectedCoupon();
-							}
-						}
+						this.selectedCoupon = coupon;
+						this.showDeleteModal = true;
 					} else {
 						return;
+					}
+				},
+
+				// 取消删除并关闭弹窗。
+				cancelDelete() {
+					this.showDeleteModal = false;
+				},
+
+				// 用户确认后，删除当前待处理项。
+				confirmDelete() {
+					if (this.selectedCoupon) {
+						const index = this.allCoupons.findIndex(c => c.id === this.selectedCoupon.id);
+						if (index !== -1) {
+							this.allCoupons.splice(index, 1);
+							const originalIndex = this.originalCoupons.findIndex(c => c.id === this.selectedCoupon.id);
+							if (originalIndex !== -1) {
+								this.originalCoupons.splice(originalIndex, 1);
+							}
+							this.selectedCoupon = null;
+							this.saveCouponsToLocalStorage();
+							this.updatePagination();
+							this.updateSelectedCoupon();
+							this.showDeleteModal = false;
+						}
 					}
 				},
 				

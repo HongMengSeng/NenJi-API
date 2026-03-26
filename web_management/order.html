@@ -96,6 +96,8 @@
 		.user-info{
 			display: flex;
 			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
 		}
 		
 		.user-avatar{
@@ -107,7 +109,8 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			margin-right: 10px;
+			flex-shrink: 0;
+			font-weight: 600;
 		}
 		
 		/* 操作按钮 */
@@ -263,7 +266,7 @@
 				<main class="content">
 					<!-- 顶部导航 -->
 					<header class="top-nav">
-						<div>微信用户1773052556</div>
+						<div>农场管理后台-订单管理</div>
 						<div class="user-info">
 							<div class="user-avatar">用</div>
 							<div>用户12312</div>
@@ -273,7 +276,6 @@
 					<!-- 订单管理页面 -->
 					<div class="order-page">
 						<div class="content-container">
-							<h2>农场管理后台-订单管理</h2>
 							<div class="action-buttons">
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
