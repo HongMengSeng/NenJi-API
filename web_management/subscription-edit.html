@@ -137,6 +137,21 @@
 			resize: vertical;
 			height: 120px;
 		}
+
+		.input-with-unit {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.input-with-unit input {
+			flex: 1;
+		}
+
+		.input-with-unit select {
+			width: 90px;
+			flex-shrink: 0;
+		}
 		
 		/* 图片上传区域 */
 		.image-upload {
@@ -266,12 +281,16 @@
 							</div>
 							
 							<div class="form-group">
-								<label>认购单价</label>
-								<div style="display: flex; gap: 10px;">
-									<input type="text" v-model="form.price" style="flex: 1;">
-									<label for="minYield">保底保有量</label>
-									<input type="text" id="minYield" v-model="form.minYield" style="flex: 1;">
-									<select v-model="form.unit">
+								<label for="price">认购单价（元/份）</label>
+								<input type="text" id="price" v-model="form.price" placeholder="请输入认购单价">
+							</div>
+							
+							<div class="form-group">
+								<label for="minYield">保底保有量</label>
+								<div class="input-with-unit">
+									<input type="text" id="minYield" v-model="form.minYield" placeholder="请输入保底保有量">
+									<select v-model="form.minYieldUnit" aria-label="保底保有量单位">
+										<option value="g">g</option>
 										<option value="kg">kg</option>
 										<option value="斤">斤</option>
 									</select>
@@ -370,7 +389,7 @@
 						name: '',
 						price: '',
 						minYield: '',
-						unit: 'kg',
+						minYieldUnit: '斤',
 						status: '已上架',
 						intro: ''
 					}
@@ -389,6 +408,25 @@
 			
 			methods: {
 				// 加载认购一亩田数据
+				extractMinYieldValue(value) {
+					const match = String(value || '').match(/[\d.]+/);
+					return match ? match[0] : '';
+				},
+
+				extractMinYieldUnit(value) {
+					const text = String(value || '').toLowerCase();
+					if (text.includes('kg')) {
+						return 'kg';
+					}
+					if (text.includes('g')) {
+						return 'g';
+					}
+					if (String(value || '').includes('斤')) {
+						return '斤';
+					}
+					return '斤';
+				},
+
 				loadSubscriptionData(id) {
 					// 从localStorage中获取认购一亩田数据
 					const subscriptionsData = localStorage.getItem('subscriptions');
@@ -401,8 +439,8 @@
 								area: subscription.area,
 								name: subscription.name,
 								price: subscription.price,
-								minYield: subscription.minYield.replace('保底', '').replace('/份', ''),
-								unit: 'kg',
+								minYield: this.extractMinYieldValue(subscription.minYield),
+								minYieldUnit: this.extractMinYieldUnit(subscription.minYield),
 								status: subscription.status,
 								intro: ''
 							};
