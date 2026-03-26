@@ -2,122 +2,78 @@ const api = require('../../utils/api');
 
 Page({
   data: {
-    dish: {
+    order: {
       id: '',
-      name: '',
-      price: 0,
-      image: '',
-      detailImage: '',
-      description: '',
-      ingredients: '',
-      cookingTime: ''
+      status: '',
+      statusText: '',
+      createTime: '',
+      payTime: null,
+      shippingTime: null,
+      completeTime: null,
+      totalPrice: 0,
+      shippingAddress: {
+        name: '',
+        phone: '',
+        address: ''
+      },
+      items: [],
+      paymentMethod: null,
+      transactionId: null
     },
-    loading: true,
-    cartCount: 0
+    loading: true
   },
 
   onLoad(options) {
-    const dishId = options.id;
+    const orderId = options.id;
 
-    if (!dishId) {
+    if (!orderId) {
       this.setData({ loading: false });
       wx.showToast({
-        title: '缺少菜品ID',
+        title: '缺少订单ID',
         icon: 'none'
       });
       return;
     }
 
-    this.getDishDetail(dishId);
-    this.updateCartCount();
+    this.getOrderDetail(orderId);
   },
 
-  onShow() {
-    this.updateCartCount();
-  },
-
-  getDishDetail(dishId) {
+  getOrderDetail(orderId) {
     wx.showLoading({ title: '加载中...' });
 
     api.request({
-      url: `/api/goods/${dishId}`,
+      url: `/api/OrderDetails/${orderId}`,
       method: 'GET'
     })
       .then((data) => {
         this.setData({
-          dish: {
-            id: data.id || dishId,
-            name: data.name || '',
-            price: Number(data.price || 0),
-            image: data.image || '',
-            detailImage: data.detailImage || data.image || '',
-            description: data.description || '',
-            ingredients: data.ingredients || '',
-            cookingTime: data.cookingTime || ''
+          order: data.order || {
+            id: orderId,
+            status: '',
+            statusText: '',
+            createTime: '',
+            payTime: null,
+            shippingTime: null,
+            completeTime: null,
+            totalPrice: 0,
+            shippingAddress: {
+              name: '',
+              phone: '',
+              address: ''
+            },
+            items: [],
+            paymentMethod: null,
+            transactionId: null
           },
           loading: false
         });
       })
       .catch((err) => {
-        console.error('获取菜品详情失败:', err);
+        console.error('获取订单详情失败:', err);
         this.setData({ loading: false });
-      })
-      .finally(() => {
-        wx.hideLoading();
-      });
-  },
-
-  addToCart() {
-    const dish = this.data.dish;
-    const currentCart = wx.getStorageSync('cartList') || [];
-    const nextCart = currentCart.map(item => ({ ...item }));
-    const targetId = String(dish.id);
-    const existingIndex = nextCart.findIndex(item => String(item.id) === targetId);
-
-    if (existingIndex > -1) {
-      nextCart[existingIndex].count += 1;
-      nextCart[existingIndex].checked = true;
-    } else {
-      nextCart.push({
-        id: targetId,
-        name: dish.name,
-        price: Number(dish.price || 0),
-        image: dish.image,
-        count: 1,
-        checked: true
-      });
-    }
-
-    wx.showLoading({ title: '加入中...' });
-
-    api.request({
-      url: '/api/AppCart/Appcart',
-      method: 'POST',
-      data: {
-        cartList: nextCart
-      }
-    })
-      .then((data) => {
-        const cartList = (data.cartList || []).map(item => ({
-          ...item,
-          checked: !!item.checked
-        }));
-
-        wx.setStorageSync('cartList', cartList);
-        this.updateCartCount();
         wx.showToast({
-          title: '已加入购物车',
-          icon: 'success'
-        });
-      })
-      .catch((err) => {
-        console.error('加入购物车失败:', err);
-        // 即使 API 调用失败，也将菜品添加到本地购物车
-        wx.setStorageSync('cartList', nextCart);
-        this.updateCartCount();
-        wx.showToast({
-          title: '已加入购物车',
-          icon: 'success'
+          title: '获取订单详情失败',
+          icon: 'none'
         });
       })
       .finally(() => {
@@ -125,30 +81,81 @@ Page({
       });
   },
 
-  buyNow() {
+  payOrder() {
+    const orderId = this.data.order.id;
     wx.navigateTo({
-      url: '../buy/buy',
-      success: function(res) {
-        console.log("跳转成功");
-      },
-      fail: function(res) {
-        console.log("跳转失败", res);
+      url: `/pages/pay/pay?orderId=${orderId}`
+    });
+  },
+
+  goToOrders() {
+    wx.navigateTo({
+      url: '/pages/orders/orders'
+    });
+  },
+
+  goBack() {
+    wx.navigateBack();
+  },
+
+  // 取消订单
+  cancelOrder() {
+    wx.showModal({
+      title: '确认取消',
+      content: '确定要取消这个订单吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '取消中...' });
+          
+          api.request({
+            url: `/api/OrderDetails/${this.data.order.id}/cancel`,
+            method: 'POST',
+            data: {
+              reason: '用户主动取消'
+            }
+          })
+          .then((data) => {
+            wx.hideLoading();
+            wx.showToast({ title: '订单已取消', icon: 'success' });
+            // 刷新订单详情
+            this.getOrderDetail(this.data.order.id);
+          })
+          .catch((err) => {
+            console.error('取消订单失败:', err);
+            wx.hideLoading();
+            wx.showToast({ title: '取消订单失败', icon: 'none' });
+          });
+        }
       }
     });
   },
 
-  updateCartCount() {
-    const cartList = wx.getStorageSync('cartList') || [];
-    let totalCount = 0;
-    cartList.forEach(item => {
-      totalCount += item.count || 0;
-    });
-    this.setData({ cartCount: totalCount });
-  },
-
-  goToCart() {
-    wx.switchTab({
-      url: '/pages/cart/cart'
+  // 确认收货
+  confirmReceipt() {
+    wx.showModal({
+      title: '确认收货',
+      content: '确定已收到商品吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '确认中...' });
+          
+          api.request({
+            url: `/api/OrderDetails/${this.data.order.id}/confirm`,
+            method: 'POST'
+          })
+          .then((data) => {
+            wx.hideLoading();
+            wx.showToast({ title: '收货成功', icon: 'success' });
+            // 刷新订单详情
+            this.getOrderDetail(this.data.order.id);
+          })
+          .catch((err) => {
+            console.error('确认收货失败:', err);
+            wx.hideLoading();
+            wx.showToast({ title: '确认收货失败', icon: 'none' });
+          });
+        }
+      }
     });
   }
 });

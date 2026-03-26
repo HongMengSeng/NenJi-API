@@ -2,9 +2,6 @@ const api = require('../../utils/api');
 
 Page({
   data: {
-   
- 
-
   },
 
   onLoad: function () {
@@ -60,11 +57,11 @@ Page({
       .then(data => {
         this.setData({
           userInfo: {
-            nickname: data.nickname || '用户',
-            avatar: data.avatar || 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square',
-            email: data.email || '',
-            balance: data.balance || 0,
-            reward: data.reward || 0
+            nickname: data.nickname,
+            avatar: data.avatar ,
+            email: data.email,
+            balance: data.balance ,
+            reward: data.reward 
           },
           orderCounts: data.orderCounts || {
             pending: 0,
@@ -122,16 +119,8 @@ Page({
   },
 
   editProfile() {
-    const userInfo = this.data.userInfo;
-    
-    wx.showModal({
-      title: '编辑个人资料',
-      content: '是否要修改昵称和头像？',
-      success: (res) => {
-        if (res.confirm) {
-          this.updateProfile(userInfo.nickname, userInfo.avatar, userInfo.email);
-        }
-      }
+    wx.navigateTo({
+      url: '/pages/profile-edit/profile-edit'
     });
   },
 
@@ -143,9 +132,8 @@ Page({
   },
 
   navigateToAddress() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/address/address'
     });
   },
 
@@ -156,24 +144,17 @@ Page({
     });
   },
 
-  navigateToFavorites() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    });
-  },
-
   navigateToService() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    wx.showModal({
+      title: '能记家庭农场客服',
+      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
+      showCancel: false
     });
   },
 
-  navigateToFeedback() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+  navigateToFarmIntro() {
+    wx.navigateTo({
+      url: '/pages/farm-intro/farm-intro'
     });
   }
 })

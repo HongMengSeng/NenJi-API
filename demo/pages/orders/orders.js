@@ -25,92 +25,16 @@ Page({
   getOrders() {
     wx.showLoading({ title: '加载中...' });
 
-    // 使用虚拟数据先展示页面
-    const mockOrders = [];
-    
-    // 根据当前标签生成对应的虚拟订单
-    if (this.data.activeTab === 'all' || this.data.activeTab === 'pending') {
-      mockOrders.push({
-        id: '1001',
-        status: 'pending',
-        statusText: '待支付',
-        createTime: '2026-03-25 18:30:00',
-        totalPrice: 198.00,
-        items: [
-          {
-            name: '红烧肉',
-            price: 68.00,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=100&q=80'
-          },
-          {
-            name: '清炒时蔬',
-            price: 28.00,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1576181259264-6902b56d9f36?auto=format&fit=crop&w=100&q=80'
-          }
-        ]
-      });
-    }
-    
-    if (this.data.activeTab === 'all' || this.data.activeTab === 'paid') {
-      mockOrders.push({
-        id: '1002',
-        status: 'paid',
-        statusText: '已支付',
-        createTime: '2026-03-24 12:15:00',
-        totalPrice: 88.00,
-        items: [
-          {
-            name: '宫保鸡丁',
-            price: 48.00,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1606744872121-a423a4010b30?auto=format&fit=crop&w=100&q=80'
-          }
-        ]
-      });
-    }
-    
-    if (this.data.activeTab === 'all' || this.data.activeTab === 'shipping') {
-      mockOrders.push({
-        id: '1003',
-        status: 'shipping',
-        statusText: '待收货',
-        createTime: '2026-03-23 20:00:00',
-        totalPrice: 156.00,
-        items: [
-          {
-            name: '鱼香肉丝',
-            price: 38.00,
-            quantity: 2,
-            image: 'https://images.unsplash.com/photo-1563245372-f865e890286d?auto=format&fit=crop&w=100&q=80'
-          },
-          {
-            name: '米饭',
-            price: 2.00,
-            quantity: 2,
-            image: 'https://images.unsplash.com/photo-1576717039968-6b2757ab4a20?auto=format&fit=crop&w=100&q=80'
-          }
-        ]
-      });
-    }
-    
-    this.setData({
-      orders: mockOrders,
-      loading: false
-    });
-
-    wx.hideLoading();
-
-    // API调用（暂时注释，等API准备好后启用）
-    /*
+    // API调用
     api.request({
-      url: '/api/orders',
+      url: '/api/OrderDetails',
       method: 'GET',
       data: {
         status: this.data.activeTab === 'all' ? '' : this.data.activeTab,
         page: 1,
-        pageSize: 10
+        pageSize: 10,
+        sortBy: 'createTime',
+        sortOrder: 'desc'
       }
     })
       .then((data) => {
@@ -122,11 +46,12 @@ Page({
       .catch((err) => {
         console.error('获取订单列表失败:', err);
         this.setData({ loading: false });
+        // 出错时显示空订单状态
+        this.setData({ orders: [] });
       })
       .finally(() => {
         wx.hideLoading();
       });
-    */
   },
 
   switchTab(e) {

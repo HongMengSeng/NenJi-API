@@ -9,8 +9,7 @@
       </view>
     </view>
     <view class="member-actions">
-      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/chat.png" />
-      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/settings.png" />
+      <image class="action-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/settings.png" bindtap="editProfile" />
     </view>
   </view>
   
@@ -56,24 +55,14 @@
       <text class="function-text">收货地址</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
     </view>
-    <view class="function-item" bindtap="navigateToPayment">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/paypal.png" />
-      <text class="function-text">支付信息</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
-    <view class="function-item" bindtap="navigateToFavorites">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/like.png" />
-      <text class="function-text">商品收藏</text>
-      <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
-    </view>
     <view class="function-item" bindtap="navigateToService">
       <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
-      <text class="function-text">客服中心</text>
+      <text class="function-text">我的客服</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
     </view>
-    <view class="function-item" bindtap="navigateToFeedback">
-      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/feedback.png" />
-      <text class="function-text">意见反馈</text>
+    <view class="function-item" bindtap="navigateToFarmIntro">
+      <image class="function-icon" src="https://img.icons8.com/ios-glyphs/24/666666/info.png" />
+      <text class="function-text">关于我们</text>
       <image class="function-arrow" src="https://img.icons8.com/ios-glyphs/24/999999/chevron-right.png" />
     </view>
   </view>

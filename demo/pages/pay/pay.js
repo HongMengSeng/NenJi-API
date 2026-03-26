@@ -1,5 +1,9 @@
+const api = require('../../utils/api');
+
 Page({
   data: {
+    // 订单ID
+    orderId: '',
     // 支付金额
     totalPrice: 0,
     // 加载状态
@@ -9,9 +13,20 @@ Page({
   },
 
   onLoad: function (options) {
-    // 获取支付金额
+    // 获取订单ID和支付金额
+    const orderId = options.orderId;
     const totalPrice = options.totalPrice || 0;
+    
+    if (!orderId) {
+      wx.showToast({
+        title: '缺少订单ID',
+        icon: 'none'
+      });
+      return;
+    }
+    
     this.setData({
+      orderId: orderId,
       totalPrice: totalPrice
     });
     
@@ -23,13 +38,46 @@ Page({
   startPayment: function() {
     this.setData({ loading: true });
     
-    // 模拟支付过程
-    setTimeout(() => {
+    // 调用支付API
+    api.request({
+      url: `/api/OrderDetails/${this.data.orderId}/pay`,
+      method: 'POST',
+      data: {
+        paymentMethod: 'wechat',
+        payAmount: this.data.totalPrice
+      }
+    })
+    .then((data) => {
+      this.setData({ loading: false });
+      
+      // 调用微信支付
+      wx.requestPayment({
+        timeStamp: data.paymentInfo.timeStamp,
+        nonceStr: data.paymentInfo.nonceStr,
+        package: data.paymentInfo.package,
+        signType: data.paymentInfo.signType,
+        paySign: data.paymentInfo.paySign,
+        success: (res) => {
+          console.log('支付成功:', res);
+          this.setData({ payStatus: 'success' });
+        },
+        fail: (err) => {
+          console.error('支付失败:', err);
+          this.setData({ payStatus: 'failed' });
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('发起支付失败:', err);
       this.setData({ 
         loading: false,
-        payStatus: 'success' 
+        payStatus: 'failed' 
       });
-    }, 2000);
+      wx.showToast({
+        title: '发起支付失败',
+        icon: 'none'
+      });
+    });
   },
 
   // 重新支付
@@ -42,8 +90,8 @@ Page({
   viewOrder: function() {
     // 清空购物车数据
     this.clearCart();
-    wx.switchTab({ 
-      url: '/pages/order/order'
+    wx.navigateTo({ 
+      url: `/pages/order-detail/order-detail?id=${this.data.orderId}`
     });
   },
   

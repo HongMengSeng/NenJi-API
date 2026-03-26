@@ -1,4 +1,5 @@
 <view class="container">
+  <image class="background-image" src="/images/logimage.jpg" mode="aspectFill" />
   <!-- 页面标题 -->
   <view class="page-title">农场介绍</view>
   
