@@ -15,17 +15,25 @@ namespace WebAdminApi
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            
+
             // 正确的服务注册
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
 
+            // DbContext 配置（修复版本）
             builder.Services.AddDbContext<AppDbContext>(options =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
                 options.UseMySql(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-                )
-            );
+                    connectionString,
+                    ServerVersion.AutoDetect(connectionString),
+                    mysqlOptions => mysqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(1),
+                        errorNumbersToAdd: new[] { 1040, 1041, 1205 }
+                    )
+                );
+            });
 
             var app = builder.Build();
 
@@ -36,10 +44,10 @@ namespace WebAdminApi
             }
 
             app.UseHttpsRedirection();
-            
+
             // 注册中间件
             app.UseMiddleware<TokenMiddleware>();
-            
+
             app.UseAuthorization();
             app.MapControllers();
 
