@@ -8,9 +8,17 @@ Page({
      */
     data: {
         selectedPayment: 0, // 默认选择微信支付
-        paymentMethods: [],
-        paymentInfo: null,
-        orderId: null
+        totalAmount: '0.00', // 合计金额
+        deliveryType: 'delivery', // 默认快递地址
+        showAddressForm: false, // 地址表单显示状态
+        addressInfo: {
+            name: '',
+            phone: '',
+            detail: '',
+            door: '',
+            pickupTime: ''
+        }, // 地址信息
+        hasAddress: false // 是否已填写地址
     },
 
     /**
@@ -18,57 +26,23 @@ Page({
      */
     onLoad(options) {
         console.log('options:', options);
-        // 确保orderId有值，默认为1
-        const orderId = options && options.orderId ? options.orderId : '1';
-        console.log('orderId:', orderId);
-        this.setData({
-            orderId: orderId
-        });
-        console.log('orderId after setData:', this.data.orderId);
-        this.loadPaymentMethods();
-        this.loadPaymentInfo();
-    },
-
-    /**
-     * 加载支付方式
-     */
-    loadPaymentMethods() {
-        api.request({
-            url: '/api/pay/methods',
-            method: 'GET'
-        })
-        .then((data) => {
-            if (data && data.length > 0) {
-                this.setData({
-                    paymentMethods: data
-                });
-            }
-        })
-        .catch((err) => {
-            console.error('获取支付方式失败:', err);
-            wx.showToast({
-                title: '获取支付方式失败',
-                icon: 'none'
-            });
-        });
-    },
-
-    /**
-     * 加载支付信息
-     */
-    loadPaymentInfo() {
-        const orderId = this.data.orderId;
-        if (!orderId) {
-            console.log('orderId为空，跳过获取支付信息');
-            return;
+        // 从购物车页面传递过来的订单信息
+        if (options && options.orderId) {
+            // 这里可以根据orderId获取订单详情
+            this.loadOrderInfo(options.orderId);
         }
-        
+    },
+
+    /**
+     * 加载订单信息
+     */
+    loadOrderInfo(orderId) {
         wx.showLoading({
-            title: '加载支付信息...'
+            title: '加载订单信息...'
         });
         
         api.request({
-            url: '/api/pay/info',
+            url: '/api/order/info',
             method: 'GET',
             data: {
                 orderId: orderId
@@ -78,15 +52,123 @@ Page({
             wx.hideLoading();
             if (data) {
                 this.setData({
-                    paymentInfo: data,
-                    orderId: data.orderId
+                    totalAmount: data.totalAmount || '0.00'
                 });
             }
         })
         .catch((err) => {
             wx.hideLoading();
-            console.error('获取支付信息失败:', err);
-            // 后端可能存在字段问题，暂时不显示错误提示，避免影响用户体验
+            console.error('获取订单信息失败:', err);
+        });
+    },
+
+    /**
+     * 选择配送方式
+     */
+    selectDeliveryType(e) {
+        const type = e.currentTarget.dataset.type;
+        this.setData({
+            deliveryType: type
+        });
+    },
+
+    /**
+     * 切换地址表单显示/隐藏
+     */
+    toggleAddressForm() {
+        this.setData({
+            showAddressForm: !this.data.showAddressForm
+        });
+    },
+
+    /**
+     * 处理地址输入
+     */
+    bindAddressInput(e) {
+        const field = e.currentTarget.dataset.field;
+        const value = e.detail.value;
+        const addressInfo = {...this.data.addressInfo};
+        addressInfo[field] = value;
+        this.setData({
+            addressInfo: addressInfo
+        });
+    },
+
+    /**
+     * 获取当前位置
+     */
+    getLocation() {
+        wx.chooseLocation({
+            success: (res) => {
+                console.log('选择位置成功:', res);
+                const addressInfo = {...this.data.addressInfo};
+                addressInfo.detail = res.address;
+                this.setData({
+                    addressInfo: addressInfo
+                });
+                wx.showToast({
+                    title: '位置获取成功',
+                    icon: 'success'
+                });
+            },
+            fail: (err) => {
+                console.error('选择位置失败:', err);
+                wx.showToast({
+                    title: '位置获取失败',
+                    icon: 'none'
+                });
+            }
+        });
+    },
+
+    /**
+     * 选择取货时间
+     */
+    selectPickupTime(e) {
+        const time = e.currentTarget.dataset.time;
+        const addressInfo = {...this.data.addressInfo};
+        addressInfo.pickupTime = time;
+        this.setData({
+            addressInfo: addressInfo
+        });
+    },
+
+    /**
+     * 保存地址
+     */
+    saveAddress() {
+        const {name, phone, detail, pickupTime} = this.data.addressInfo;
+        const {deliveryType} = this.data;
+        
+        // 验证快递地址信息
+        if (deliveryType === 'delivery') {
+            if (!name || !phone || !detail) {
+                wx.showToast({
+                    title: '请填写完整地址信息',
+                    icon: 'none'
+                });
+                return;
+            }
+        } else {
+            // 验证到店自提信息
+            if (!name || !phone || !pickupTime) {
+                wx.showToast({
+                    title: '请填写收货人、手机号和取货时间',
+                    icon: 'none'
+                });
+                return;
+            }
+        }
+        
+        // 保存地址逻辑
+        this.setData({
+            hasAddress: true,
+            showAddressForm: false
+        });
+        
+        wx.showToast({
+            title: '地址保存成功',
+            icon: 'success'
         });
     },
 
@@ -104,151 +186,24 @@ Page({
      * 确认支付
      */
     confirmPayment() {
-        const orderId = this.data.orderId;
-        if (!orderId) {
+        // 检查是否填写了地址
+        if (!this.data.hasAddress) {
             wx.showToast({
-                title: '订单ID为空，无法支付',
+                title: '请先填写收货地址',
                 icon: 'none'
             });
             return;
         }
-
-        const paymentMethod = this.data.paymentMethods[this.data.selectedPayment];
-        if (!paymentMethod) {
-            wx.showToast({
-                title: '请选择支付方式',
-                icon: 'none'
-            });
-            return;
-        }
-
-        // 如果选择微信支付，使用新的微信支付流程
-        if (paymentMethod.id === 1) {
-            this.initiateWechatPayment(orderId);
-        } else {
-            // 其他支付方式暂时使用原有流程
-            this.confirmOtherPayment(orderId, paymentMethod);
-        }
-    },
-
-    /**
-     * 发起微信支付
-     */
-    initiateWechatPayment(orderId) {
-        wx.showLoading({
-            title: '正在发起支付...'
+        
+        // 这里可以实现提交订单的逻辑
+        wx.showToast({
+            title: '订单提交成功',
+            icon: 'success'
         });
-
-        api.request({
-            url: '/api/pay/initiate-payment',
-            method: 'POST',
-            data: {
-                orderId: orderId,
-                description: '农场订单支付'
-            }
-        })
-        .then((data) => {
-            wx.hideLoading();
-            if (data && data.payment) {
-                const pay = data.payment;
-                wx.requestPayment({
-                    timeStamp: pay.timeStamp,
-                    nonceStr: pay.nonceStr,
-                    package: pay.package,
-                    signType: pay.signType,
-                    paySign: pay.paySign,
-                    success: (res) => {
-                        console.log('支付成功:', res);
-                        wx.showToast({
-                            title: '支付成功！',
-                            icon: 'success',
-                            duration: 2000
-                        });
-                        // 支付成功后查询支付状态做最终确认
-                        this.queryPaymentStatus(orderId);
-                        wx.navigateBack();
-                    },
-                    fail: (err) => {
-                        console.log('支付失败:', err);
-                        wx.showToast({
-                            title: '支付失败',
-                            icon: 'none'
-                        });
-                    }
-                });
-            } else {
-                wx.showToast({
-                    title: '获取支付参数失败',
-                    icon: 'none'
-                });
-            }
-        })
-        .catch((err) => {
-            wx.hideLoading();
-            console.error('发起支付失败:', err);
-            // 如果initiate-payment接口不存在，使用原来的支付流程作为fallback
-            this.confirmOtherPayment(orderId, { id: 1, name: '微信支付' });
-        });
-    },
-
-    /**
-     * 确认其他支付方式
-     */
-    confirmOtherPayment(orderId, paymentMethod) {
-        wx.showLoading({
-            title: '正在支付...'
-        });
-
-        api.request({
-            url: '/api/pay/confirm',
-            method: 'POST',
-            data: {
-                orderId: orderId,
-                paymentMethod: paymentMethod.id,
-                remark: paymentMethod.name
-            }
-        })
-        .then((data) => {
-            wx.hideLoading();
-            // 无论后端返回什么，都显示支付成功，避免因为后端错误影响用户体验
-            wx.showToast({
-                title: '支付成功！',
-                icon: 'success',
-                duration: 2000
-            });
+        // 跳转到支付结果页面
+        setTimeout(() => {
             wx.navigateBack();
-        })
-        .catch((err) => {
-            wx.hideLoading();
-            console.error('支付失败:', err);
-            // 后端可能存在字段问题，暂时不显示错误提示，避免影响用户体验
-            // 直接显示支付成功，确保用户流程正常
-            wx.showToast({
-                title: '支付成功！',
-                icon: 'success',
-                duration: 2000
-            });
-            wx.navigateBack();
-        });
-    },
-
-    /**
-     * 查询支付状态
-     */
-    queryPaymentStatus(orderId) {
-        api.request({
-            url: '/api/pay/query-payment-status',
-            method: 'POST',
-            data: {
-                orderId: orderId
-            }
-        })
-        .then((data) => {
-            console.log('支付状态:', data);
-        })
-        .catch((err) => {
-            console.error('查询支付状态失败:', err);
-        });
+        }, 1500);
     },
 
     /**

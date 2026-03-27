@@ -49,10 +49,12 @@
 
   <!-- 3. 底部结算栏 -->
   <view class="cart-bottom">
-    <view class="cart-badge" bindtap="handleCartIconClick">
-      <text class="cart-icon">🛒</text>
+    <view class="left-section">
+      <view class="cart-badge" bindtap="handleCartIconClick">
+        <text class="cart-icon">🛒</text>
+      </view>
+      <view class="total-price">合计: ¥{{totalPrice}}</view>
     </view>
-    <view class="total-price">合计: ¥{{totalPrice}}</view>
     <view class="settle-btn" bindtap="handleSettle">
       {{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}
     </view>

@@ -198,15 +198,21 @@
     box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
     z-index: 100;
   }
-  
+
+  .left-section {
+    display: flex;
+    align-items: center;
+  }
+
   .cart-badge {
     position: relative;
+    margin-right: 20rpx;
   }
-  
+
   .cart-icon {
     font-size: 48rpx;
   }
-  
+
   .total-price {
     font-size: 28rpx;
     color: #333;
