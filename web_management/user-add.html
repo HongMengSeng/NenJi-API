@@ -3,68 +3,64 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-用户管理-新增页面</title>
+	<title>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x65B0;&#x589E;&#x9875;&#x9762;</title>
 	<style>
-		*{
+		* {
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
+
+		body {
+			height: 100vh;
+			font-family: "Microsoft YaHei", sans-serif;
+			background: #f5f7fa;
 		}
-		
-		/* 主页面样式 */
-		.main-container{
+
+		.main-container {
 			display: flex;
 			height: 100vh;
 		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
+
+		.sidebar {
 			width: 200px;
 			background: #1a202c;
 			color: white;
 			padding: 20px 0;
 		}
-		
-		.sidebar-header{
+
+		.sidebar-header {
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
 			font-size: 18px;
 			font-weight: bold;
 		}
-		
-		.sidebar-menu{
+
+		.sidebar-menu {
 			list-style: none;
 			margin-top: 20px;
 		}
-		
-		.sidebar-menu li{
+
+		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
 		}
-		
-		.sidebar-menu li:hover{
+
+		.sidebar-menu li:hover {
 			background: #2d3748;
 		}
-		
-		.sidebar-menu li.active{
+
+		.sidebar-menu li.active {
 			background: #3182ce;
 		}
-		
-		/* 主内容区样式 */
-		.content{
+
+		.content {
 			flex: 1;
 			padding: 20px;
 			overflow-y: auto;
 		}
-		
-		/* 顶部导航栏 */
-		.top-nav{
+
+		.top-nav {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
@@ -72,15 +68,15 @@
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e0e0e0;
 		}
-		
-		.user-info{
+
+		.user-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
 			flex-shrink: 0;
 		}
-		
-		.user-avatar{
+
+		.user-avatar {
 			width: 40px;
 			height: 40px;
 			border-radius: 50%;
@@ -92,48 +88,52 @@
 			flex-shrink: 0;
 			font-weight: 600;
 		}
-		
-		/* 表单容器 */
+
 		.form-container {
 			background-color: white;
 			padding: 20px;
 			border-radius: 4px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 			max-width: 600px;
 		}
-		
-		/* 表单组 */
+
 		.form-group {
 			margin-bottom: 15px;
 			display: flex;
 			align-items: center;
 			gap: 20px;
 		}
-		
+
 		.form-group label {
 			display: inline-block;
 			width: 100px;
 			font-weight: bold;
 			font-size: 14px;
+			color: #2d3748;
 		}
-		
+
 		.form-group input,
 		.form-group select {
 			flex: 1;
-			padding: 8px;
+			padding: 8px 10px;
 			border: 1px solid #e0e0e0;
 			border-radius: 4px;
 			font-size: 14px;
 		}
-		
-		/* 按钮样式 */
+
+		.readonly-input {
+			background: #f7fafc;
+			color: #4a5568;
+		}
+
 		.form-buttons {
 			margin-top: 30px;
 			display: flex;
+			align-items: center;
 			gap: 20px;
-			justify-content: flex-start;
+			flex-wrap: wrap;
 		}
-		
+
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -142,173 +142,182 @@
 			font-size: 14px;
 			font-weight: bold;
 		}
-		
+
 		.btn-success {
 			background-color: #4caf50;
 			color: white;
 		}
-		
+
 		.btn-primary {
 			background-color: #2196f3;
 			color: white;
 		}
-		
-		.errormsg{
-			font-size: 15px;
-			text-align: center;
-			color: #000000;
-			height: 10px;
+
+		.btn:disabled {
+			background: #cbd5e0;
+			cursor: not-allowed;
+		}
+
+		.errormsg {
+			font-size: 14px;
+			color: #9a5b3a;
+			background: rgba(205, 153, 120, 0.12);
+			border-radius: 8px;
+			padding: 8px 10px;
+			line-height: 1.5;
 		}
 	</style>
 </head>
 <body>
 	<div id="app">
 		<div class="main-container">
-			<!-- 侧边栏 -->
 			<aside class="sidebar">
-				<div class="sidebar-header">农场管理后台</div>
+				<div class="sidebar-header">&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;</div>
 				<ul class="sidebar-menu">
-					<li @click="navigateTo('product.html')">产品管理</li>
-					<li @click="navigateTo('order.html')">订单管理</li>
-					<li @click="navigateTo('dish.html')">菜品管理</li>
-					<li @click="navigateTo('coupon.html')">券类管理</li>
-					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-					<li class="active" @click="navigateTo('user.html')">用户管理</li>
+					<li @click="navigateTo('product.html')">&#x4EA7;&#x54C1;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('order.html')">&#x8BA2;&#x5355;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('dish.html')">&#x83DC;&#x54C1;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('coupon.html')">&#x5238;&#x7C7B;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('subscription.html')">&#x8BA4;&#x8D2D;&#x7530;&#x5730;&#x7BA1;&#x7406;</li>
+					<li class="active" @click="navigateTo('user.html')">&#x7528;&#x6237;&#x7BA1;&#x7406;</li>
 				</ul>
 			</aside>
-			
-			<!-- 主内容区 -->
+
 			<main class="content">
-				<!-- 顶部导航 -->
 				<header class="top-nav">
-					<div>农场管理后台-用户管理-新增页面</div>
+					<div>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x65B0;&#x589E;&#x9875;&#x9762;</div>
 					<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div>用户12312</div>
+						<div class="user-avatar">&#x7528;</div>
+						<div>&#x7528;&#x6237;12312</div>
 					</div>
 				</header>
-				
-				<!-- 新增页面表单 -->
+
 				<div class="form-container">
 					<div class="form-group">
-						<label for="nickname">用户昵称</label>
-						<input type="text" id="nickname" v-model="form.nickname">
+						<label for="nickname">&#x7528;&#x6237;&#x6635;&#x79F0;</label>
+						<input type="text" id="nickname" v-model.trim="form.nickname">
 					</div>
-					
+
 					<div class="form-group">
-						<label for="gender">性别</label>
+						<label for="gender">&#x6027;&#x522B;</label>
 						<select id="gender" v-model="form.gender">
-							<option value="男">男</option>
-							<option value="女">女</option>
+							<option :value="maleLabel">{{ maleLabel }}</option>
+							<option :value="femaleLabel">{{ femaleLabel }}</option>
 						</select>
 					</div>
-					
+
 					<div class="form-group">
-							<label for="phone">电话号码</label>
-							<input type="text" id="phone" v-model="form.phone">
-						</div>
-						
-						<div class="form-group">
-						<label for="status">状态</label>
+						<label for="phone">&#x7535;&#x8BDD;&#x53F7;&#x7801;</label>
+						<input type="text" id="phone" v-model.trim="form.phone">
+					</div>
+
+					<div class="form-group">
+						<label for="status">&#x72B6;&#x6001;</label>
 						<select id="status" v-model="form.status">
-							<option value="启用">启用</option>
-							<option value="禁用">禁用</option>
+							<option :value="enabledStatus">{{ enabledStatus }}</option>
+							<option :value="disabledStatus">{{ disabledStatus }}</option>
 						</select>
 					</div>
-					
+
 					<div class="form-group">
-						<label for="role">身份</label>
-						<select id="role" v-model="form.role">
-							<option value="普通用户">普通用户</option>
-							<option value="管理员">管理员</option>
-						</select>
+						<label for="role">&#x8EAB;&#x4EFD;</label>
+						<input id="role" class="readonly-input" type="text" :value="normalUserRole" readonly>
 					</div>
-					
-					<!-- 按钮 -->
+
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="addUser">新增用户</button>
-						<button class="btn btn-primary" @click="cancel">取消</button>
-						<div v-if="form.errormsg" class="errormsg">
-							{{form.errormsg}}
-						</div>
+						<button class="btn btn-success" @click="addUser" :disabled="submitting">&#x65B0;&#x589E;&#x7528;&#x6237;</button>
+						<button class="btn btn-primary" @click="cancel">&#x53D6;&#x6D88;</button>
+						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
 				</div>
 			</main>
 		</div>
 	</div>
-	
+
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script>
-		const { createApp } = Vue
-		
+		const { createApp } = Vue;
+		const MALE_LABEL = '\u7537';
+		const FEMALE_LABEL = '\u5973';
+		const ENABLED_STATUS = '\u542F\u7528';
+		const DISABLED_STATUS = '\u7981\u7528';
+		const NORMAL_USER_ROLE = '\u666E\u901A\u7528\u6237';
+
 		createApp({
 			data() {
 				return {
+					maleLabel: MALE_LABEL,
+					femaleLabel: FEMALE_LABEL,
+					enabledStatus: ENABLED_STATUS,
+					disabledStatus: DISABLED_STATUS,
+					normalUserRole: NORMAL_USER_ROLE,
+					submitting: false,
 					form: {
 						nickname: '',
-						gender: '男',
+						gender: MALE_LABEL,
 						phone: '',
-						status: '启用',
-						role: '普通用户',
+						status: ENABLED_STATUS,
 						errormsg: ''
 					}
-				}
+				};
 			},
-			
 			methods: {
-				// 跳转到指定页面
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				
-				// 新增用户
 				async addUser() {
-					if (this.form.nickname === ""){
-						this.form.errormsg = '昵称不能为空！';
+					if (!this.form.nickname) {
+						this.form.errormsg = '\u6635\u79F0\u4E0D\u80FD\u4E3A\u7A7A';
 						return;
 					}
-					if (this.form.phone === ""){
-						this.form.errormsg = '手机号不能为空！';
+
+					if (!this.form.phone) {
+						this.form.errormsg = '\u624B\u673A\u53F7\u4E0D\u80FD\u4E3A\u7A7A';
 						return;
 					}
-				  try {
+
+					if (!/^\d{11}$/.test(this.form.phone)) {
+						this.form.errormsg = '\u8BF7\u8F93\u5165\u6B63\u786E\u7684 11 \u4F4D\u624B\u673A\u53F7';
+						return;
+					}
+
+					this.submitting = true;
+					this.form.errormsg = '';
+
+					try {
 						const res = await fetch('https://localhost:7138/api/user/add', {
-						  method: 'POST',
-						  headers: {
-							'Content-Type': 'application/json'
-						  },
-						  body: JSON.stringify({
-							  nickname: this.form.nickname,
-							  gender: this.form.gender,
-							  phone: this.form.phone,
-							  status: this.form.status,
-							  role: this.form.role
-						  })
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								nickname: this.form.nickname,
+								gender: this.form.gender,
+								phone: this.form.phone,
+								status: this.form.status,
+								role: NORMAL_USER_ROLE
+							})
 						});
-				
-					const data = await res.json();
-				
-					console.log('新增返回:', data);
-				
-					if (data.code === 200) {
-					  window.location.href = 'user.html';
-					} else {
-						this.form.errormsg = `${data.message}`;
+
+						const data = await res.json();
+
+						if (data.code === 200) {
+							window.location.href = 'user.html';
+						} else {
+							this.form.errormsg = data.message || '\u65B0\u589E\u5931\u8D25';
+						}
+					} catch (error) {
+						console.error('Add user request failed:', error);
+						this.form.errormsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5';
+					} finally {
+						this.submitting = false;
 					}
-				
-				  } catch (error) {
-					console.error('请求失败:', error);
-					this.form.errormsg = `${data.message}`;
-				  }	
 				},
-				
-				// 取消
 				cancel() {
-					// 跳转到列表页面
 					window.location.href = 'user.html';
 				}
 			}
-		}).mount('#app')
+		}).mount('#app');
 	</script>
 </body>
 </html>
