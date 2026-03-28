@@ -369,7 +369,7 @@
 										<td>{{ dish.id }}</td>
 										<td><img :src="dish.image" alt="菜品封面" class="dish-image" /></td>
 										<td>{{ dish.name }}</td>
-										<td>{{ dish.uploadTime }}</td>
+										<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
 										<td>{{ dish.price }}</td>
 										<td>{{ dish.stock }}</td>
 										<td>
@@ -470,6 +470,19 @@
 				},
 				
 				methods: {
+					formatDisplayTime(value) {
+						if (!value) {
+							return '';
+						}
+						const text = String(value).trim().replace(/\s*日\//g, ' ');
+						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+						if (!match) {
+							return text;
+						}
+						const pad = item => String(item).padStart(2, '0');
+						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+					},
+
 					// 将菜品数据保存到localStorage
 					saveDishesToLocalStorage() {
 						try {
@@ -790,16 +803,22 @@
 					loadDishesFromLocalStorage() {
 						try {
 							// 直接使用最新的默认数据，确保数据更新
-							this.allDishes = this.getDefaultDishes();
-							this.originalDishes = this.getDefaultDishes();
+							this.allDishes = this.getDefaultDishes().map(dish => ({
+								...dish,
+								uploadTime: this.formatDisplayTime(dish.uploadTime)
+							}));
+							this.originalDishes = JSON.parse(JSON.stringify(this.allDishes));
 							this.saveDishesToLocalStorage();
 							console.log('加载最新默认菜品数据:', this.allDishes);
 							this.updatePagination();
 						} catch (error) {
 							console.error('数据加载失败:', error);
 							// 加载失败时使用默认数据
-							this.allDishes = this.getDefaultDishes();
-							this.originalDishes = this.getDefaultDishes();
+							this.allDishes = this.getDefaultDishes().map(dish => ({
+								...dish,
+								uploadTime: this.formatDisplayTime(dish.uploadTime)
+							}));
+							this.originalDishes = JSON.parse(JSON.stringify(this.allDishes));
 							this.updatePagination();
 						}
 					},

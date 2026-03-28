@@ -262,7 +262,7 @@
 						</tr>
 						<tr>
 							<td class="label">下单时间</td>
-							<td class="value">{{ orderInfo.createTime }}</td>
+							<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
 							<td class="label">订单状态</td>
 							<td class="value">
 								<span :class="['status-tag', orderInfo.status === '已支付' ? 'paid' : 'unpaid']">
@@ -433,6 +433,19 @@
 			},
 			
 			methods: {
+				formatDisplayTime(value) {
+					if (!value) {
+						return '';
+					}
+					const text = String(value).trim().replace(/\s*日\//g, ' ');
+					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+					if (!match) {
+						return text;
+					}
+					const pad = item => String(item).padStart(2, '0');
+					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+				},
+
 				// 跳转到指定页面
 				navigateTo(page) {
 					window.location.href = page;
@@ -567,6 +580,7 @@
 							address: '北京市朝阳区某某街道某某小区1号楼2单元301室'
 						};
 					}
+					this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
 				}
 			}
 		}).mount('#app')

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x65B0;&#x589E;&#x9875;&#x9762;</title>
+	<title>农场管理后台-用户管理-新增页面</title>
 	<style>
 		* {
 			margin: 0;
@@ -178,14 +178,14 @@
 					<li @click="navigateTo('order.html')">&#x8BA2;&#x5355;&#x7BA1;&#x7406;</li>
 					<li @click="navigateTo('dish.html')">&#x83DC;&#x54C1;&#x7BA1;&#x7406;</li>
 					<li @click="navigateTo('coupon.html')">&#x5238;&#x7C7B;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('subscription.html')">&#x8BA4;&#x8D2D;&#x7530;&#x5730;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 					<li class="active" @click="navigateTo('user.html')">&#x7528;&#x6237;&#x7BA1;&#x7406;</li>
 				</ul>
 			</aside>
 
 			<main class="content">
 				<header class="top-nav">
-					<div>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x65B0;&#x589E;&#x9875;&#x9762;</div>
+					<div>农场管理后台-用户管理-新增页面</div>
 					<div class="user-info">
 						<div class="user-avatar">&#x7528;</div>
 						<div>&#x7528;&#x6237;12312</div>
@@ -245,6 +245,7 @@
 
 		createApp({
 			data() {
+				// 新增用户页状态：包含下拉选项、提交状态和表单内容。
 				return {
 					maleLabel: MALE_LABEL,
 					femaleLabel: FEMALE_LABEL,
@@ -262,9 +263,11 @@
 				};
 			},
 			methods: {
+				// 页面跳转统一走这里，便于后续替换导航逻辑。
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				// 校验表单后调用新增接口，成功时返回用户列表页。
 				async addUser() {
 					if (!this.form.nickname) {
 						this.form.errormsg = '\u6635\u79F0\u4E0D\u80FD\u4E3A\u7A7A';
@@ -313,6 +316,7 @@
 						this.submitting = false;
 					}
 				},
+				// 取消新增时直接返回用户列表页。
 				cancel() {
 					window.location.href = 'user.html';
 				}

@@ -5,73 +5,64 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-券类管理-新增页面</title>
 	<style>
-		/* 全局样式 */
-		*{
+		* {
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
-		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
+
+		body {
 			height: 100vh;
+			font-family: "Microsoft YaHei";
+			background: #f5f7fa;
 		}
-		
-		/* 主容器 */
+
 		.main-container {
 			display: flex;
 			height: 100vh;
 		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
+
+		.sidebar {
 			width: 200px;
 			background: #1a202c;
 			color: white;
 			padding: 20px 0;
 		}
-		
-		.sidebar-header{
+
+		.sidebar-header {
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
 			font-size: 18px;
 			font-weight: bold;
 		}
-		
-		.sidebar-menu{
+
+		.sidebar-menu {
 			list-style: none;
 			margin-top: 20px;
 		}
-		
-		.sidebar-menu li{
+
+		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
 		}
-		
-		.sidebar-menu li:hover{
+
+		.sidebar-menu li:hover {
 			background: #2d3748;
 		}
-		
-		.sidebar-menu li.active{
+
+		.sidebar-menu li.active {
 			background: #3182ce;
 		}
-		
-		/* 主内容区 */
+
 		.content {
 			flex: 1;
 			padding: 20px;
 			background-color: #f5f5f5;
-			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
-		
-		/* 顶部导航 */
+
 		.top-nav {
 			display: flex;
 			justify-content: space-between;
@@ -79,15 +70,23 @@
 			margin-bottom: 20px;
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e0e0e0;
+			flex-shrink: 0;
 		}
-		
+
+		.form-scroll {
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+		}
+
 		.user-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
 			flex-shrink: 0;
 		}
-		
+
 		.user-avatar {
 			width: 40px;
 			height: 40px;
@@ -100,94 +99,100 @@
 			flex-shrink: 0;
 			font-weight: 600;
 		}
-		
-		/* 表单样式 */
+
 		.form-container {
 			background-color: white;
 			padding: 20px;
 			border-radius: 8px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		}
-		
-		.form-group {
+
+		.form-row {
+			display: flex;
+			gap: 16px;
 			margin-bottom: 20px;
 		}
-		
+
+		.form-group {
+			flex: 1;
+		}
+
 		.form-group label {
 			display: block;
 			margin-bottom: 8px;
 			font-weight: bold;
 			color: #333;
 		}
-		
+
 		.form-group input,
 		.form-group select,
 		.form-group textarea {
 			width: 100%;
-			padding: 8px;
+			padding: 10px 12px;
 			border: 1px solid #e0e0e0;
-			border-radius: 4px;
+			border-radius: 6px;
 			font-size: 14px;
 		}
-		
-		.form-row {
-			display: flex;
-			gap: 10px;
-			margin-bottom: 20px;
+
+		.form-group textarea {
+			min-height: 120px;
+			resize: vertical;
+			line-height: 1.6;
 		}
-		
-		.form-row .form-group {
-			flex: 1;
+
+		.form-row.compact {
 			margin-bottom: 0;
 		}
-		
-		/* 折扣率滑块 */
-		.discount-slider {
+
+		.form-hint {
+			margin-top: 8px;
+			font-size: 12px;
+			color: #718096;
+		}
+
+		.upload-row {
 			display: flex;
 			align-items: center;
-			gap: 10px;
+			gap: 12px;
+			flex-wrap: wrap;
 		}
-		
-		.slider {
-			flex: 1;
-			height: 6px;
-			background-color: #e0e0e0;
-			border-radius: 3px;
-			position: relative;
-			cursor: pointer;
+
+		.file-input {
+			width: auto !important;
+			max-width: 100%;
+			padding: 0 !important;
+			border: none !important;
+			background: transparent;
 		}
-		
-		.slider-track {
+
+		.file-name {
+			font-size: 13px;
+			color: #4a5568;
+		}
+
+		.image-preview {
+			margin-top: 12px;
+			width: 240px;
+			height: 140px;
+			border-radius: 10px;
+			border: 1px solid #e2e8f0;
+			overflow: hidden;
+			background: #edf2f7;
+		}
+
+		.image-preview img {
+			width: 100%;
 			height: 100%;
-			background-color: #2196f3;
-			border-radius: 3px;
-			width: 90%;
+			object-fit: cover;
+			display: block;
 		}
-		
-		.slider-thumb {
-			width: 16px;
-			height: 16px;
-			background-color: #2196f3;
-			border-radius: 50%;
-			position: absolute;
-			top: 50%;
-			transform: translate(-50%, -50%);
-			left: 90%;
-			cursor: pointer;
-		}
-		
-		.discount-value {
-			width: 60px;
-			text-align: right;
-		}
-		
-		/* 操作按钮 */
+
 		.form-actions {
 			margin-top: 30px;
 			display: flex;
 			gap: 10px;
 		}
-		
+
 		.btn {
 			padding: 8px 16px;
 			border: none;
@@ -196,38 +201,46 @@
 			font-size: 14px;
 			font-weight: bold;
 		}
-		
+
 		.btn-success {
 			background-color: #4caf50;
 			color: white;
 		}
-		
+
 		.btn-default {
 			background-color: #e0e0e0;
 			color: #333;
 			border: 1px solid #e0e0e0;
+		}
+
+		@media (max-width: 1024px) {
+			.form-row {
+				flex-direction: column;
+			}
+
+			.image-preview {
+				width: 100%;
+				max-width: 320px;
+			}
 		}
 	</style>
 </head>
 <body>
 	<div id="app">
 		<div class="main-container">
-			<!-- 侧边栏 -->
 			<aside class="sidebar">
 				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
-									<li @click="navigateTo('product.html')">产品管理</li>
-									<li @click="navigateTo('order.html')">订单管理</li>
-									<li @click="navigateTo('dish.html')">菜品管理</li>
-									<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-									<li @click="navigateTo('user.html')">用户管理</li>
-								</ul>
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li class="active" @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
 			</aside>
-			
-			<!-- 主内容区 -->
+
 			<main class="content">
-				<!-- 顶部导航 -->
 				<header class="top-nav">
 					<div>农场管理后台-券类管理-新增页面</div>
 					<div class="user-info">
@@ -235,141 +248,305 @@
 						<div>用户12312</div>
 					</div>
 				</header>
-				
-				<!-- 券类新增表单 -->
-				<div class="form-container">
-					<div class="form-group">
-						<label>券品名称</label>
-						<input v-model="couponForm.name" type="text" placeholder="请输入券品名称">
-					</div>
-					
-					<div class="form-group">
-						<label>满减/折扣</label>
+
+				<div class="form-scroll">
+					<div class="form-container">
 						<div class="form-row">
 							<div class="form-group">
-								<label>满</label>
-								<input v-model="couponForm.minAmount" type="number" placeholder="0">
+								<label>券品名称</label>
+								<input v-model.trim="couponForm.name" type="text" placeholder="请输入券品名称">
 							</div>
 							<div class="form-group">
-								<label>减</label>
-								<input v-model="couponForm.discountAmount" type="number" placeholder="0">
-							</div>
-							<div class="form-group" style="flex: 2;">
-								<label>折扣率</label>
-								<div class="discount-slider">
-									<div class="slider" @click="updateDiscountRate">
-										<div class="slider-track"></div>
-										<div class="slider-thumb" :style="{ left: couponForm.discountRate * 100 + '%' }"></div>
-									</div>
-									<div class="discount-value">{{ couponForm.discountRate }}</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					
-					<div class="form-group">
-						<label>状态</label>
-						<select v-model="couponForm.status">
-							<option value="已上架">已上架</option>
-							<option value="已下架">已下架</option>
-						</select>
-					</div>
-					
-					<div class="form-group">
-						<label>有效期</label>
-						<div class="form-row">
-							<div class="form-group">
-								<input v-model="couponForm.validityPeriod" type="number" placeholder="0">
-							</div>
-							<div class="form-group">
-								<select v-model="couponForm.validityUnit">
-									<option value="年">年</option>
-									<option value="月">月</option>
-									<option value="日">日</option>
+								<label>券品类型</label>
+								<select v-model="couponForm.type">
+									<option value="研学活动券">研学活动券</option>
+									<option value="采摘券">采摘券</option>
 								</select>
 							</div>
 						</div>
-					</div>
-					
-					<div class="form-group">
-						<label>券品管理类型</label>
-						<select v-model="couponForm.managementType">
-							<option value="菜品">菜品</option>
-							<option value="产品">产品</option>
-							<option value="活动门票">活动门票</option>
-						</select>
-					</div>
-					
-					<div class="form-group">
-						<label>券品类型</label>
-						<select v-model="couponForm.type">
-							<option value="满减券">满减券</option>
-							<option value="折扣券">折扣券</option>
-							<option value="优惠券">优惠券</option>
-						</select>
-					</div>
-					
-					<div class="form-actions">
-						<button class="btn btn-success" @click="saveCoupon">新增券品</button>
-						<button class="btn btn-default" @click="cancel">取消</button>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label>售价（元）</label>
+								<input v-model="couponForm.price" type="number" min="0" step="0.01" placeholder="请输入售价">
+							</div>
+							<div class="form-group">
+								<label>库存（张）</label>
+								<input v-model="couponForm.stock" type="number" min="0" step="1" placeholder="请输入库存">
+							</div>
+							<div class="form-group">
+								<label>单次限购（张）</label>
+								<input v-model="couponForm.limitPerOrder" type="number" min="1" step="1" placeholder="请输入限购数量">
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label>有效期</label>
+								<div class="form-row compact">
+									<div class="form-group">
+										<input v-model="couponForm.validityPeriod" type="number" min="1" step="1" placeholder="请输入有效期">
+									</div>
+									<div class="form-group">
+										<select v-model="couponForm.validityUnit">
+											<option value="天">天</option>
+											<option value="月">月</option>
+											<option value="年">年</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="form-group">
+								<label>退款规则</label>
+								<select v-model="couponForm.refundRule">
+									<option value="支持未使用且未核销退款">支持未使用且未核销退款</option>
+									<option value="需人工审核退款">需人工审核退款</option>
+									<option value="不支持退款">不支持退款</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label>使用规则</label>
+							<textarea
+								v-model.trim="couponForm.usageRules"
+								placeholder="请输入券品适用范围、预约要求、到店核销方式、使用说明等"
+							></textarea>
+						</div>
+
+						<div class="form-group">
+							<label>封面图</label>
+							<div class="upload-row">
+								<input
+									ref="imageInput"
+									class="file-input"
+									type="file"
+									accept="image/*"
+									@change="handleImageChange"
+								>
+								<button class="btn btn-default" type="button" @click="clearImage">移除图片</button>
+								<span class="file-name">{{ imageFileName || '未选择图片文件' }}</span>
+							</div>
+							<div class="form-hint">请选择电脑本地图片文件上传；若不上传，将自动使用对应类型的默认封面图。建议图片不超过 2MB。</div>
+							<div class="image-preview">
+								<img :src="previewImage" :alt="couponForm.name || couponForm.type">
+							</div>
+						</div>
+
+						<div class="form-actions">
+							<button class="btn btn-success" @click="saveCoupon">新增券品</button>
+							<button class="btn btn-default" @click="cancel">取消</button>
+						</div>
 					</div>
 				</div>
 			</main>
 		</div>
 	</div>
-	
+
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script>
-		const { createApp } = Vue
-		
+		const { createApp } = Vue;
+
 		createApp({
 			data() {
+				// 新增页表单状态，记录券品信息和已选择的图片文件名。
 				return {
-					// 券品表单
+					imageFileName: '',
 					couponForm: {
 						name: '',
-						minAmount: '',
-						discountAmount: '',
-						discountRate: 0.9,
-						status: '已上架',
-						validityPeriod: '',
-						validityUnit: '年',
-						managementType: '菜品',
-						type: '满减券'
+						type: '研学活动券',
+						price: '',
+						stock: '',
+						limitPerOrder: 1,
+						validityPeriod: 30,
+						validityUnit: '天',
+						refundRule: '支持未使用且未核销退款',
+						usageRules: '适用于农场研学活动场次，需至少提前1天预约，到店后出示券包核销码签到使用。',
+						image: ''
 					}
+				};
+			},
+
+			computed: {
+				// 预览图优先使用上传图片，没有时回退到类型默认图。
+				previewImage() {
+					return this.getDisplayImage(this.couponForm.image, this.couponForm.type);
 				}
 			},
-			
+
 			methods: {
-				// 跳转到指定页面
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				
-				// 更新折扣率
-				updateDiscountRate(event) {
-					const slider = event.target;
-					const rect = slider.getBoundingClientRect();
-					const x = event.clientX - rect.left;
-					const percentage = Math.max(0, Math.min(1, x / rect.width));
-					this.couponForm.discountRate = parseFloat((percentage * 0.5 + 0.5).toFixed(1));
+
+				// 清空文件选择框，方便重新选择同一张图片。
+				resetImageInput() {
+					if (this.$refs.imageInput) {
+						this.$refs.imageInput.value = '';
+					}
 				},
-				
-				// 保存券品
+
+				// 读取电脑本地图片文件，并转成 base64 供预览和保存使用。
+				handleImageChange(event) {
+					const file = event.target.files && event.target.files[0];
+					if (!file) {
+						return;
+					}
+					if (!file.type || !file.type.startsWith('image/')) {
+						alert('请选择图片文件');
+						this.resetImageInput();
+						return;
+					}
+					if (file.size > 2 * 1024 * 1024) {
+						alert('图片大小不能超过 2MB');
+						this.resetImageInput();
+						return;
+					}
+
+					const reader = new FileReader();
+					reader.onload = () => {
+						this.couponForm.image = typeof reader.result === 'string' ? reader.result : '';
+						this.imageFileName = file.name;
+					};
+					reader.onerror = () => {
+						alert('图片读取失败，请重新选择');
+						this.resetImageInput();
+					};
+					reader.readAsDataURL(file);
+				},
+
+				// 主动移除已上传图片，恢复到系统默认封面图。
+				clearImage() {
+					this.couponForm.image = '';
+					this.imageFileName = '';
+					this.resetImageInput();
+				},
+
+				formatDateTime(date = new Date()) {
+					const pad = value => String(value).padStart(2, '0');
+					return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+				},
+
+				createCouponId() {
+					const now = new Date();
+					const pad = value => String(value).padStart(2, '0');
+					return `Q${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+				},
+
+				// 根据券品类型生成默认封面图，避免新增时没有图片可看。
+				generateSceneImage(type) {
+					const config = type === '采摘券'
+						? {
+							title: '采摘体验',
+							subtitle: 'PICKING VOUCHER',
+							colors: ['#f59e0b', '#22c55e']
+						}
+						: {
+							title: '研学活动',
+							subtitle: 'STUDY TOUR',
+							colors: ['#2563eb', '#06b6d4']
+						};
+					const svg = `
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140">
+							<defs>
+								<linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+									<stop offset="0%" stop-color="${config.colors[0]}"/>
+									<stop offset="100%" stop-color="${config.colors[1]}"/>
+								</linearGradient>
+							</defs>
+							<rect width="240" height="140" rx="16" fill="url(#g)"/>
+							<circle cx="188" cy="34" r="26" fill="rgba(255,255,255,0.16)"/>
+							<circle cx="208" cy="58" r="16" fill="rgba(255,255,255,0.12)"/>
+							<path d="M0 112 C40 96 74 96 110 112 S184 128 240 104 L240 140 L0 140 Z" fill="rgba(255,255,255,0.2)"/>
+							<text x="20" y="62" font-size="24" font-family="Microsoft YaHei, Arial" fill="#ffffff" font-weight="700">${config.title}</text>
+							<text x="20" y="92" font-size="13" font-family="Arial" fill="rgba(255,255,255,0.88)">${config.subtitle}</text>
+						</svg>
+					`;
+					return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+				},
+
+				getDisplayImage(image, type) {
+					return image && image.trim() ? image.trim() : this.generateSceneImage(type);
+				},
+
+				// 从本地存储读取已有券品，新增后会追加到列表最前面。
+				getStoredCoupons() {
+					try {
+						const couponsData = localStorage.getItem('coupons');
+						const coupons = couponsData ? JSON.parse(couponsData) : [];
+						return Array.isArray(coupons) ? coupons : [];
+					} catch (error) {
+						console.error('读取券类数据失败:', error);
+						return [];
+					}
+				},
+
+				// 保存前校验必填项和数值范围，避免生成异常券数据。
+				validateForm() {
+					if (!this.couponForm.name) {
+						alert('请输入券品名称');
+						return false;
+					}
+					if (!(Number(this.couponForm.price) > 0)) {
+						alert('请输入大于 0 的售价');
+						return false;
+					}
+					if (!(Number(this.couponForm.stock) >= 0)) {
+						alert('请输入正确的库存数量');
+						return false;
+					}
+					if (!(Number(this.couponForm.limitPerOrder) >= 1)) {
+						alert('单次限购至少为 1 张');
+						return false;
+					}
+					if (!(Number(this.couponForm.validityPeriod) >= 1)) {
+						alert('有效期至少为 1');
+						return false;
+					}
+					if (!this.couponForm.usageRules) {
+						alert('请输入使用规则');
+						return false;
+					}
+					return true;
+				},
+
+				// 组装新增券数据并写入本地存储，保存成功后返回列表页。
 				saveCoupon() {
-					// 模拟保存券品
-					console.log('保存券品:', this.couponForm);
-					// 跳回券类管理页面
+					if (!this.validateForm()) {
+						return;
+					}
+
+					const coupons = this.getStoredCoupons();
+					const coupon = {
+						id: this.createCouponId(),
+						name: this.couponForm.name,
+						type: this.couponForm.type,
+						price: Number(Number(this.couponForm.price).toFixed(2)),
+						stock: Math.round(Number(this.couponForm.stock)),
+						limitPerOrder: Math.round(Number(this.couponForm.limitPerOrder)),
+						validityPeriod: Math.round(Number(this.couponForm.validityPeriod)),
+						validityUnit: this.couponForm.validityUnit,
+						validity: `${Math.round(Number(this.couponForm.validityPeriod))}${this.couponForm.validityUnit}`,
+						refundRule: this.couponForm.refundRule,
+						usageRules: this.couponForm.usageRules,
+						image: this.couponForm.image,
+						imageName: this.imageFileName,
+						soldCount: 0,
+						verifiedCount: 0,
+						createTime: this.formatDateTime(),
+						selected: false
+					};
+
+					coupons.unshift(coupon);
+					localStorage.setItem('coupons', JSON.stringify(coupons));
 					window.location.href = 'coupon.html';
 				},
-				
-				// 取消
+
 				cancel() {
-					// 跳回券类管理页面
 					window.location.href = 'coupon.html';
 				}
 			}
-		}).mount('#app')
+		}).mount('#app');
 	</script>
 </body>
 </html>

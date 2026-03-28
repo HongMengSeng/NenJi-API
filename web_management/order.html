@@ -308,12 +308,12 @@
 												{{ order.paymentStatus }}
 											</span>
 										</td>
-										<td>
+									<td>
 											<span :class="['status-tag', order.orderStatus === '已完成' ? 'completed' : order.orderStatus === '待支付' ? 'unpaid' : order.orderStatus === '待发货' ? 'processing' : order.orderStatus === '待收货' ? 'processing' : 'pending']">
 												{{ order.orderStatus }}
 											</span>
 										</td>
-										<td>{{ order.orderTime }}</td>
+										<td>{{ formatDisplayTime(order.orderTime) }}</td>
 										<td>
 											<a :href="'order-detail.html?orderNo=' + order.orderId + '&phone=' + order.userPhone" class="view-details">查看详情</a>
 										</td>
@@ -370,7 +370,20 @@
 					this.loadOrdersFromLocalStorage();
 				},
 				
-				methods: {
+			methods: {
+					formatDisplayTime(value) {
+						if (!value) {
+							return '';
+						}
+						const text = String(value).trim().replace(/\s*日\//g, ' ');
+						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+						if (!match) {
+							return text;
+						}
+						const pad = item => String(item).padStart(2, '0');
+						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+					},
+
 					// 获取默认订单数据
 					getDefaultOrders() {
 						return [
@@ -472,16 +485,22 @@
 					loadOrdersFromLocalStorage() {
 						try {
 							// 直接使用最新的默认数据，确保数据更新
-							this.allOrders = this.getDefaultOrders();
-							this.originalOrders = this.getDefaultOrders();
+							this.allOrders = this.getDefaultOrders().map(order => ({
+								...order,
+								orderTime: this.formatDisplayTime(order.orderTime)
+							}));
+							this.originalOrders = JSON.parse(JSON.stringify(this.allOrders));
 							this.saveOrdersToLocalStorage();
 							console.log('加载最新默认订单数据:', this.allOrders);
 							this.updatePagination();
 						} catch (error) {
 							console.error('数据加载失败:', error);
 							// 加载失败时使用默认数据
-							this.allOrders = this.getDefaultOrders();
-							this.originalOrders = this.getDefaultOrders();
+							this.allOrders = this.getDefaultOrders().map(order => ({
+								...order,
+								orderTime: this.formatDisplayTime(order.orderTime)
+							}));
+							this.originalOrders = JSON.parse(JSON.stringify(this.allOrders));
 							this.updatePagination();
 						}
 					},

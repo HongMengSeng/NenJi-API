@@ -389,7 +389,6 @@
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
 								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
-								<button class="btn btn-default" @click="resetDefaultData">恢复默认数据</button>
 							</div>
 							
 							<!-- 搜索功能 -->
@@ -418,7 +417,7 @@
 										<td>{{ product.id }}</td>
 										<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
 										<td>{{ product.name }}</td>
-										<td>{{ product.uploadTime }}</td>
+										<td>{{ formatDisplayTime(product.uploadTime) }}</td>
 										<td>{{ product.price }}</td>
 										<td>{{ product.stock }}</td>
 										<td>
@@ -515,6 +514,19 @@
 				},
 				
 				methods: {
+					formatDisplayTime(value) {
+						if (!value) {
+							return '';
+						}
+						const text = String(value).trim().replace(/\s*日\//g, ' ');
+						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+						if (!match) {
+							return text;
+						}
+						const pad = item => String(item).padStart(2, '0');
+						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+					},
+
 					// 获取默认产品数据
 					getDefaultProducts() {
 						return [
@@ -735,14 +747,20 @@
 								loadProductsFromLocalStorage() {
 									try {
 										// 直接使用最新的默认数据，确保数据更新
-										this.allProducts = this.getDefaultProducts();
+										this.allProducts = this.getDefaultProducts().map(product => ({
+											...product,
+											uploadTime: this.formatDisplayTime(product.uploadTime)
+										}));
 										this.saveProductsToLocalStorage();
 										console.log('加载最新默认数据:', this.allProducts);
 										this.updatePagination();
 								} catch (error) {
 										console.error('数据加载失败:', error);
 										// 加载失败时使用默认数据
-										this.allProducts = this.getDefaultProducts();
+										this.allProducts = this.getDefaultProducts().map(product => ({
+											...product,
+											uploadTime: this.formatDisplayTime(product.uploadTime)
+										}));
 										this.updatePagination();
 									}
 								},
@@ -870,24 +888,6 @@
 									} catch (error) {
 										console.error('数据刷新失败:', error);
 									}
-							},
-					
-					// 恢复默认数据
-								resetDefaultData() {
-									if (confirm('确定要恢复默认数据吗？\n此操作将清除所有当前数据并恢复为初始状态。')) {
-										try {
-											this.allProducts = this.getDefaultProducts();
-											this.saveProductsToLocalStorage();
-											this.currentPage = 1;
-										this.selectedProduct = null;
-										this.selectAll = false;
-										this.searchKeyword = '';
-										this.updatePagination();
-										console.log('默认数据恢复成功');
-									} catch (error) {
-										console.error('恢复默认数据失败:', error);
-									}
-								}
 							},
 					
 					// 搜索产品

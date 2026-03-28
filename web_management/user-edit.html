@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x7F16;&#x8F91;&#x9875;&#x9762;</title>
+	<title>农场管理后台-用户管理-编辑页面</title>
 	<style>
 		* {
 			margin: 0;
@@ -178,14 +178,14 @@
 					<li @click="navigateTo('order.html')">&#x8BA2;&#x5355;&#x7BA1;&#x7406;</li>
 					<li @click="navigateTo('dish.html')">&#x83DC;&#x54C1;&#x7BA1;&#x7406;</li>
 					<li @click="navigateTo('coupon.html')">&#x5238;&#x7C7B;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('subscription.html')">&#x8BA4;&#x8D2D;&#x7530;&#x5730;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
 					<li class="active" @click="navigateTo('user.html')">&#x7528;&#x6237;&#x7BA1;&#x7406;</li>
 				</ul>
 			</aside>
 
 			<main class="content">
 				<header class="top-nav">
-					<div>&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;-&#x7528;&#x6237;&#x7BA1;&#x7406;-&#x7F16;&#x8F91;&#x9875;&#x9762;</div>
+					<div>农场管理后台-用户管理-编辑页面</div>
 					<div class="user-info">
 						<div class="user-avatar">&#x7528;</div>
 						<div>&#x7528;&#x6237;12312</div>
@@ -245,6 +245,7 @@
 
 		createApp({
 			data() {
+				// 编辑用户页状态：保存当前用户信息和提交状态。
 				return {
 					maleLabel: MALE_LABEL,
 					femaleLabel: FEMALE_LABEL,
@@ -263,6 +264,7 @@
 				};
 			},
 			mounted() {
+				// 从地址栏读取用户 ID，用于加载当前要编辑的用户。
 				const urlParams = new URLSearchParams(window.location.search);
 				const userId = urlParams.get('id');
 				if (userId) {
@@ -272,6 +274,7 @@
 				}
 			},
 			methods: {
+				// 调用用户列表接口，并按 ID 找到要编辑的那一条数据。
 				async loadUserData(id) {
 					try {
 						const res = await fetch('https://localhost:7138/api/user/list');
@@ -299,9 +302,11 @@
 						this.form.errormsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5';
 					}
 				},
+				// 页面跳转统一走这里，便于保持管理页跳转方式一致。
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				// 校验表单并提交编辑接口，保存成功后返回用户列表页。
 				async updateUser() {
 					if (!this.form.id) {
 						this.form.errormsg = '\u7F3A\u5C11\u7528\u6237 ID';
@@ -356,6 +361,7 @@
 						this.submitting = false;
 					}
 				},
+				// 取消编辑时直接返回用户列表页。
 				cancel() {
 					window.location.href = 'user.html';
 				}
