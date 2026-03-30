@@ -7,7 +7,7 @@
   padding-bottom: 120rpx;
 }
 
-/* 头部导航 */
+
 .header {
   display: flex;
   align-items: center;
