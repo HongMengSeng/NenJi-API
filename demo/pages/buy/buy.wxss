@@ -308,6 +308,48 @@
   border-color: #07c160;
 }
 
+/* 商品列表 */
+.product-section {
+  background-color: #fff;
+  margin-top: 20rpx;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.product-item:last-child {
+  border-bottom: none;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.product-price {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #e64340;
+}
+
+.product-quantity {
+  font-size: 32rpx;
+  color: #666;
+}
+
 /* 提交订单按钮 */
 .submit-btn {
   position: fixed;
