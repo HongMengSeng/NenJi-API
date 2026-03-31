@@ -130,7 +130,15 @@ Page({
       } else {
         this.setData({ loading: true });
       }
+      // 先更新当前分类
+      this.setData({ currentCategory: categoryId });
+      // 然后应用分页
       this.applyCategoryPage(categoryId, nextPage);
+      // 检查是否有搜索关键词，如果有，执行搜索
+      const keyword = this.data.searchKeyword.trim();
+      if (keyword) {
+        this.performSearch(keyword);
+      }
       return;
     }
 
@@ -154,6 +162,11 @@ Page({
         }
       });
       this.applyCategoryPage(categoryId, nextPage);
+      // 检查是否有搜索关键词，如果有，执行搜索
+      const keyword = this.data.searchKeyword.trim();
+      if (keyword) {
+        this.performSearch(keyword);
+      }
     }).catch((err) => {
       this.setData({ loading: false, loadingMore: false });
       wx.showToast({
@@ -187,21 +200,16 @@ Page({
   performSearch(keyword) {
     wx.showLoading({ title: '搜索中...' });
 
-    // 从所有分类里拿全部商品
-    let allGoods = [];
-    Object.values(this.data.goodsCache).forEach(list => {
-      if (Array.isArray(list)) {
-        allGoods = allGoods.concat(list);
-      }
-    });
+    // 从当前分类中拿商品
+    let categoryGoods = this.data.goodsCache[this.data.currentCategory] || [];
 
     // 兜底：没有缓存就用当前列表
-    if (allGoods.length === 0) {
-      allGoods = this.data.currentCategoryGoods || [];
+    if (categoryGoods.length === 0) {
+      categoryGoods = this.data.currentCategoryGoods || [];
     }
 
     // 只要名字里包含你输入的字，就出来（万能模糊）
-    const result = allGoods.filter(item => {
+    const result = categoryGoods.filter(item => {
       const name = item.name || '';
       return name.includes(keyword);
     });

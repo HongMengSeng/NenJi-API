@@ -65,7 +65,7 @@
           <view class="goods-actions">
             <view class="quantity-control" catchtap="stopPropagation">
               <view class="quantity-btn decrease" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
-              <view class="quantity-display">{{cart[item.id] ? cart[item.id].quantity : 0}}</view>
+              <view class="quantity-display">{{cart[item.id] && cart[item.id].quantity !== null && cart[item.id].quantity !== undefined ? cart[item.id].quantity : 0}}</view>
               <view class="quantity-btn increase" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
             </view>
           </view>

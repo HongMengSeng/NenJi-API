@@ -19,8 +19,9 @@
         "pages/order-detail/order-detail",
         "pages/profile-edit/profile-edit",
         "pages/address-edit/address-edit",
-        "pages/address/address"
-    ],
+        "pages/address/address",
+        "pages/orders-detail/order-detail"
+  ],
     "window": {
         "backgroundTextStyle": "light",
         "navigationBarBackgroundColor": "#fff",

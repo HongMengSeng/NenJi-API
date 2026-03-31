@@ -266,7 +266,7 @@ Page({
 
   navigateToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${id}` })
+    wx.navigateTo({ url: `/pages/orders-detail/order-detail?id=${id}` })
   },
 
   onReachBottom() {
