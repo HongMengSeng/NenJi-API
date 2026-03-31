@@ -306,6 +306,247 @@
 			font-size: 12px;
 			margin-right: 0;
 		}
+
+		.management-sections{
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.management-card{
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+			overflow: hidden;
+		}
+
+		.management-header{
+			width: 100%;
+			border: none;
+			background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 100%);
+			padding: 18px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			cursor: pointer;
+			text-align: left;
+		}
+
+		.management-header:hover{
+			background: linear-gradient(90deg, #eef2f7 0%, #e2e8f0 100%);
+		}
+
+		.management-title{
+			font-size: 18px;
+			font-weight: 700;
+			color: #1f2937;
+		}
+
+		.management-meta{
+			margin-top: 6px;
+			font-size: 13px;
+			color: #64748b;
+		}
+
+		.management-arrow{
+			font-size: 13px;
+			color: #475569;
+			white-space: nowrap;
+		}
+
+		.management-body{
+			padding: 20px;
+			border-top: 1px solid #e2e8f0;
+		}
+
+		.manage-table{
+			width: 100%;
+			border-collapse: collapse;
+			background: white;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+		}
+
+		.manage-table th,
+		.manage-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.manage-table th{
+			background: #f7fafc;
+			font-weight: 600;
+		}
+
+		.table-status{
+			padding: 4px 8px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+		}
+
+		.table-status.free{
+			background: #dcfce7;
+			color: #166534;
+		}
+
+		.table-status.busy{
+			background: #dbeafe;
+			color: #1d4ed8;
+		}
+
+		.table-status.offline{
+			background: #fee2e2;
+			color: #b91c1c;
+		}
+
+		.table-chip{
+			display: inline-flex;
+			align-items: center;
+			padding: 4px 8px;
+			border-radius: 999px;
+			background: #f1f5f9;
+			color: #334155;
+			font-size: 12px;
+			font-weight: 500;
+		}
+
+		.detail-modal{
+			max-width: 760px;
+		}
+
+		.detail-layout{
+			display: grid;
+			grid-template-columns: minmax(0, 1.2fr) minmax(220px, 280px);
+			gap: 24px;
+			align-items: start;
+		}
+
+		.detail-grid{
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 14px;
+		}
+
+		.detail-item{
+			padding: 12px 14px;
+			background: #f8fafc;
+			border-radius: 8px;
+			border: 1px solid #e2e8f0;
+		}
+
+		.detail-label{
+			display: block;
+			margin-bottom: 6px;
+			font-size: 12px;
+			font-weight: 600;
+			color: #64748b;
+		}
+
+		.detail-content{
+			color: #1f2937;
+			line-height: 1.6;
+			word-break: break-word;
+		}
+
+		.qr-panel{
+			padding: 16px;
+			border-radius: 10px;
+			background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+			border: 1px solid #dbe2ea;
+			text-align: center;
+		}
+
+		.qr-image{
+			width: 220px;
+			height: 220px;
+			max-width: 100%;
+			border-radius: 10px;
+			background: white;
+			border: 1px solid #dbe2ea;
+			padding: 10px;
+			object-fit: contain;
+		}
+
+		.qr-tip{
+			margin-top: 12px;
+			font-size: 12px;
+			color: #64748b;
+			line-height: 1.6;
+			word-break: break-all;
+		}
+
+		.qr-link{
+			color: #166534;
+			text-decoration: none;
+			font-weight: 600;
+		}
+
+		.qr-link:hover{
+			text-decoration: underline;
+		}
+
+		.qr-warning{
+			color: #b45309;
+		}
+
+		.management-toolbar{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			flex-wrap: wrap;
+			margin-bottom: 20px;
+		}
+
+		.search-container{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.search-input{
+			padding: 8px 12px;
+			min-width: 250px;
+			border: 1px solid #dbe2ea;
+			border-radius: 6px;
+			outline: none;
+		}
+
+		.search-input:focus{
+			border-color: #3182ce;
+			box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.12);
+		}
+
+		.empty-state{
+			padding: 32px 16px;
+			text-align: center;
+			color: #64748b;
+			background: #f8fafc;
+			border: 1px dashed #cbd5e1;
+			border-radius: 8px;
+		}
+
+		.management-body .pagination{
+			position: static;
+			border-top: none;
+			background: transparent;
+			padding: 18px 0 0;
+			gap: 10px;
+		}
+
+		@media (max-width: 768px){
+			.detail-layout{
+				grid-template-columns: 1fr;
+			}
+
+			.detail-grid{
+				grid-template-columns: 1fr;
+			}
+		}
 	</style>
 	
 	<body>
@@ -328,7 +569,7 @@
 				<main class="content">
 					<!-- 顶部导航 -->
 					<header class="top-nav">
-						<div>农场管理后台-菜品管理</div>
+						<div>农场管理后台-菜品和餐桌管理</div>
 						<div class="user-info">
 							<div class="user-avatar">用</div>
 							<div>用户12312</div>
@@ -338,548 +579,519 @@
 					<!-- 菜品管理页面 -->
 					<div class="dish-page">
 						<div class="content-container">
-							<div class="action-buttons">
-								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-danger" @click="deleteDish" :disabled="selectedDishes.length === 0">删除</button>
-								<button class="btn btn-default" @click="refreshData">刷新数据</button>
-							</div>
-							
-							<!-- 搜索功能 -->
-							<div class="search-container" style="margin-bottom: 20px;">
-								<input type="text" v-model="searchKeyword" placeholder="菜品ID/菜品名称搜索" style="padding: 8px; width: 250px; border: 1px solid #e2e8f0; border-radius: 4px;" />
-								<button class="btn btn-primary" @click="searchDishes">搜索</button>
-							</div>
-							
-							<table class="dish-table">
-								<thead>
-									<tr>
-										<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-										<th>菜品ID</th>
-										<th>菜品封面</th>
-										<th>菜品名称</th>
-										<th>上架时间</th>
-										<th>价格</th>
-										<th>库存数量</th>
-										<th>状态</th>
-										<th>操作</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="dish in dishes" :key="dish.id">
-										<td><input type="checkbox" v-model="dish.selected" @change="updateSelectedDish" /></td>
-										<td>{{ dish.id }}</td>
-										<td><img :src="dish.image" alt="菜品封面" class="dish-image" /></td>
-										<td>{{ dish.name }}</td>
-										<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
-										<td>{{ dish.price }}</td>
-										<td>{{ dish.stock }}</td>
-										<td>
-											<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">
-												{{ dish.status }}
-											</span>
-										</td>
-										<td>
-											<div class="table-actions">
-												<button class="btn btn-primary" @click="editDish(dish)">编辑</button>
+							<div class="management-sections">
+								<section class="management-card">
+									<button class="management-header" @click="toggleSection('dish')">
+										<div>
+											<div class="management-title">菜品管理</div>
+											<div class="management-meta">共 {{ totalDishes }} 个菜品，已上架 {{ activeDishCount }} 个，支持新增、搜索、分页和编辑</div>
+										</div>
+										<div class="management-arrow">{{ dishSectionOpen ? '收起模块' : '展开模块' }}</div>
+									</button>
+									<div class="management-body" v-show="dishSectionOpen">
+										<div class="management-toolbar">
+											<div class="action-buttons">
+												<button class="btn btn-success" @click="navigateToAdd">新增菜品</button>
+												<button class="btn btn-default" @click="refreshDishData">刷新数据</button>
 											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-						
-						<!-- 分页 -->
-						<div class="pagination">
-							<span class="pagination-info">共 {{ totalDishes }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
-							<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-							<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
-							<div style="display: flex; align-items: center; gap: 5px;">
-								<span>跳转到</span>
-								<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
-								<button class="pagination-btn" @click="jumpToPage">跳转</button>
+											<div class="search-container">
+												<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="菜品ID/菜品名称搜索" @keyup.enter="searchDishes" />
+												<button class="btn btn-primary" @click="searchDishes">搜索</button>
+											</div>
+										</div>
+										<table class="dish-table" v-if="dishes.length > 0">
+											<thead>
+												<tr>
+													<th>菜品ID</th>
+													<th>菜品封面</th>
+													<th>菜品名称</th>
+													<th>上架时间</th>
+													<th>价格</th>
+													<th>库存数量</th>
+													<th>状态</th>
+													<th>操作</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr v-for="dish in dishes" :key="dish.id">
+													<td>{{ dish.id }}</td>
+													<td><img :src="dish.image" alt="菜品封面" class="dish-image" /></td>
+													<td>{{ dish.name }}</td>
+													<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
+													<td>{{ dish.price }}</td>
+													<td>{{ dish.stock }}</td>
+													<td>
+														<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">{{ dish.status }}</span>
+													</td>
+													<td>
+														<div class="table-actions">
+															<button class="btn btn-primary" @click="editDish(dish)">编辑</button>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+										<div class="empty-state" v-else>暂无符合条件的菜品数据</div>
+										<div class="pagination" v-if="totalDishes > 0">
+											<span class="pagination-info">共 {{ totalDishes }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+											<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+											<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+											<div style="display: flex; align-items: center; gap: 5px;">
+												<span>跳转到</span>
+												<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+												<button class="pagination-btn" @click="jumpToPage">跳转</button>
+											</div>
+										</div>
+									</div>
+								</section>
+								<section class="management-card">
+									<button class="management-header" @click="toggleSection('table')">
+										<div>
+											<div class="management-title">餐桌管理</div>
+											<div class="management-meta">共 {{ allTables.length }} 张餐桌，空闲 {{ freeTableCount }} 张，可快速切换状态、搜索和删除</div>
+										</div>
+										<div class="management-arrow">{{ tableSectionOpen ? '收起模块' : '展开模块' }}</div>
+									</button>
+									<div class="management-body" v-show="tableSectionOpen">
+										<div class="management-toolbar">
+											<div class="action-buttons">
+												<button class="btn btn-success" @click="addTable">新增餐桌</button>
+												<button class="btn btn-danger" @click="deleteTable()" :disabled="selectedTables.length === 0">删除餐桌</button>
+												<button class="btn btn-default" @click="refreshTableData">刷新数据</button>
+											</div>
+											<div class="search-container">
+												<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号/区域/类型搜索" @keyup.enter="searchTables" />
+												<button class="btn btn-primary" @click="searchTables">搜索</button>
+											</div>
+										</div>
+										<table class="manage-table" v-if="tables.length > 0">
+											<thead>
+												<tr>
+													<th><input type="checkbox" v-model="tableSelectAll" @change="toggleSelectAllTables" /></th>
+													<th>餐桌编号</th>
+													<th>区域</th>
+													<th>餐桌类型</th>
+													<th>容纳人数</th>
+													<th>点餐码</th>
+													<th>状态</th>
+													<th>更新时间</th>
+													<th>操作</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr v-for="table in tables" :key="table.id">
+													<td><input type="checkbox" v-model="table.selected" @change="updateSelectedTable" /></td>
+													<td>{{ table.id }}</td>
+													<td>{{ table.area }}</td>
+													<td><span class="table-chip">{{ table.type }}</span></td>
+													<td>{{ table.capacity }} 人</td>
+													<td><span class="table-chip">{{ table.codeStatus }}</span></td>
+													<td><span :class="['table-status', getTableStatusClass(table.status)]">{{ table.status }}</span></td>
+													<td>{{ table.updateTime }}</td>
+													<td>
+														<div class="table-actions">
+															<button class="btn btn-primary" @click="editTable(table)">编辑</button>
+															<button class="btn btn-primary" @click="openTableDetail(table)">查看明细</button>
+															<button class="btn btn-default" @click="toggleTableStatus(table)">{{ getTableActionText(table.status) }}</button>
+															<button class="btn btn-danger" @click="deleteTable(table)">删除</button>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+										<div class="empty-state" v-else>暂无符合条件的餐桌数据</div>
+									</div>
+								</section>
 							</div>
 						</div>
 					</div>
 				</main>
 			</div>
 
-			<!-- 删除确认弹窗 -->
-			<div class="modal-overlay" v-if="showDeleteModal">
-				<div class="modal">
+			<div class="modal-overlay" v-if="showTableDetailModal && tableDetailItem">
+				<div class="modal detail-modal">
 					<div class="modal-header">
-						<h3 class="modal-title">删除确认</h3>
+						<h3 class="modal-title">餐桌明细</h3>
 					</div>
 					<div class="modal-body">
-						<div style="text-align: center;">
-							<p style="margin-bottom: 10px;">确定要删除菜品吗？</p>
-							<p class="modal-warning">{{ selectedDish ? selectedDish.name : '' }}</p>
-							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+						<div class="detail-layout">
+							<div class="detail-grid">
+								<div class="detail-item">
+									<span class="detail-label">餐桌编号</span>
+									<div class="detail-content">{{ tableDetailItem.id }}</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">区域</span>
+									<div class="detail-content">{{ tableDetailItem.area }}</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">餐桌类型</span>
+									<div class="detail-content">{{ tableDetailItem.type }}</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">容纳人数</span>
+									<div class="detail-content">{{ tableDetailItem.capacity }} 人</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">点餐码</span>
+									<div class="detail-content">{{ tableDetailItem.codeStatus }}</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">状态</span>
+									<div class="detail-content">{{ tableDetailItem.status }}</div>
+								</div>
+								<div class="detail-item" style="grid-column: 1 / -1;">
+									<span class="detail-label">餐桌详情</span>
+									<div class="detail-content">{{ tableDetailItem.detail }}</div>
+								</div>
+							</div>
+							<div class="qr-panel">
+								<span class="detail-label">餐桌二维码</span>
+								<img :src="tableQrCodeUrl" alt="餐桌二维码" class="qr-image" />
+								<div class="qr-tip">二维码内容已切换为餐桌落地页链接，微信扫一扫可直接打开。</div>
+								<div class="qr-tip">
+									链接：
+									<a :href="tableQrPayload" target="_blank" rel="noopener noreferrer" class="qr-link">{{ tableQrPayload }}</a>
+								</div>
+								<div class="qr-tip qr-warning" v-if="tableQrPayload.startsWith('file:')">当前是本地文件预览地址，实际微信扫码请部署到 `http/https` 站点后使用。</div>
+							</div>
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-default" @click="cancelDelete">取消</button>
-						<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+						<button class="btn btn-default" @click="closeTableDetail">关闭</button>
 					</div>
 				</div>
 			</div>
+
 		</div>
 		
 		<script>
 			const { createApp } = Vue
-			
+
 			createApp({
 				data() {
 					return {
-						// 所有菜品列表
 						allDishes: [],
-						// 当前显示的菜品列表（分页后）
 						dishes: [],
-						// 当前页码
+						allTables: [],
+						tables: [],
 						currentPage: 1,
-						// 每页显示数量
 						pageSize: 15,
-						// 总页数
 						totalPages: 1,
-						// 总菜品数量
 						totalDishes: 0,
-							
-						// 选中的菜品
-						selectedDish: null,
-						selectedDish: null,
-						// 控制删除确认弹窗的显示状态。
-						showDeleteModal: false,
-						selectAll: false,
-						// 搜索关键字
+						selectedTable: null,
+						tableSelectAll: false,
+						showTableDetailModal: false,
+						tableDetailItem: null,
+						tableQrPayload: '',
+						tableQrCodeUrl: '',
 						searchKeyword: '',
-						// 原始菜品数据备份
-						originalDishes: [],
-						// 跳转页码
-						jumpPage: 1
+						tableSearchKeyword: '',
+						jumpPage: 1,
+						dishSectionOpen: true,
+						tableSectionOpen: false
 					}
 				},
-				
 				mounted() {
-					// 加载菜品数据
 					this.loadDishesFromLocalStorage();
+					this.loadTablesFromLocalStorage();
 				},
-				
 				computed: {
-					// 计算属性：获取选中的菜品
-					selectedDishes() {
-						return this.dishes.filter(dish => dish.selected);
+					selectedTables() {
+						return this.tables.filter(table => table.selected);
+					},
+					activeDishCount() {
+						return this.allDishes.filter(dish => dish.status === '已上架').length;
+					},
+					freeTableCount() {
+						return this.allTables.filter(table => table.status === '空闲').length;
 					}
 				},
-				
 				methods: {
 					formatDisplayTime(value) {
-						if (!value) {
-							return '';
-						}
+						if (!value) return '';
 						const text = String(value).trim().replace(/\s*日\//g, ' ');
 						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-						if (!match) {
-							return text;
-						}
+						if (!match) return text;
 						const pad = item => String(item).padStart(2, '0');
 						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 					},
-
-					// 将菜品数据保存到localStorage
-					saveDishesToLocalStorage() {
-						try {
-							localStorage.setItem('dishes', JSON.stringify(this.allDishes));
-							console.log('菜品数据保存成功:', this.allDishes);
-						} catch (error) {
-							console.error('数据保存失败:', error);
-							alert('数据保存失败，请检查浏览器存储权限');
-						}
+					getCurrentTime() {
+						const now = new Date();
+						const pad = item => String(item).padStart(2, '0');
+						return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 					},
-					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					
-					// 跳转到新增页面
 					navigateToAdd() {
 						window.location.href = 'dish-add.html';
 					},
-					
-					// 全选/取消全选
-					toggleSelectAll() {
-						this.dishes.forEach(dish => {
-							dish.selected = this.selectAll;
-							// 同时更新allDishes中的对应项
-							const index = this.allDishes.findIndex(d => d.id === dish.id);
-							if (index !== -1) {
-								this.allDishes[index].selected = this.selectAll;
+					toggleSection(section) {
+						if (section === 'dish') {
+							const shouldOpen = !this.dishSectionOpen;
+							this.dishSectionOpen = shouldOpen;
+							if (shouldOpen) {
+								this.tableSectionOpen = false;
 							}
-						});
-						this.updateSelectedDish();
-						this.saveDishesToLocalStorage();
-					},
-					
-					// 更新选中的菜品
-					updateSelectedDish() {
-						const selected = this.dishes.filter(dish => dish.selected);
-						this.selectedDish = selected.length === 1 ? selected[0] : null;
-						this.selectAll = this.dishes.length > 0 && selected.length === this.dishes.length;
-						// 同步选中状态到allDishes
-						this.dishes.forEach(dish => {
-							const index = this.allDishes.findIndex(d => d.id === dish.id);
-							if (index !== -1) {
-								this.allDishes[index].selected = dish.selected;
-							}
-						});
-						this.saveDishesToLocalStorage();
-					},
-					
-					// 编辑菜品
-					editDish(dish = this.selectedDish) {
-						if (dish) {
-							// 跳转到编辑页面
-							window.location.href = 'dish-edit.html?id=' + dish.id;
 							return;
 						}
-						const selectedDishes = this.dishes.filter(item => item.selected);
-						if (selectedDishes.length > 1) {
-							alert('请选择要编辑的菜品');
-						}
-					},
-					
-					// 删除菜品
-					// 为当前项打开删除确认弹窗。
-					deleteDish(dish = this.selectedDish) {
-						if (dish) {
-							this.selectedDish = dish;
-							this.showDeleteModal = true;
-						} else {
-							return;
-						}
-					},
-
-					// 取消删除并关闭弹窗。
-					cancelDelete() {
-						this.showDeleteModal = false;
-					},
-
-					// 用户确认后，删除当前待处理项。
-					confirmDelete() {
-						if (this.selectedDish) {
-							const index = this.allDishes.findIndex(d => d.id === this.selectedDish.id);
-							if (index !== -1) {
-								this.allDishes.splice(index, 1);
-								const originalIndex = this.originalDishes.findIndex(d => d.id === this.selectedDish.id);
-								if (originalIndex !== -1) {
-									this.originalDishes.splice(originalIndex, 1);
-								}
-								this.selectedDish = null;
-								this.saveDishesToLocalStorage();
-								this.updatePagination();
-								this.updateSelectedDish();
-								this.showDeleteModal = false;
+						if (section === 'table') {
+							const shouldOpen = !this.tableSectionOpen;
+							this.tableSectionOpen = shouldOpen;
+							if (shouldOpen) {
+								this.dishSectionOpen = false;
 							}
 						}
 					},
-					
-					// 刷新数据
-					refreshData() {
+					saveDishesToLocalStorage() {
 						try {
-							console.log('开始刷新数据...');
-							this.loadDishesFromLocalStorage();
-							this.currentPage = 1;
-							this.searchKeyword = '';
-							console.log('数据刷新成功');
+							localStorage.setItem('dishes', JSON.stringify(this.allDishes));
 						} catch (error) {
-							console.error('数据刷新失败:', error);
+							console.error('菜品数据保存失败:', error);
 						}
 					},
-					
-					// 获取默认菜品数据
+					saveTablesToLocalStorage() {
+						try {
+							localStorage.setItem('diningTables', JSON.stringify(this.allTables));
+						} catch (error) {
+							console.error('餐桌数据保存失败:', error);
+						}
+					},
 					getDefaultDishes() {
 						return [
-							{
-								id: '20230121153012',
-								name: '剁椒鱼头',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2023/12/27 日/19:30',
-								price: 8.9,
-								stock: 0,
-								status: '已下架',
-								selected: false
-							},
-							{
-								id: '20251121090000',
-								name: '番茄披萨',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20pizza%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/12/1 日/10:00',
-								price: 23,
-								stock: 30,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20251010100001',
-								name: '三文鱼片',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20sashimi%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/9/1 日/10:00',
-								price: 45.7,
-								stock: 1,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20240501120022',
-								name: '牛肉堡',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20burger%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/6/1 日/12:00',
-								price: 12.4,
-								stock: 2,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20260101010101',
-								name: '牛肉三件套',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20meal%20set%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2026/9/1 日/10:01',
-								price: 80.48,
-								stock: 1,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20240601120000',
-								name: '宫保鸡丁',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=kung%20pao%20chicken%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/6/1 日/12:00',
-								price: 28.5,
-								stock: 25,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20240701120000',
-								name: '麻婆豆腐',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mapo%20tofu%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/7/1 日/12:00',
-								price: 18.9,
-								stock: 30,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20240801120000',
-								name: '糖醋排骨',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sweet%20and%20sour%20ribs%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/8/1 日/12:00',
-								price: 35.6,
-								stock: 20,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20240901120000',
-								name: '清蒸鱼',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=steamed%20fish%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/9/1 日/12:00',
-								price: 42.8,
-								stock: 15,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20241001120000',
-								name: '红烧肉',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20belly%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/10/1 日/12:00',
-								price: 38.5,
-								stock: 18,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20241101120000',
-								name: '鱼香肉丝',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=yuxiang%20shredded%20pork%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/11/1 日/12:00',
-								price: 22.8,
-								stock: 25,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20241201120000',
-								name: '水煮鱼',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=boiled%20fish%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2024/12/1 日/12:00',
-								price: 48.6,
-								stock: 12,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250101120000',
-								name: '蒜蓉空心菜',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20choy%20sum%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/1/1 日/12:00',
-								price: 12.5,
-								stock: 35,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250201120000',
-								name: '椒盐排骨',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20salt%20ribs%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/2/1 日/12:00',
-								price: 32.8,
-								stock: 18,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250301120000',
-								name: '酸辣土豆丝',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sour%20and%20spicy%20shredded%20potato%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/3/1 日/12:00',
-								price: 15.8,
-								stock: 30,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250401120000',
-								name: '葱爆羊肉',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=scallion%20lamb%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/4/1 日/12:00',
-								price: 45.6,
-								stock: 15,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250501120000',
-								name: '梅菜扣肉',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20with%20preserved%20vegetables%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/5/1 日/12:00',
-								price: 36.8,
-								stock: 12,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250601120000',
-								name: '干煸四季豆',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stir-fried%20green%20beans%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/6/1 日/12:00',
-								price: 18.5,
-								stock: 25,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250701120000',
-								name: '辣子鸡',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20chicken%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/7/1 日/12:00',
-								price: 38.8,
-								stock: 15,
-								status: '已上架',
-								selected: false
-							},
-							{
-								id: '20250801120000',
-								name: '蒜蓉蒸虾',
-								image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20steamed%20shrimp%2C%20high%20quality%20photograph&image_size=square',
-								uploadTime: '2025/8/1 日/12:00',
-								price: 58.6,
-								stock: 10,
-								status: '已上架',
-								selected: false
-							}
+							{ id: '20230121153012', name: '剁椒鱼头', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20fish%20head%20dish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2023/12/27 日/19:30', price: 8.9, stock: 0, status: '已下架', selected: false },
+							{ id: '20251121090000', name: '番茄披萨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20pizza%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/12/1 日/10:00', price: 23, stock: 30, status: '已上架', selected: false },
+							{ id: '20251010100001', name: '三文鱼片', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20sashimi%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/9/1 日/10:00', price: 45.7, stock: 1, status: '已上架', selected: false },
+							{ id: '20240501120022', name: '牛肉堡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20burger%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/6/1 日/12:00', price: 12.4, stock: 2, status: '已上架', selected: false },
+							{ id: '20260101010101', name: '牛肉三件套', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20meal%20set%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2026/9/1 日/10:01', price: 80.48, stock: 1, status: '已上架', selected: false },
+							{ id: '20240601120000', name: '宫保鸡丁', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=kung%20pao%20chicken%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/6/1 日/12:00', price: 28.5, stock: 25, status: '已上架', selected: false },
+							{ id: '20240701120000', name: '麻婆豆腐', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mapo%20tofu%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/7/1 日/12:00', price: 18.9, stock: 30, status: '已上架', selected: false },
+							{ id: '20240801120000', name: '糖醋排骨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sweet%20and%20sour%20ribs%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/8/1 日/12:00', price: 35.6, stock: 20, status: '已上架', selected: false },
+							{ id: '20240901120000', name: '清蒸鱼', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=steamed%20fish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/9/1 日/12:00', price: 42.8, stock: 15, status: '已上架', selected: false },
+							{ id: '20241001120000', name: '红烧肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20belly%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/10/1 日/12:00', price: 38.5, stock: 18, status: '已上架', selected: false },
+							{ id: '20241101120000', name: '鱼香肉丝', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=yuxiang%20shredded%20pork%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/11/1 日/12:00', price: 22.8, stock: 25, status: '已上架', selected: false },
+							{ id: '20241201120000', name: '水煮鱼', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=boiled%20fish%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2024/12/1 日/12:00', price: 48.6, stock: 12, status: '已上架', selected: false },
+							{ id: '20250101120000', name: '蒜蓉空心菜', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20choy%20sum%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/1/1 日/12:00', price: 12.5, stock: 35, status: '已上架', selected: false },
+							{ id: '20250201120000', name: '椒盐排骨', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20salt%20ribs%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/2/1 日/12:00', price: 32.8, stock: 18, status: '已上架', selected: false },
+							{ id: '20250301120000', name: '酸辣土豆丝', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sour%20and%20spicy%20shredded%20potato%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/3/1 日/12:00', price: 15.8, stock: 30, status: '已上架', selected: false },
+							{ id: '20250401120000', name: '葱爆羊肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=scallion%20lamb%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/4/1 日/12:00', price: 45.6, stock: 15, status: '已上架', selected: false },
+							{ id: '20250501120000', name: '梅菜扣肉', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20with%20preserved%20vegetables%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/5/1 日/12:00', price: 36.8, stock: 12, status: '已上架', selected: false },
+							{ id: '20250601120000', name: '干煸四季豆', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stir-fried%20green%20beans%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/6/1 日/12:00', price: 18.5, stock: 25, status: '已上架', selected: false },
+							{ id: '20250701120000', name: '辣子鸡', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20chicken%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/7/1 日/12:00', price: 38.8, stock: 15, status: '已上架', selected: false },
+							{ id: '20250801120000', name: '蒜蓉蒸虾', image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20steamed%20shrimp%2C%20high%20quality%20photograph&image_size=square', uploadTime: '2025/8/1 日/12:00', price: 58.6, stock: 10, status: '已上架', selected: false }
 						];
 					},
-					
-					// 从localStorage加载菜品数据
+					getDefaultTables() {
+						return [
+							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
+							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
+							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
+							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, codeStatus: '点餐码正常', status: '停用', updateTime: '2026-03-30 16:20', selected: false },
+							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
+							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, codeStatus: '点餐码正常', status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
+							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, codeStatus: '点餐码正常', status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
+						];
+					},
+					inferTableType(table) {
+						if (table.type) return table.type;
+						const area = String(table.area || '');
+						const capacity = Number(table.capacity || 0);
+						if (area.includes('包厢')) return '包厢桌';
+						if (area.includes('露台')) return '露台桌';
+						if (capacity <= 2) return '双人桌';
+						if (capacity <= 4) return '四人桌';
+						if (capacity <= 6) return '六人桌';
+						return '多人桌';
+					},
+					inferTableDetail(table) {
+						if (table.detail) return table.detail;
+						const area = String(table.area || '');
+						const type = String(table.type || this.inferTableType(table));
+						if (area.includes('包厢')) return '独立包厢，可提供更私密的就餐环境。';
+						if (area.includes('露台')) return '户外露台位，通风较好，适合休闲用餐。';
+						if (type.includes('双人')) return '适合双人就餐，翻台灵活。';
+						if (type.includes('四人')) return '适合家庭或朋友聚餐。';
+						if (type.includes('六人')) return '适合多人聚餐，可灵活拼桌。';
+						return '标准散台，可按现场接待灵活安排。';
+					},
 					loadDishesFromLocalStorage() {
 						try {
-							// 直接使用最新的默认数据，确保数据更新
-							this.allDishes = this.getDefaultDishes().map(dish => ({
-								...dish,
-								uploadTime: this.formatDisplayTime(dish.uploadTime)
-							}));
-							this.originalDishes = JSON.parse(JSON.stringify(this.allDishes));
+							const cached = JSON.parse(localStorage.getItem('dishes') || 'null');
+							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultDishes();
+							this.allDishes = source.map(dish => ({ ...dish, selected: Boolean(dish.selected), uploadTime: this.formatDisplayTime(dish.uploadTime) }));
+							if (!cached || !cached.length) this.saveDishesToLocalStorage();
+							this.applyDishFilter();
+						} catch (error) {
+							console.error('菜品数据加载失败:', error);
+							this.allDishes = this.getDefaultDishes().map(dish => ({ ...dish, selected: false, uploadTime: this.formatDisplayTime(dish.uploadTime) }));
 							this.saveDishesToLocalStorage();
-							console.log('加载最新默认菜品数据:', this.allDishes);
-							this.updatePagination();
-						} catch (error) {
-							console.error('数据加载失败:', error);
-							// 加载失败时使用默认数据
-							this.allDishes = this.getDefaultDishes().map(dish => ({
-								...dish,
-								uploadTime: this.formatDisplayTime(dish.uploadTime)
-							}));
-							this.originalDishes = JSON.parse(JSON.stringify(this.allDishes));
-							this.updatePagination();
+							this.applyDishFilter();
 						}
 					},
-					
-					// 搜索菜品
-					searchDishes() {
-						if (!this.searchKeyword) {
-							// 如果搜索关键字为空，恢复原始菜品数据
-							this.allDishes = JSON.parse(JSON.stringify(this.originalDishes));
-							this.currentPage = 1;
-							this.updatePagination();
-							return;
-						}
-						
+					loadTablesFromLocalStorage() {
 						try {
-							// 根据搜索关键字过滤菜品
-							const keyword = this.searchKeyword.toLowerCase();
-							this.allDishes = this.originalDishes.filter(dish => {
-								// 搜索菜品ID、菜品名称
-								return dish.id.toLowerCase().includes(keyword) || 
-								       dish.name.toLowerCase().includes(keyword);
-							});
-							console.log('搜索结果:', this.allDishes);
-							this.currentPage = 1;
-							this.updatePagination();
+							const cached = JSON.parse(localStorage.getItem('diningTables') || 'null');
+							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultTables();
+							this.allTables = source.map(table => ({
+								...table,
+								type: this.inferTableType(table),
+								selected: Boolean(table.selected),
+								updateTime: this.formatDisplayTime(table.updateTime)
+							}));
+							if (!cached || !cached.length) this.saveTablesToLocalStorage();
+							this.applyTableFilter();
 						} catch (error) {
-							console.error('搜索失败:', error);
-							alert('搜索失败，请重试');
+							console.error('餐桌数据加载失败:', error);
+							this.allTables = this.getDefaultTables().map(table => ({
+								...table,
+								type: this.inferTableType(table),
+								selected: false,
+								updateTime: this.formatDisplayTime(table.updateTime)
+							}));
+							this.saveTablesToLocalStorage();
+							this.applyTableFilter();
 						}
 					},
-					
-					// 更新分页
-					updatePagination() {
-						this.totalDishes = this.allDishes.length;
-						this.totalPages = Math.ceil(this.totalDishes / this.pageSize) || 1;
-						if (this.currentPage > this.totalPages) {
-							this.currentPage = this.totalPages;
-						}
+					filterDishes() {
+						const keyword = this.searchKeyword.trim().toLowerCase();
+						if (!keyword) return this.allDishes;
+						return this.allDishes.filter(dish => String(dish.id).toLowerCase().includes(keyword) || String(dish.name).toLowerCase().includes(keyword));
+					},
+					filterTables() {
+						const keyword = this.tableSearchKeyword.trim().toLowerCase();
+						if (!keyword) return this.allTables;
+						return this.allTables.filter(table =>
+							String(table.id).toLowerCase().includes(keyword) ||
+							String(table.area).toLowerCase().includes(keyword) ||
+							String(table.type).toLowerCase().includes(keyword)
+						);
+					},
+					applyDishFilter() {
+						const filtered = this.filterDishes();
+						this.totalDishes = filtered.length;
+						this.totalPages = Math.max(1, Math.ceil(this.totalDishes / this.pageSize));
+						if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
 						const startIndex = (this.currentPage - 1) * this.pageSize;
-						const endIndex = startIndex + this.pageSize;
-						this.dishes = this.allDishes.slice(startIndex, endIndex);
-						console.log('分页更新:', { currentPage: this.currentPage, totalPages: this.totalPages, dishesCount: this.dishes.length });
+						this.dishes = filtered.slice(startIndex, startIndex + this.pageSize);
+						this.jumpPage = this.currentPage;
 					},
-					
-					// 切换页面
+					applyTableFilter() {
+						this.tables = this.filterTables();
+						this.syncTableSelectionState();
+					},
+					syncTableSelectionState() {
+						const selected = this.tables.filter(table => table.selected);
+						this.selectedTable = selected.length === 1 ? selected[0] : null;
+						this.tableSelectAll = this.tables.length > 0 && selected.length === this.tables.length;
+					},
+					searchDishes() {
+						this.currentPage = 1;
+						this.applyDishFilter();
+					},
+					searchTables() {
+						this.applyTableFilter();
+					},
+					toggleSelectAllTables() {
+						this.tables.forEach(table => {
+							table.selected = this.tableSelectAll;
+						});
+						this.syncTableSelectionState();
+						this.saveTablesToLocalStorage();
+					},
+					updateSelectedTable() {
+						this.syncTableSelectionState();
+						this.saveTablesToLocalStorage();
+					},
+					editDish(dish) {
+						window.location.href = 'dish-edit.html?id=' + dish.id;
+					},
+					editTable(table) {
+						window.location.href = 'table-form.html?id=' + encodeURIComponent(table.id);
+					},
+					refreshDishData() {
+						this.searchKeyword = '';
+						this.currentPage = 1;
+						this.loadDishesFromLocalStorage();
+					},
+					refreshTableData() {
+						this.tableSearchKeyword = '';
+						this.loadTablesFromLocalStorage();
+					},
 					changePage(page) {
-						if (page >= 1 && page <= this.totalPages) {
-							this.currentPage = page;
-							this.updatePagination();
-						}
+						if (page < 1 || page > this.totalPages) return;
+						this.currentPage = page;
+						this.applyDishFilter();
 					},
-					
-					// 跳转到指定页面
 					jumpToPage() {
 						if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
 							this.currentPage = this.jumpPage;
-							this.updatePagination();
-						} else {
-							console.log('请输入有效页码！')
+							this.applyDishFilter();
+							return;
 						}
+						alert('请输入有效页码');
+					},
+					addTable() {
+						window.location.href = 'table-form.html';
+					},
+					getTableStatusClass(status) {
+						if (status === '空闲') return 'free';
+						if (status === '使用中') return 'busy';
+						return 'offline';
+					},
+					getTableActionText(status) {
+						if (status === '空闲') return '设为使用中';
+						if (status === '使用中') return '设为停用';
+						return '恢复空闲';
+					},
+					buildTableScanUrl(table) {
+						const targetUrl = new URL('table-scan.html', window.location.href);
+						targetUrl.searchParams.set('tableId', table.id);
+						targetUrl.searchParams.set('area', table.area);
+						targetUrl.searchParams.set('type', table.type);
+						targetUrl.searchParams.set('capacity', table.capacity);
+						targetUrl.searchParams.set('status', table.status);
+						targetUrl.searchParams.set('codeStatus', table.codeStatus);
+						return targetUrl.toString();
+					},
+					buildTableQrPayload(table) {
+						return this.buildTableScanUrl(table);
+					},
+					buildTableQrCodeUrl(payload) {
+						return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(payload)}`;
+					},
+					openTableDetail(table) {
+						this.tableDetailItem = {
+							...table,
+							type: this.inferTableType(table),
+							detail: this.inferTableDetail(table)
+						};
+						this.tableQrPayload = this.buildTableQrPayload(this.tableDetailItem);
+						this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.tableQrPayload);
+						this.showTableDetailModal = true;
+					},
+					closeTableDetail() {
+						this.showTableDetailModal = false;
+						this.tableDetailItem = null;
+						this.tableQrPayload = '';
+						this.tableQrCodeUrl = '';
+					},
+					toggleTableStatus(table) {
+						const nextStatusMap = { '空闲': '使用中', '使用中': '停用', '停用': '空闲' };
+						table.status = nextStatusMap[table.status] || '空闲';
+						table.updateTime = this.getCurrentTime();
+						this.saveTablesToLocalStorage();
+						this.applyTableFilter();
+					},
+					deleteTable(table = null) {
+						const targets = table ? [table] : this.selectedTables.slice();
+						if (!targets.length) return;
+						const message = targets.length === 1 ? `确定删除餐桌 ${targets[0].id} 吗？` : `确定删除已选择的 ${targets.length} 张餐桌吗？`;
+						if (!window.confirm(message)) return;
+						const removeSet = new Set(targets.map(item => item.id));
+						this.allTables = this.allTables.filter(item => !removeSet.has(item.id));
+						this.saveTablesToLocalStorage();
+						this.applyTableFilter();
 					}
 				}
 			}).mount('#app')

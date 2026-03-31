@@ -140,6 +140,25 @@
 			height: 100px;
 			resize: vertical;
 		}
+
+		.weight-input-group{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.weight-input-group input{
+			flex: 1;
+			min-width: 0;
+			font-size: 15px;
+		}
+
+		.weight-input-group select{
+			width: 110px;
+			flex: 0 0 110px;
+			font-size: 15px;
+			font-weight: 500;
+		}
 		
 		/* 图片上传区域 */
 		.image-upload{
@@ -273,8 +292,8 @@
 							<div class="form-row">
 								<div class="form-group">
 									<label>净含量</label>
-									<div style="display: flex;">
-										<input type="number" v-model="productForm.netWeight" style="flex: 1; margin-right: 10px;" />
+									<div class="weight-input-group">
+										<input type="number" v-model="productForm.netWeight" />
 										<select v-model="productForm.weightUnit">
 											<option value="kg">kg</option>
 											<option value="g">g</option>
