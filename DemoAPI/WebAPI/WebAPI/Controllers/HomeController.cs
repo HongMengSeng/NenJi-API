@@ -48,11 +48,7 @@ public class HomeController : ControllerBase
     public async Task<IActionResult> GetHomeVideo(CancellationToken cancellationToken)
     {
         var items = await LoadHomeVideosAsync(cancellationToken);
-
-        return Ok(ApiResult.Success(new
-        {
-            items
-        }));
+        return Ok(ApiResult.Success(new { items }));
     }
 
     private async Task<IActionResult> BuildHomeResponseAsync(
@@ -73,7 +69,7 @@ public class HomeController : ControllerBase
                 .Select(x => new SwiperItem
                 {
                     Id = (int)x.CarouselId,
-                    Image = x.ImageUrl,
+                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                     LinkUrl = x.LinkUrl ?? string.Empty,
                     Title = x.Title
                 })
@@ -91,7 +87,7 @@ public class HomeController : ControllerBase
                     Name = x.Name,
                     Description = x.Description,
                     Price = x.Price,
-                    Image = x.ImageUrl
+                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty
                 })
                 .ToListAsync(cancellationToken);
 
@@ -104,6 +100,8 @@ public class HomeController : ControllerBase
                     .OrderByDescending(x => x.CommodityId),
                 cancellationToken);
 
+            allFarmGoods = EnsureBlackPorkImage(allFarmGoods);
+
             var allHotDishes = await _dbContext.Dishes
                 .AsNoTracking()
                 .Where(x => x.Status == 1)
@@ -113,7 +111,7 @@ public class HomeController : ControllerBase
                 {
                     Id = x.DishId,
                     Name = x.DishName,
-                    Image = x.ImageUrl,
+                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                     Price = x.DishPrice,
                     Tags = string.IsNullOrWhiteSpace(x.AttributeName)
                         ? new List<string>()
@@ -162,7 +160,7 @@ public class HomeController : ControllerBase
         {
             Id = x.CommodityId,
             Name = x.ProductName,
-            Image = x.ImageUrl ?? string.Empty,
+            Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
             Price = ResolveCommodityPrice(x.ProductName),
             OriginalPrice = ResolveCommodityPrice(x.ProductName) + 3m,
             Tags = tags.TryGetValue(x.CommodityId, out var itemTags) ? itemTags : [],
@@ -172,20 +170,47 @@ public class HomeController : ControllerBase
 
     private async Task<List<HomeVideoItem>> LoadHomeVideosAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Videos
+        var rows = await _dbContext.Videos
             .AsNoTracking()
-            .Where(x => x.Status == 1)
+            .Where(x => x.Status == 1 && !string.IsNullOrWhiteSpace(x.VideoUrl))
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.VideoId)
+            .Select(x => new
+            {
+                x.VideoId,
+                x.CoverUrl,
+                x.VideoUrl
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
             .Select(x => new HomeVideoItem
             {
                 Id = (int)x.VideoId,
-                Title = x.Title,
-                CoverImage = x.CoverUrl,
-                VideoUrl = x.VideoUrl,
-                Description = x.Title
+                CoverImage = NormalizeMediaUrl(x.CoverUrl) ?? string.Empty,
+                VideoUrl = NormalizeMediaUrl(x.VideoUrl) ?? string.Empty
             })
-            .ToListAsync(cancellationToken);
+            .Where(x => !string.IsNullOrWhiteSpace(x.VideoUrl))
+            .ToList();
+    }
+
+    private static List<FarmGoodsItem> EnsureBlackPorkImage(List<FarmGoodsItem> goods)
+    {
+        var fallbackImage = goods.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Image))?.Image ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(fallbackImage))
+        {
+            return goods;
+        }
+
+        foreach (var item in goods.Where(x =>
+                     (x.Name.Contains("黑猪", StringComparison.OrdinalIgnoreCase)
+                      || x.Name.Contains("猪肉", StringComparison.OrdinalIgnoreCase))
+                     && string.IsNullOrWhiteSpace(x.Image)))
+        {
+            item.Image = fallbackImage;
+        }
+
+        return goods;
     }
 
     private static List<FunctionButton> BuildFunctionButtons()
@@ -205,7 +230,7 @@ public class HomeController : ControllerBase
         {
             "有机生菜" => 12.8m,
             "黄金甜玉米" => 8.8m,
-            "农家番茄" => 9.9m,
+            "农家西红柿" => 9.9m,
             "红富士苹果" => 19.9m,
             "香甜橙子" => 15.9m,
             "散养土鸡蛋" => 16.8m,
@@ -237,6 +262,30 @@ public class HomeController : ControllerBase
             .ToDictionary(
                 group => group.Key,
                 group => group.Select(x => x.TagName).Distinct().ToList());
+    }
+
+    private static string? NormalizeMediaUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var trimmed = url.Trim();
+
+        var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+        if (duplicateHttps > 0)
+        {
+            trimmed = trimmed[..duplicateHttps];
+        }
+
+        var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+        if (duplicateHttp > 0)
+        {
+            trimmed = trimmed[..duplicateHttp];
+        }
+
+        return trimmed.Trim();
     }
 
     private sealed class HomeIndexResponse
@@ -278,10 +327,8 @@ public class HomeController : ControllerBase
     private sealed class HomeVideoItem
     {
         public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
         public string CoverImage { get; set; } = string.Empty;
         public string VideoUrl { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
     }
 
     private sealed class FarmGoodsItem

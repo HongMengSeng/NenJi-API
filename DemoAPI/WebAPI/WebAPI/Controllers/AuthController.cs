@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -18,6 +19,8 @@ namespace WebAPI.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    private readonly IConfiguration _config;
+    private readonly HttpClient _httpClient;
     private readonly IAuthService _authService;
     private readonly AppDbContext _dbContext;
     private readonly IConfiguration _configuration;
@@ -27,12 +30,16 @@ public class AuthController : ControllerBase
         IAuthService authService,
         AppDbContext dbContext,
         IConfiguration configuration,
-        JwtHelper jwtHelper)
+        JwtHelper jwtHelper,
+        IHttpClientFactory httpClientFactory)
     {
         _authService = authService;
         _dbContext = dbContext;
         _configuration = configuration;
         _jwtHelper = jwtHelper;
+
+        _config = configuration;
+        _httpClient = httpClientFactory.CreateClient();
     }
 
     /// <summary>
@@ -121,9 +128,10 @@ public class AuthController : ControllerBase
                 token,
                 isNewUser,
                 user_id = user.UserId,
-                user_guid = user.UserNo,     // UserNo 对应数据库里的 user_guid
+                user_guid = user.UserNo,
                 register_time = user.RegisterTime,
-                openid = user.WxOpenId
+                openid = user.WxOpenId,
+                phone_number = user.PhoneNumber
             }));
         }
         catch (Exception ex)
@@ -166,7 +174,8 @@ public class AuthController : ControllerBase
                 user_id = user.UserId,
                 user_guid = user.UserNo,
                 register_time = user.RegisterTime,
-                openid = user.WxOpenId
+                openid = user.WxOpenId,
+                phone_number = user.PhoneNumber
             }));
         }
         catch (Exception ex)
@@ -174,6 +183,147 @@ public class AuthController : ControllerBase
             Console.WriteLine("========== Check ERROR ==========");
             Console.WriteLine(ex.ToString());
             Console.WriteLine("=================================");
+
+            return Ok(ApiResult.Fail("服务器异常，请稍后重试"));
+        }
+    }
+
+    /// <summary>
+    /// 获取并保存微信手机号
+    /// 前端传入 getPhoneNumber 返回的 code
+    /// 需要登录后调用
+    /// </summary>
+    [HttpPost("phone")]
+    [Authorize]
+    public async Task<ActionResult<ApiResult>> GetPhoneNumber(
+        [FromBody] AuthPhoneCodeRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Code))
+            {
+                return Ok(ApiResult.Fail("code不能为空"));
+            }
+
+            var userId = TryGetCurrentUserId();
+            if (userId is null)
+            {
+                return Ok(ApiResult.Fail("登录状态无效", 401));
+            }
+
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
+
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
+            string appId = _config["WeChat:AppId"] ?? string.Empty;
+            string appSecret = _config["WeChat:AppSecret"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+            {
+                return Ok(ApiResult.Fail("微信配置缺失"));
+            }
+
+            string tokenUrl =
+                $"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={Uri.EscapeDataString(appId)}&secret={Uri.EscapeDataString(appSecret)}";
+
+            using var tokenResp = await _httpClient.GetAsync(tokenUrl, cancellationToken);
+            var tokenJson = await tokenResp.Content.ReadAsStringAsync(cancellationToken);
+
+            Console.WriteLine("========== GetPhone token response ==========");
+            Console.WriteLine(tokenJson);
+            Console.WriteLine("============================================");
+
+            tokenResp.EnsureSuccessStatusCode();
+
+            var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenJson);
+
+            if (tokenData.TryGetProperty("errcode", out var errCode) && errCode.GetInt32() != 0)
+            {
+                string errMsg = tokenData.TryGetProperty("errmsg", out var errmsgValue)
+                    ? errmsgValue.GetString() ?? "获取token失败"
+                    : "获取token失败";
+
+                return Ok(ApiResult.Fail(errMsg));
+            }
+
+            string accessToken = tokenData.GetProperty("access_token").GetString() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                return Ok(ApiResult.Fail("access_token获取失败"));
+            }
+
+            string phoneUrl =
+                $"https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token={Uri.EscapeDataString(accessToken)}";
+
+            var postData = new { code = request.Code };
+            using var content = new StringContent(
+                JsonSerializer.Serialize(postData),
+                Encoding.UTF8,
+                "application/json");
+
+            using var phoneResp = await _httpClient.PostAsync(phoneUrl, content, cancellationToken);
+            var phoneJson = await phoneResp.Content.ReadAsStringAsync(cancellationToken);
+
+            Console.WriteLine("========== GetPhone phone response ==========");
+            Console.WriteLine(phoneJson);
+            Console.WriteLine("============================================");
+
+            phoneResp.EnsureSuccessStatusCode();
+
+            var phoneData = JsonSerializer.Deserialize<JsonElement>(phoneJson);
+
+            int phoneErrCode = phoneData.TryGetProperty("errcode", out var phoneErrCodeValue)
+                ? phoneErrCodeValue.GetInt32()
+                : -1;
+
+            if (phoneErrCode != 0)
+            {
+                string phoneErrMsg = phoneData.TryGetProperty("errmsg", out var phoneErrMsgValue)
+                    ? phoneErrMsgValue.GetString() ?? "获取手机号失败"
+                    : "获取手机号失败";
+
+                return Ok(ApiResult.Fail(phoneErrMsg, phoneErrCode));
+            }
+
+            if (!phoneData.TryGetProperty("phone_info", out var phoneInfo))
+            {
+                return Ok(ApiResult.Fail("未返回手机号信息"));
+            }
+
+            var phoneNumber = phoneInfo.TryGetProperty("phoneNumber", out var phoneNumberValue)
+                ? phoneNumberValue.GetString() ?? string.Empty
+                : string.Empty;
+
+            var purePhoneNumber = phoneInfo.TryGetProperty("purePhoneNumber", out var purePhoneNumberValue)
+                ? purePhoneNumberValue.GetString() ?? string.Empty
+                : string.Empty;
+
+            var countryCode = phoneInfo.TryGetProperty("countryCode", out var countryCodeValue)
+                ? countryCodeValue.GetString() ?? string.Empty
+                : string.Empty;
+
+            user.PhoneNumber = purePhoneNumber;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(new
+            {
+                user_id = user.UserId,
+                user_guid = user.UserNo,
+                phoneNumber,
+                purePhoneNumber,
+                countryCode
+            }));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("========== GetPhoneNumber ERROR ==========");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("=========================================");
 
             return Ok(ApiResult.Fail("服务器异常，请稍后重试"));
         }
@@ -244,7 +394,7 @@ public class AuthController : ControllerBase
 
         return new User
         {
-            UserNo = Guid.NewGuid().ToString("N"), // 这里当成 user_guid 用
+            UserNo = Guid.NewGuid().ToString("N"),
             PhoneNumber = string.Empty,
             RegisterTime = DateTime.Now,
             WxOpenId = openId,
@@ -273,5 +423,13 @@ public class AuthController : ControllerBase
 
         [JsonPropertyName("errmsg")]
         public string? ErrMsg { get; set; }
+    }
+
+    /// <summary>
+    /// 获取手机号请求参数
+    /// </summary>
+    public sealed class AuthPhoneCodeRequest
+    {
+        public string Code { get; set; } = string.Empty;
     }
 }

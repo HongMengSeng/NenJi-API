@@ -49,13 +49,16 @@ public class ActivityController : ControllerBase
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Where(x => x.Status == 1 && x.ActivityId == id)
-            .Select(x => new ActivitySummaryDto
+            .Select(x => new ActivityDetailSummary
             {
                 Id = (int)x.ActivityId,
                 Title = x.Title,
-                Price = x.PriceText,
+                Price = $"¥{x.PriceText}",
                 Date = x.DateText,
-                Image = x.ImageUrl
+                Image = x.ImageUrl,
+                CategoryName = ResolveCategoryName(x.Title),
+                Participants = x.Participants,
+                RemainingSlots = x.RemainingSlots
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -72,6 +75,24 @@ public class ActivityController : ControllerBase
         return Ok(ApiResult.Success(data));
     }
 
+    [HttpPost("{id:int}/register")]
+    public ActionResult<ApiResult> Register(int id)
+    {
+        if (id <= 0)
+        {
+            return Ok(ApiResult.Fail("活动 id 参数不正确", 400));
+        }
+
+        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return Ok(ApiResult.Success(new
+        {
+            id = orderId,
+            orderId,
+            activityId = id,
+            paymentStatus = "pending_payment"
+        }));
+    }
+
     private async Task<List<ActivitySummaryDto>> LoadActivitySummariesAsync(CancellationToken cancellationToken)
     {
         return await _dbContext.Activities
@@ -83,25 +104,29 @@ public class ActivityController : ControllerBase
             {
                 Id = (int)x.ActivityId,
                 Title = x.Title,
-                Price = x.PriceText,
+                Price = $"¥{x.PriceText}",
                 Date = x.DateText,
-                Image = x.ImageUrl
+                Image = x.ImageUrl,
+                CategoryName = ResolveCategoryName(x.Title)
             })
             .ToListAsync(cancellationToken);
     }
 
-    private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivitySummaryDto summary)
+    private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)
     {
         detail.Id = summary.Id;
         detail.Title = summary.Title;
         detail.Price = summary.Price;
         detail.Date = summary.Date;
         detail.Image = summary.Image;
-        detail.Images = string.IsNullOrWhiteSpace(summary.Image) ? [] : [summary.Image];
+        detail.CategoryName = summary.CategoryName;
+        detail.Images = EnsureFourImages(detail.Images, summary.Image);
+        detail.Participants = summary.Participants;
+        detail.RemainingSlots = summary.RemainingSlots;
         return detail;
     }
 
-    private static ActivityDetailDto BuildDetailFallback(ActivitySummaryDto summary)
+    private static ActivityDetailDto BuildDetailFallback(ActivityDetailSummary summary)
     {
         return new ActivityDetailDto
         {
@@ -110,11 +135,56 @@ public class ActivityController : ControllerBase
             Price = summary.Price,
             Date = summary.Date,
             Image = summary.Image,
-            Images = string.IsNullOrWhiteSpace(summary.Image) ? [] : [summary.Image],
+            Images = EnsureFourImages([], summary.Image),
+            CategoryName = summary.CategoryName,
             Description = summary.Title,
             Location = string.Empty,
             People = string.Empty,
-            Content = string.Empty
+            Content = string.Empty,
+            Participants = summary.Participants,
+            RemainingSlots = summary.RemainingSlots
         };
+    }
+
+    private static List<string> EnsureFourImages(IEnumerable<string>? images, string? fallbackImage)
+    {
+        var result = (images ?? [])
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToList();
+
+        var fallback = string.IsNullOrWhiteSpace(fallbackImage) ? string.Empty : fallbackImage.Trim();
+        if (result.Count == 0 && !string.IsNullOrWhiteSpace(fallback))
+        {
+            result.Add(fallback);
+        }
+
+        while (result.Count > 0 && result.Count < 4)
+        {
+            result.Add(result[result.Count - 1]);
+        }
+
+        return result;
+    }
+
+    private static string ResolveCategoryName(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return "采摘活动";
+        }
+
+        return title.Contains("露营", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("camp", StringComparison.OrdinalIgnoreCase)
+            ? "露营"
+            : "采摘活动";
+    }
+
+    private sealed class ActivityDetailSummary : ActivitySummaryDto
+    {
+        public int Participants { get; set; }
+        public int RemainingSlots { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace WebAPI.Controllers;
 [Route("api/user")]
 public class UserController : ControllerBase
 {
+    private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
 
     public UserController(AppDbContext dbContext)
@@ -41,11 +42,7 @@ public class UserController : ControllerBase
     {
         try
         {
-            var userId = GetCurrentUserId();
-            var user = await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
-
+            var user = await GetCurrentUserAsync(cancellationToken);
             if (user is null)
             {
                 return Ok(ApiResult.Fail("用户不存在", 404));
@@ -76,9 +73,7 @@ public class UserController : ControllerBase
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
-            var user = await _dbContext.Users
-                .FirstOrDefaultAsync(x => x.UserId == GetCurrentUserId(), cancellationToken);
-
+            var user = await GetCurrentUserAsync(cancellationToken);
             if (user is null)
             {
                 return Ok(ApiResult.Fail("用户不存在", 404));
@@ -104,34 +99,34 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("address")]
+    [HttpGet("/api/address/list")]
     public async Task<IActionResult> Address(CancellationToken cancellationToken)
     {
         try
         {
-            var userId = GetCurrentUserId();
-            var userPhone = await _dbContext.Users
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Select(x => x.PhoneNumber)
-                .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
-
-            var addresses = await _dbContext.ShippingAddresses
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.AddressId)
-                .ToListAsync(cancellationToken);
-
-            var data = addresses.Select((x, index) => new AddressResponse
+            var user = await GetCurrentUserAsync(cancellationToken);
+            if (user is null)
             {
-                Id = x.AddressId,
-                Name = x.ContactName,
-                Phone = userPhone,
-                Province = x.Province,
-                City = x.City,
-                District = x.MunicipalDistrict,
-                Address = $"{x.Town}{x.HouseNumber}",
-                IsDefault = index == 0
-            }).ToList();
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
+            var data = await _dbContext.ShippingAddresses
+                .AsNoTracking()
+                .Where(x => x.UserId == user.UserId)
+                .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
+                .ThenByDescending(x => x.AddressId)
+                .Select(x => new AddressResponse
+                {
+                    Id = x.AddressId,
+                    Name = x.ContactName,
+                    Phone = user.PhoneNumber ?? string.Empty,
+                    Province = x.Province,
+                    City = x.City,
+                    District = x.MunicipalDistrict,
+                    Address = $"{x.Town}{x.HouseNumber}",
+                    IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
+                })
+                .ToListAsync(cancellationToken);
 
             return Ok(ApiResult.Success(data));
         }
@@ -141,7 +136,53 @@ public class UserController : ControllerBase
         }
     }
 
+    [HttpGet("/api/address/{id:int}")]
+    public async Task<IActionResult> GetAddressById(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (id <= 0)
+            {
+                return Ok(ApiResult.Fail("请求参数不正确", 400));
+            }
+
+            var user = await GetCurrentUserAsync(cancellationToken);
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
+            var data = await _dbContext.ShippingAddresses
+                .AsNoTracking()
+                .Where(x => x.AddressId == id && x.UserId == user.UserId)
+                .Select(x => new AddressResponse
+                {
+                    Id = x.AddressId,
+                    Name = x.ContactName,
+                    Phone = user.PhoneNumber ?? string.Empty,
+                    Province = x.Province,
+                    City = x.City,
+                    District = x.MunicipalDistrict,
+                    Address = $"{x.Town}{x.HouseNumber}",
+                    IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (data is null)
+            {
+                return Ok(ApiResult.Fail("地址不存在", 404));
+            }
+
+            return Ok(ApiResult.Success(data));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取地址详情失败：{ex.Message}"));
+        }
+    }
+
     [HttpPost("address")]
+    [HttpPost("/api/address")]
     public async Task<IActionResult> CreateAddress([FromBody] SaveAddressRequest? request, CancellationToken cancellationToken)
     {
         try
@@ -151,10 +192,26 @@ public class UserController : ControllerBase
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
-            var (town, houseNumber) = SplitAddress(request!.Address);
+            var user = await GetCurrentUserAsync(cancellationToken);
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
+            var hasAnyAddress = await _dbContext.ShippingAddresses
+                .AsNoTracking()
+                .AnyAsync(x => x.UserId == user.UserId, cancellationToken);
+
+            var shouldSetDefault = request!.IsDefault || !hasAnyAddress;
+            if (shouldSetDefault)
+            {
+                await ClearDefaultAddressesAsync(user.UserId, cancellationToken);
+            }
+
+            var (town, houseNumber) = SplitAddress(request.Address);
             var address = new ShippingAddress
             {
-                UserId = GetCurrentUserId(),
+                UserId = user.UserId,
                 ContactName = request.Name.Trim(),
                 Province = request.Province.Trim(),
                 City = request.City.Trim(),
@@ -164,6 +221,8 @@ public class UserController : ControllerBase
             };
 
             _dbContext.ShippingAddresses.Add(address);
+            SetDefaultFlag(address, shouldSetDefault);
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Ok(ApiResult.Success());
         }
@@ -174,18 +233,55 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("address")]
-    public async Task<IActionResult> UpdateAddress([FromBody] SaveAddressRequest? request, CancellationToken cancellationToken)
+    public Task<IActionResult> UpdateAddress([FromBody] SaveAddressRequest? request, CancellationToken cancellationToken)
+    {
+        return UpdateAddressCore(request, null, cancellationToken);
+    }
+
+    [HttpPut("/api/address/{id:int}")]
+    public Task<IActionResult> UpdateAddressById(int id, [FromBody] SaveAddressRequest? request, CancellationToken cancellationToken)
+    {
+        request ??= new SaveAddressRequest();
+        request.Id = id;
+        return UpdateAddressCore(request, id, cancellationToken);
+    }
+
+    [HttpDelete("address")]
+    public Task<IActionResult> DeleteAddress([FromBody] DeleteAddressRequest? request, CancellationToken cancellationToken)
+    {
+        return DeleteAddressCore(request?.Id ?? 0, cancellationToken);
+    }
+
+    [HttpDelete("/api/address/{id:int}")]
+    public Task<IActionResult> DeleteAddressById(int id, CancellationToken cancellationToken)
+    {
+        return DeleteAddressCore(id, cancellationToken);
+    }
+
+    private async Task<IActionResult> UpdateAddressCore(SaveAddressRequest? request, int? routeId, CancellationToken cancellationToken)
     {
         try
         {
+            if (routeId.HasValue && routeId.Value > 0)
+            {
+                request ??= new SaveAddressRequest();
+                request.Id = routeId;
+            }
+
             if (!IsValidAddressRequest(request, true))
             {
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
+            var user = await GetCurrentUserAsync(cancellationToken);
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
             var updateRequest = request!;
             var address = await _dbContext.ShippingAddresses
-                .FirstOrDefaultAsync(x => x.AddressId == updateRequest.Id && x.UserId == GetCurrentUserId(), cancellationToken);
+                .FirstOrDefaultAsync(x => x.AddressId == updateRequest.Id && x.UserId == user.UserId, cancellationToken);
 
             if (address is null)
             {
@@ -199,8 +295,15 @@ public class UserController : ControllerBase
             address.MunicipalDistrict = updateRequest.District.Trim();
             address.Town = town;
             address.HouseNumber = houseNumber;
+            SetDefaultFlag(address, updateRequest.IsDefault);
+
+            if (updateRequest.IsDefault)
+            {
+                await ClearDefaultAddressesAsync(user.UserId, cancellationToken, address.AddressId);
+            }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+            await EnsureDefaultAddressExistsAsync(user.UserId, cancellationToken);
             return Ok(ApiResult.Success());
         }
         catch (Exception ex)
@@ -209,18 +312,23 @@ public class UserController : ControllerBase
         }
     }
 
-    [HttpDelete("address")]
-    public async Task<IActionResult> DeleteAddress([FromBody] DeleteAddressRequest? request, CancellationToken cancellationToken)
+    private async Task<IActionResult> DeleteAddressCore(int id, CancellationToken cancellationToken)
     {
         try
         {
-            if (request is null || request.Id <= 0)
+            if (id <= 0)
             {
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
+            var user = await GetCurrentUserAsync(cancellationToken);
+            if (user is null)
+            {
+                return Ok(ApiResult.Fail("用户不存在", 404));
+            }
+
             var address = await _dbContext.ShippingAddresses
-                .FirstOrDefaultAsync(x => x.AddressId == request.Id && x.UserId == GetCurrentUserId(), cancellationToken);
+                .FirstOrDefaultAsync(x => x.AddressId == id && x.UserId == user.UserId, cancellationToken);
 
             if (address is null)
             {
@@ -229,6 +337,7 @@ public class UserController : ControllerBase
 
             _dbContext.ShippingAddresses.Remove(address);
             await _dbContext.SaveChangesAsync(cancellationToken);
+            await EnsureDefaultAddressExistsAsync(user.UserId, cancellationToken);
             return Ok(ApiResult.Success());
         }
         catch (Exception ex)
@@ -237,12 +346,42 @@ public class UserController : ControllerBase
         }
     }
 
-    private int GetCurrentUserId()
+    private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("userId");
-        return int.TryParse(userIdValue, out var userId)
-            ? userId
-            : throw new InvalidOperationException("未授权，请重新登录");
+        var userGuid = GetCurrentUserGuid();
+        if (!string.IsNullOrWhiteSpace(userGuid))
+        {
+            var userByGuid = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.UserNo == userGuid, cancellationToken);
+            if (userByGuid is not null)
+            {
+                return userByGuid;
+            }
+        }
+
+        var userId = GetCurrentUserIdOrNull();
+        if (userId is null)
+        {
+            return null;
+        }
+
+        return await _dbContext.Users
+            .FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
+    }
+
+    private string GetCurrentUserGuid()
+    {
+        return (User.FindFirstValue("userNo")
+            ?? User.FindFirstValue("user_guid")
+            ?? User.FindFirstValue("userGuid")
+            ?? string.Empty).Trim();
+    }
+
+    private int? GetCurrentUserIdOrNull()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("userId");
+        return int.TryParse(userIdValue, out var userId) ? userId : null;
     }
 
     private static bool IsValidAddressRequest(SaveAddressRequest? request, bool requireId)
@@ -275,6 +414,54 @@ public class UserController : ControllerBase
         return address.Length <= 50
             ? (string.Empty, address)
             : (address[..50], address[50..]);
+    }
+
+    private async Task ClearDefaultAddressesAsync(int userId, CancellationToken cancellationToken, int? keepAddressId = null)
+    {
+        var query = _dbContext.ShippingAddresses
+            .Where(x => x.UserId == userId && EF.Property<bool>(x, DefaultFlagProperty));
+
+        if (keepAddressId.HasValue)
+        {
+            query = query.Where(x => x.AddressId != keepAddressId.Value);
+        }
+
+        var defaultAddresses = await query.ToListAsync(cancellationToken);
+        if (defaultAddresses.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in defaultAddresses)
+        {
+            SetDefaultFlag(item, false);
+        }
+    }
+
+    private async Task EnsureDefaultAddressExistsAsync(int userId, CancellationToken cancellationToken)
+    {
+        var addresses = await _dbContext.ShippingAddresses
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.AddressId)
+            .ToListAsync(cancellationToken);
+
+        if (addresses.Count == 0 || addresses.Any(GetDefaultFlag))
+        {
+            return;
+        }
+
+        SetDefaultFlag(addresses[0], true);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private bool GetDefaultFlag(ShippingAddress address)
+    {
+        return _dbContext.Entry(address).Property<bool>(DefaultFlagProperty).CurrentValue;
+    }
+
+    private void SetDefaultFlag(ShippingAddress address, bool value)
+    {
+        _dbContext.Entry(address).Property<bool>(DefaultFlagProperty).CurrentValue = value;
     }
 
     public sealed class UpdateUserProfileRequest

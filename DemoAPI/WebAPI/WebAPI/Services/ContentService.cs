@@ -31,7 +31,8 @@ public class ContentService : IContentService
                     Title = item.Title,
                     Price = item.Price,
                     Date = item.Date,
-                    Image = item.Image
+                    Image = item.Image,
+                    CategoryName = item.CategoryName
                 }).ToList())
         });
     }
@@ -190,12 +191,12 @@ public class ContentService : IContentService
     {
         var all = new List<ActivitySummaryDto>
         {
-            new() { Id = 1, Title = "农家研学活动报名中", Price = "门票: 10-20 元", Date = "2025.2.25-2025.3.6", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=children%20playing%20football%20on%20farm&image_size=landscape_16_9" },
-            new() { Id = 2, Title = "采摘活动报名中", Price = "门票: 10-50 元", Date = "2025.2.25-2025.3.6", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%20field&image_size=landscape_16_9" },
-            new() { Id = 3, Title = "草莓采摘体验", Price = "门票: 30 元/人", Date = "2025.3.1-2025.4.30", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=strawberry%20picking&image_size=landscape_16_9" },
-            new() { Id = 4, Title = "葡萄采摘节", Price = "门票: 50 元/人", Date = "2025.7.1-2025.8.31", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grape%20picking&image_size=landscape_16_9" },
-            new() { Id = 5, Title = "农场露营体验", Price = "费用: 120 元/晚", Date = "2025.4.1-2025.10.31", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20camping%20tent&image_size=landscape_16_9" },
-            new() { Id = 6, Title = "篝火露营晚会", Price = "费用: 180 元/人", Date = "2025.5.1-2025.9.30", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=camping%20with%20campfire&image_size=landscape_16_9" }
+            new() { Id = 1, Title = "农家研学活动报名中", Price = "¥20", Date = "2025.2.25-2025.3.6", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=children%20playing%20football%20on%20farm&image_size=landscape_16_9" },
+            new() { Id = 2, Title = "采摘活动报名中", Price = "¥50", Date = "2025.2.25-2025.3.6", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%20field&image_size=landscape_16_9" },
+            new() { Id = 3, Title = "草莓采摘体验", Price = "¥30", Date = "2025.3.1-2025.4.30", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=strawberry%20picking&image_size=landscape_16_9" },
+            new() { Id = 4, Title = "葡萄采摘节", Price = "¥50", Date = "2025.7.1-2025.8.31", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grape%20picking&image_size=landscape_16_9" },
+            new() { Id = 5, Title = "农场露营体验", Price = "¥120", Date = "2025.4.1-2025.10.31", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20camping%20tent&image_size=landscape_16_9" },
+            new() { Id = 6, Title = "篝火露营晚会", Price = "¥180", Date = "2025.5.1-2025.9.30", Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=camping%20with%20campfire&image_size=landscape_16_9" }
         };
 
         return new Dictionary<string, List<ActivitySummaryDto>>
@@ -214,7 +215,7 @@ public class ContentService : IContentService
             {
                 Id = 1,
                 Title = "农家研学活动报名中",
-                Price = "门票: 10-20 元",
+                Price = "¥20",
                 Date = "2025.2.25-2025.3.6",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=children%20playing%20football%20on%20farm&image_size=landscape_16_9",
                 Description = "通过农场劳动、采摘体验和农产品制作，让孩子在自然里学习农业知识。",
@@ -233,7 +234,7 @@ public class ContentService : IContentService
             {
                 Id = 2,
                 Title = "采摘活动报名中",
-                Price = "门票: 10-50 元",
+                Price = "¥50",
                 Date = "2025.2.25-2025.3.6",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20lettuce%20field&image_size=landscape_16_9",
                 Description = "适合亲子和家庭参与的采摘活动，可现场采摘时令蔬果并购买带回家。",
@@ -252,7 +253,7 @@ public class ContentService : IContentService
             {
                 Id = 3,
                 Title = "草莓采摘体验",
-                Price = "门票: 30 元/人",
+                Price = "¥30",
                 Date = "2025.3.1-2025.4.30",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=strawberry%20picking&image_size=landscape_16_9",
                 Description = "春季热门活动，在草莓大棚中采摘新鲜草莓，适合亲子和情侣体验。",
@@ -271,7 +272,7 @@ public class ContentService : IContentService
             {
                 Id = 4,
                 Title = "葡萄采摘节",
-                Price = "门票: 50 元/人",
+                Price = "¥50",
                 Date = "2025.7.1-2025.8.31",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=grape%20picking&image_size=landscape_16_9",
                 Description = "夏季葡萄节活动，可品尝多个品种的新鲜葡萄和体验葡萄园采摘。",
@@ -290,7 +291,7 @@ public class ContentService : IContentService
             {
                 Id = 5,
                 Title = "农场露营体验",
-                Price = "费用: 120 元/晚",
+                Price = "¥120",
                 Date = "2025.4.1-2025.10.31",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20camping%20tent&image_size=landscape_16_9",
                 Description = "在农场草地上搭帐篷露营，夜晚赏星空，清晨体验农场早餐和晨露采摘。",
@@ -309,7 +310,7 @@ public class ContentService : IContentService
             {
                 Id = 6,
                 Title = "篝火露营晚会",
-                Price = "费用: 180 元/人",
+                Price = "¥180",
                 Date = "2025.5.1-2025.9.30",
                 Image = "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=camping%20with%20campfire&image_size=landscape_16_9",
                 Description = "夜间篝火、烧烤和露营结合的户外活动，适合多人结伴参加。",

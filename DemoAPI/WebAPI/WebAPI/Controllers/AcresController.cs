@@ -41,6 +41,7 @@ public class AcresController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var items = await LoadProjectsAsync(cancellationToken);
+        var swiperList = await LoadSwiperListAsync(cancellationToken);
         var filteredItems = items.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(status) && !status.Equals("all", StringComparison.OrdinalIgnoreCase))
@@ -57,7 +58,15 @@ public class AcresController : ControllerBase
             Items = resultItems
         };
 
-        return Ok(ApiResult.Success(result));
+        return Ok(ApiResult.Success(new
+        {
+            pageIndex = result.PageIndex,
+            pageSize = result.PageSize,
+            total = result.Total,
+            swiperList,
+            list = result.Items,
+            items = result.Items
+        }));
     }
 
     [HttpGet("{id}")]
@@ -83,49 +92,100 @@ public class AcresController : ControllerBase
 
         if (project is null)
         {
-            return Ok(ApiResult.Fail("认购项目不存在", 404));
+            return Ok(ApiResult.Fail("认养项目不存在", 404));
         }
 
-        var swiperList = await _dbContext.AcreProjectImages
+        var detailImages = await _dbContext.AcreProjectImages
             .AsNoTracking()
             .Where(x => x.AcreProjectId == projectId)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Id)
-            .Select(x => new
-            {
-                id = x.Id,
-                image = x.ImageUrl
-            })
+            .Select(x => NormalizeImageUrl(x.ImageUrl))
             .ToListAsync(cancellationToken);
 
-        if (swiperList.Count == 0 && !string.IsNullOrWhiteSpace(project.ImageUrl))
+        var normalizedImages = detailImages
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Cast<string>()
+            .ToList();
+
+        var primaryImage = NormalizeImageUrl(project.ImageUrl) ?? string.Empty;
+        if (normalizedImages.Count == 0 && !string.IsNullOrWhiteSpace(primaryImage))
         {
-            swiperList.Add(new
-            {
-                id = project.AcreProjectId,
-                image = project.ImageUrl
-            });
+            normalizedImages.Add(primaryImage);
         }
 
-        return Ok(ApiResult.Success(new
+        var bottomImages = EnsureFourImages(normalizedImages, primaryImage);
+        var swiperList = normalizedImages
+            .Select((image, index) => new
+            {
+                id = index + 1L,
+                image
+            })
+            .ToList();
+
+        var videoUrl = await _dbContext.Videos
+            .AsNoTracking()
+            .Where(x => x.Status == 1)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.VideoId)
+            .Select(x => NormalizeImageUrl(x.VideoUrl))
+            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        var detailData = new
         {
             id = project.AcreProjectId.ToString(),
             name = project.Name,
             status = "available",
             price = FormatPrice(project.Price),
-            image = project.ImageUrl,
+            image = primaryImage,
             description = project.Description,
-            swiperList
+            swiperList,
+            videoUrl,
+            remainingAcres = 1,
+            soldAcres = 0,
+            longExampleImage = bottomImages.FirstOrDefault() ?? primaryImage,
+            longExampleImages = bottomImages,
+            longExampleImageList = bottomImages,
+            bottomImages
+        };
+
+        return Ok(ApiResult.Success(new
+        {
+            acreDetail = detailData,
+            id = detailData.id,
+            name = detailData.name,
+            status = detailData.status,
+            price = detailData.price,
+            image = detailData.image,
+            description = detailData.description,
+            swiperList,
+            videoUrl = detailData.videoUrl,
+            remainingAcres = detailData.remainingAcres,
+            soldAcres = detailData.soldAcres,
+            longExampleImage = detailData.longExampleImage,
+            longExampleImages = detailData.longExampleImages,
+            longExampleImageList = detailData.longExampleImageList,
+            bottomImages = detailData.bottomImages
         }));
     }
 
     [HttpPost("{id}/adopt")]
     public ActionResult<ApiResult> Adopt(string id, [FromBody] object? body)
     {
+        if (!long.TryParse(id, out var acreId))
+        {
+            return Ok(ApiResult.Fail("id 参数不正确", 400));
+        }
+
+        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         return Ok(ApiResult.Success(new
         {
-            acreId = id,
-            adopted = true
+            acreId,
+            adopted = true,
+            id = orderId,
+            orderId,
+            message = "success"
         }));
     }
 
@@ -197,6 +257,39 @@ public class AcresController : ControllerBase
 
     private static string FormatPrice(decimal price)
     {
-        return $"{price:0.##}元/亩";
+        return $"¥{price:0.##}/亩";
+    }
+
+    private static List<string> EnsureFourImages(IEnumerable<string>? images, string? fallbackImage)
+    {
+        var result = (images ?? [])
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToList();
+
+        var fallback = string.IsNullOrWhiteSpace(fallbackImage) ? string.Empty : fallbackImage.Trim();
+        if (result.Count == 0 && !string.IsNullOrWhiteSpace(fallback))
+        {
+            result.Add(fallback);
+        }
+
+        while (result.Count > 0 && result.Count < 4)
+        {
+            result.Add(result[result.Count - 1]);
+        }
+
+        return result;
+    }
+
+    private static string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        return imageUrl.Trim();
     }
 }

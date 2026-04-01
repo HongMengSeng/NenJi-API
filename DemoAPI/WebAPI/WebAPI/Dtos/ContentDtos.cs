@@ -9,6 +9,7 @@ public class ActivitySummaryDto
     public string Price { get; set; } = string.Empty;
     public string Date { get; set; } = string.Empty;
     public string Image { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
 }
 
 public class ActivityListDto
@@ -22,6 +23,8 @@ public class ActivityDetailDto : ActivitySummaryDto
     public string Location { get; set; } = string.Empty;
     public string People { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public int Participants { get; set; }
+    public int RemainingSlots { get; set; }
     public List<string> Images { get; set; } = [];
 }
 

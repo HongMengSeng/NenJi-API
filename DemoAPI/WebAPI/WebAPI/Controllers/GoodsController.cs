@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
-using WebAPI.Entities;
 
 namespace WebAPI.Controllers;
 
@@ -25,9 +24,12 @@ public class GoodsController : ControllerBase
     }
 
     [HttpGet("detail")]
-    public Task<IActionResult> Detail([FromQuery] int goodsId, CancellationToken cancellationToken)
+    public Task<IActionResult> Detail(
+        [FromQuery(Name = "goodsId")] int? goodsId,
+        [FromQuery(Name = "goods_id")] int? goodsIdAlias,
+        CancellationToken cancellationToken)
     {
-        return BuildDetailResponseAsync(goodsId, cancellationToken);
+        return BuildDetailResponseAsync(goodsId ?? goodsIdAlias ?? 0, cancellationToken);
     }
 
     private async Task<IActionResult> BuildDetailResponseAsync(int goodsId, CancellationToken cancellationToken)
@@ -61,46 +63,94 @@ public class GoodsController : ControllerBase
                 select tag.TagName
             ).Distinct().ToListAsync(cancellationToken);
 
-            var detailImages = await _dbContext.CommodityImages
+            var detailImageRows = await _dbContext.CommodityImages
                 .AsNoTracking()
                 .Where(x => x.CommodityId == goodsId)
                 .OrderBy(x => x.SortOrder ?? int.MaxValue)
                 .ThenBy(x => x.Id)
-                .Select(x => x.Url)
+                .Select(x => new
+                {
+                    x.Url,
+                    x.ImageType
+                })
                 .ToListAsync(cancellationToken);
 
-            var primaryImage = ResolvePrimaryImageUrl(commodity.ImageUrl, detailImages);
-            var detailImage = ResolveDetailImageUrl(primaryImage, detailImages);
+            var normalizedDetailImages = detailImageRows
+                .Select(x => NormalizeImageUrl(x.Url))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Cast<string>()
+                .ToList();
 
-            return Ok(ApiResult.Success(new GoodsDetailResponse
+            var primaryImage = ResolvePrimaryImageUrl(commodity.ImageUrl, normalizedDetailImages);
+            if (normalizedDetailImages.Count == 0 && !string.IsNullOrWhiteSpace(primaryImage))
             {
-                Id = commodity.CommodityId,
-                Name = commodity.ProductName,
-                Price = ResolveCommodityPrice(commodity.CategoryId),
-                Image = primaryImage,
-                DetailImage = detailImage,
-                Description = BuildDescription(commodity, category?.CategoryName, tags),
-                Weight = BuildWeightText(commodity.Quantity),
-                Storage = ResolveStorageText(commodity.CategoryId),
-                Stock = commodity.InStock ?? 0,
-                Tags = tags,
-                CategoryName = category?.CategoryName ?? string.Empty
+                normalizedDetailImages.Add(primaryImage);
+            }
+
+            var longDetailImages = detailImageRows
+                .Where(x => x.ImageType == 2)
+                .Select(x => NormalizeImageUrl(x.Url))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Cast<string>()
+                .Take(4)
+                .ToList();
+
+            if (longDetailImages.Count == 0)
+            {
+                longDetailImages = normalizedDetailImages.Take(4).ToList();
+            }
+
+            if (longDetailImages.Count == 0 && !string.IsNullOrWhiteSpace(primaryImage))
+            {
+                longDetailImages.Add(primaryImage);
+            }
+
+            var detailImage = ResolveDetailImageUrl(primaryImage, longDetailImages);
+            var price = commodity.UnitPrice ?? 0m;
+            var originalPrice = commodity.OriginalPrice ?? price;
+            var description = commodity.SpecDescription ?? string.Empty;
+            var stock = commodity.InStock ?? 0;
+            var status = (commodity.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+            var unit = commodity.UnitName ?? string.Empty;
+            var weight = commodity.WeightText ?? string.Empty;
+            var storage = commodity.StorageCondition ?? string.Empty;
+
+            return Ok(ApiResult.Success(new
+            {
+                id = commodity.CommodityId,
+                name = commodity.ProductName,
+                price,
+                originalPrice,
+                stock,
+                mainImage = primaryImage,
+                main_image = primaryImage,
+                desc = description,
+                detailImages = longDetailImages,
+                detail_images = longDetailImages,
+                unit,
+                status,
+                image = primaryImage,
+                detailImage = detailImage,
+                detail_image = detailImage,
+                description,
+                weight,
+                storage,
+                tags,
+                categoryId = commodity.CategoryId,
+                category_id = commodity.CategoryId,
+                categoryName = category?.CategoryName ?? string.Empty,
+                category_name = category?.CategoryName ?? string.Empty,
+                canBuy = status == 1,
+                salesStatus = status == 1 ? "on_sale" : "sold_out",
+                bottomImages = longDetailImages
             }));
         }
         catch (Exception ex)
         {
             return Ok(ApiResult.Fail($"获取商品详情失败：{ex.Message}"));
         }
-    }
-
-    private static string BuildWeightText(int? quantity)
-    {
-        if (quantity.HasValue && quantity.Value > 0)
-        {
-            return $"{quantity.Value}g";
-        }
-
-        return "500g";
     }
 
     private static string ResolveDetailImageUrl(string primaryImage, IReadOnlyCollection<string?> detailImages)
@@ -147,60 +197,5 @@ public class GoodsController : ControllerBase
         }
 
         return trimmed.Trim();
-    }
-
-    private static string BuildDescription(
-        Commodity commodity,
-        string? categoryName,
-        IReadOnlyCollection<string> tags)
-    {
-        if (!string.IsNullOrWhiteSpace(commodity.SpecDescription))
-        {
-            return commodity.SpecDescription!;
-        }
-
-        if (tags.Count > 0)
-        {
-            return $"{commodity.ProductName}，分类：{categoryName ?? "农场优选"}，特色标签：{string.Join("、", tags)}。";
-        }
-
-        return $"{commodity.ProductName}，分类：{categoryName ?? "农场优选"}，新鲜直发。";
-    }
-
-    private static string ResolveStorageText(int categoryId)
-    {
-        return categoryId switch
-        {
-            3 or 4 => "冷冻",
-            _ => "冷藏"
-        };
-    }
-
-    private static decimal ResolveCommodityPrice(int categoryId)
-    {
-        return categoryId switch
-        {
-            1 => 12.8m,
-            2 => 9.9m,
-            3 => 38m,
-            4 => 16.8m,
-            5 => 49.9m,
-            _ => 19.9m
-        };
-    }
-
-    private sealed class GoodsDetailResponse
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public string Image { get; set; } = string.Empty;
-        public string DetailImage { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Weight { get; set; } = string.Empty;
-        public string Storage { get; set; } = string.Empty;
-        public int Stock { get; set; }
-        public List<string> Tags { get; set; } = [];
-        public string CategoryName { get; set; } = string.Empty;
     }
 }

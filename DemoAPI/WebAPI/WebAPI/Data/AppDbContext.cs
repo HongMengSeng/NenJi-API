@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using WebAPI.Entities;
 
 namespace WebAPI.Data;
@@ -136,6 +137,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.AddressId);
             entity.Property(x => x.AddressId).ValueGeneratedOnAdd();
+            entity.Property<bool>("IsDefault").HasColumnName("is_default").HasDefaultValue(false);
         });
 
         modelBuilder.Entity<OrderEntity>(entity =>

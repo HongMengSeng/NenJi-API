@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 using Microsoft.AspNetCore.Authorization;
@@ -88,18 +89,21 @@ public class CartController : ControllerBase
     }
 
     [HttpPost("add")]
+    [HttpPost("addToCart")]
     public async Task<IActionResult> Add([FromBody] CartAddRequest? request, CancellationToken cancellationToken)
     {
         try
         {
-            if (request is null || request.GoodsId <= 0 || request.Count <= 0)
+            if (!TryNormalizeCartAddRequest(request, out var normalizedRequest, out var validationMessage))
             {
-                return Ok(ApiResult.Fail("请求参数不正确", 400));
+                return Ok(ApiResult.Fail(validationMessage, 400));
             }
 
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CommodityId == request.GoodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+                .FirstOrDefaultAsync(
+                    x => x.CommodityId == normalizedRequest.GoodsId && (x.ProductStatus ?? 0) == 1,
+                    cancellationToken);
 
             if (goods is null)
             {
@@ -107,15 +111,19 @@ public class CartController : ControllerBase
             }
 
             var userId = GetCurrentUserId();
-            var currentItem = FindCartItem(userId, request.GoodsId);
-            var targetCount = (currentItem?.Count ?? 0) + request.Count;
+            var currentItem = FindCartItem(userId, normalizedRequest.GoodsId);
+            var targetCount = (currentItem?.Count ?? 0) + normalizedRequest.Count;
             if ((goods.InStock ?? 0) < targetCount)
             {
                 return Ok(ApiResult.Fail("商品库存不足", 1002));
             }
 
-            UpsertCartItem(userId, request.GoodsId, targetCount);
-            return Ok(ApiResult.Success());
+            UpsertCartItem(userId, normalizedRequest.GoodsId, targetCount);
+            return Ok(ApiResult.Success(new
+            {
+                goodsId = normalizedRequest.GoodsId,
+                count = targetCount
+            }));
         }
         catch (Exception ex)
         {
@@ -346,12 +354,59 @@ public class CartController : ControllerBase
             : throw new InvalidOperationException("未授权，请重新登录");
     }
 
+    private static bool TryNormalizeCartAddRequest(
+        CartAddRequest? request,
+        out CartAddRequest normalizedRequest,
+        out string validationMessage)
+    {
+        normalizedRequest = new CartAddRequest();
+        validationMessage = "请求参数不正确";
+
+        if (request is null)
+        {
+            validationMessage = "请求体不能为空";
+            return false;
+        }
+
+        var goodsId = request.GoodsId > 0
+            ? request.GoodsId
+            : request.GoodsIdAlias > 0
+                ? request.GoodsIdAlias
+                : request.CommodityIdAlias;
+
+        if (goodsId <= 0)
+        {
+            validationMessage = "goodsId 缺失或不正确";
+            return false;
+        }
+
+        var count = request.Count > 0
+            ? request.Count
+            : request.Quantity > 0
+                ? request.Quantity
+                : request.Num;
+
+        if (count <= 0)
+        {
+            validationMessage = "count 缺失或不正确";
+            return false;
+        }
+
+        normalizedRequest = new CartAddRequest
+        {
+            GoodsId = goodsId,
+            Count = count
+        };
+
+        return true;
+    }
+
     private static decimal ResolveCommodityPrice(string? productName)
     {
         return productName switch
         {
             "有机生菜" => 12.8m,
-            "甜糯玉米" => 8.8m,
+            "甜脆玉米" => 8.8m,
             "农家西红柿" => 9.9m,
             "红富士苹果" => 19.9m,
             "香甜橙子" => 15.9m,
@@ -367,6 +422,18 @@ public class CartController : ControllerBase
     {
         public int GoodsId { get; set; }
         public int Count { get; set; }
+
+        [JsonPropertyName("goods_id")]
+        public int GoodsIdAlias { get; set; }
+
+        [JsonPropertyName("commodityId")]
+        public int CommodityIdAlias { get; set; }
+
+        [JsonPropertyName("quantity")]
+        public int Quantity { get; set; }
+
+        [JsonPropertyName("num")]
+        public int Num { get; set; }
     }
 
     public sealed class CartUpdateRequest

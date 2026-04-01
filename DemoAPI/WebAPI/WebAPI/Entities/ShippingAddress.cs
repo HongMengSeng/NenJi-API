@@ -13,9 +13,13 @@ public class ShippingAddress
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("content_name")]
+    [Column("contact_name")]
     [MaxLength(50)]
     public string ContactName { get; set; } = string.Empty;
+
+    [Column("contact_phone")]
+    [MaxLength(20)]
+    public string ContactPhone { get; set; } = string.Empty;
 
     [Column("province")]
     [MaxLength(50)]
@@ -25,7 +29,7 @@ public class ShippingAddress
     [MaxLength(50)]
     public string City { get; set; } = string.Empty;
 
-    [Column("municipal_districts")]
+    [Column("municipal_district")]
     [MaxLength(50)]
     public string MunicipalDistrict { get; set; } = string.Empty;
 
@@ -36,4 +40,7 @@ public class ShippingAddress
     [Column("house_number")]
     [MaxLength(50)]
     public string HouseNumber { get; set; } = string.Empty;
+
+    [Column("is_default")]
+    public bool IsDefault { get; set; }
 }
