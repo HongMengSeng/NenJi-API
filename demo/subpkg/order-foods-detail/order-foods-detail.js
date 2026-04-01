@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -25,25 +25,22 @@ Page({
 
   getGoodsDetail(id) {
     wx.showLoading({ title: '加载中...' });
-    // 模拟获取商品详情数据
-    setTimeout(() => {
-      const mockGoods = {
-        id: id,
-        name: '农家番茄',
-        price: 9.9,
-        image: '../../images/NengJi1.jpg',
-        desc: '500g/袋，新鲜番茄',
-        weight: '500g',
-        storage: '冷藏',
-        sold: 123,
-        stock: 50
-      };
-      this.setData({
-        goods: mockGoods,
-        loading: false
+    // 调用后端API获取商品详情
+    api.goods.getDetail(id)
+      .then(data => {
+        this.setData({
+          goods: data,
+          loading: false
+        });
+      })
+      .catch(err => {
+        console.error('获取商品详情失败', err);
+        wx.showToast({ title: '获取商品详情失败', icon: 'none' });
+        this.setData({ loading: false });
+      })
+      .finally(() => {
+        wx.hideLoading();
       });
-      wx.hideLoading();
-    }, 500);
   },
 
 
