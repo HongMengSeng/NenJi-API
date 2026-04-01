@@ -119,52 +119,52 @@
   margin-bottom: 20rpx;
 }
 
-.gallery-list {
+/* 农场示例图片 */
+.example-images-vertical {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding-bottom: 15rpx;
+  flex-direction: column;
+  gap: 0rpx;
 }
 
-.gallery-item {
-  width: 48%;
-  margin-bottom: 15rpx;
-  position: relative;
-  overflow: hidden;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.gallery-item:hover {
-  transform: translateY(-4rpx);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-}
-
-.gallery-image {
+.example-images-vertical image {
   width: 100%;
-  height: 300rpx;
-  object-fit: cover;
-  transition: all 0.3s ease;
+  height: 400rpx !important;
+  object-fit: cover !important;
+  border-radius: 8rpx;
+  background-color: #f0f0f0;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  cursor: pointer;
 }
 
-.gallery-item:hover .gallery-image {
-  transform: scale(1.05);
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .example-images-vertical image {
+    height: 300rpx;
+  }
 }
 
-.image-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 20rpx;
-  color: #666;
+@media (min-width: 750px) {
+  .example-images-vertical image {
+    height: 500rpx;
+  }
 }
+
+/* 无图片提示 */
+.no-images {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #999999;
+  font-size: 28rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+  margin: 20rpx 0;
+}
+
+
+
+
 
 /* 底部按钮 */
 .bottom-buttons {

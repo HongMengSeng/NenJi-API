@@ -5,15 +5,12 @@ Page({
     activeTab: 'all',
     searchKeyword: '',
     originalActivities: {
-      all: [],
-      picking: [],
-      camping: []
+      all: []
     },
     activities: {
-      all: [],
-      picking: [],
-      camping: []
-    }
+      all: []
+    },
+    categories: [] // 存储动态分类
   },
 
   onLoad: function() {
@@ -28,14 +25,50 @@ Page({
       method: 'GET'
     })
       .then(data => {
-        const activities = data.activities || {
-          all: [],
-          picking: [],
-          camping: []
+        // 处理API返回的数据
+        let allActivities = [];
+        let categories = [];
+        
+        // 检查API返回的数据结构
+        if (data.activities && data.activities.all) {
+          // 旧结构：activities.all 是活动列表
+          allActivities = data.activities.all;
+        } else if (Array.isArray(data.activities)) {
+          // 新结构：activities 直接是活动列表
+          allActivities = data.activities;
+        } else if (Array.isArray(data)) {
+          // 更简单的结构：直接返回活动列表
+          allActivities = data;
+        }
+        
+        // 根据 categoryName 分类
+        const categorizedActivities = {
+          all: allActivities
         };
+        
+        // 提取所有唯一的分类名称
+        const categorySet = new Set();
+        allActivities.forEach(activity => {
+          if (activity.categoryName) {
+            categorySet.add(activity.categoryName);
+            // 按分类名称分组
+            if (!categorizedActivities[activity.categoryName]) {
+              categorizedActivities[activity.categoryName] = [];
+            }
+            categorizedActivities[activity.categoryName].push(activity);
+          }
+        });
+        
+        // 转换为分类数组
+        categories = Array.from(categorySet).map(categoryName => ({
+          id: categoryName,
+          name: categoryName
+        }));
+        
         this.setData({
-          originalActivities: activities,
-          activities: activities
+          originalActivities: categorizedActivities,
+          activities: categorizedActivities,
+          categories: categories
         });
       })
       .catch(err => {
@@ -56,14 +89,9 @@ Page({
     if (keyword.trim()) {
       this.performSearch(keyword.trim());
     } else {
-      // 使用原始数据的深拷贝，避免引用问题
-      const originalActivities = this.data.originalActivities || {};
+      // 恢复原始数据
       this.setData({
-        activities: {
-          all: Array.isArray(originalActivities.all) ? [...originalActivities.all] : [],
-          picking: Array.isArray(originalActivities.picking) ? [...originalActivities.picking] : [],
-          camping: Array.isArray(originalActivities.camping) ? [...originalActivities.camping] : []
-        }
+        activities: this.data.originalActivities
       });
     }
   },
@@ -89,16 +117,17 @@ Page({
       all: (Array.isArray(originalActivities.all) ? originalActivities.all : []).filter(item => {
         const title = item.title || '';
         return title.includes(keyword);
-      }),
-      picking: (Array.isArray(originalActivities.picking) ? originalActivities.picking : []).filter(item => {
-        const title = item.title || '';
-        return title.includes(keyword);
-      }),
-      camping: (Array.isArray(originalActivities.camping) ? originalActivities.camping : []).filter(item => {
-        const title = item.title || '';
-        return title.includes(keyword);
       })
     };
+
+    // 过滤每个分类
+    this.data.categories.forEach(category => {
+      const categoryActivities = Array.isArray(originalActivities[category.id]) ? originalActivities[category.id] : [];
+      filteredActivities[category.id] = categoryActivities.filter(item => {
+        const title = item.title || '';
+        return title.includes(keyword);
+      });
+    });
 
     this.setData({
       activities: filteredActivities

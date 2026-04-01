@@ -42,7 +42,10 @@ Page({
         videoUrl: cleanData.videoUrl , // 视频URL
         remainingAcres: cleanData.remainingAcres , // 剩余亩数
         soldAcres: cleanData.soldAcres , // 已售亩数
-        longExampleImage: cleanData.longExampleImage  // 农场示例图片
+        longExampleImage: cleanData.longExampleImage, // 农场示例图片
+        bottomImages: cleanData.bottomImages, // 底部图片列表
+        longExampleImages: cleanData.longExampleImages, // 长图示例
+        longExampleImageList: cleanData.longExampleImageList // 长图列表
       };
       
       this.setData({

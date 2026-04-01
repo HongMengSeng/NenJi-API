@@ -159,6 +159,14 @@ Page({
     });
   },
 
+  // 跳转到菜品详情页面
+  navigateToOrderFoodsDetail: function(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: '/subpkg/order-foods-detail/order-foods-detail?id=' + id
+    });
+  },
+
   // 跳转到农场介绍页面
   navigateToFarmIntro: function() {
     wx.navigateTo({

@@ -44,13 +44,15 @@
   <!-- 活动图片展示 -->
   <view class="activity-gallery">
     <view class="section-title">活动图片</view>
-    <view class="gallery-list">
-      <view class="gallery-item" wx:for="{{activity.images}}" wx:key="index" bindtap="previewImage" data-index="{{index}}">
-        <image class="gallery-image" src="{{item}}" mode="aspectFill" lazy-load="true" />
-        <view class="image-loading" wx:if="{{loading}}">
-          <text>加载中...</text>
-        </view>
-      </view>
+    <!-- 垂直排列成长图 -->
+    <view class="example-images-vertical" wx:if="{{activity.images && activity.images.length > 0}}">
+      <block wx:for="{{activity.images}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
+      </block>
+    </view>
+    <!-- 无图片时的提示 -->
+    <view class="no-images" wx:else>
+      <text>暂无活动图片</text>
     </view>
   </view>
   

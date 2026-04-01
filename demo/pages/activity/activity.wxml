@@ -7,8 +7,7 @@
   <!-- 选项卡 -->
   <view class="tabs">
     <view class="tab {{activeTab === 'all' ? 'active' : ''}}" data-tab="all" bindtap="switchTab">全部</view>
-    <view class="tab {{activeTab === 'picking' ? 'active' : ''}}" data-tab="picking" bindtap="switchTab">采摘活动</view>
-    <view class="tab {{activeTab === 'camping' ? 'active' : ''}}" data-tab="camping" bindtap="switchTab">露营</view>
+    <view wx:for="{{categories}}" wx:key="id" class="tab {{activeTab === item.id ? 'active' : ''}}" data-tab="{{item.id}}" bindtap="switchTab">{{item.name}}</view>
   </view>
   
   <!-- 活动列表 -->l

@@ -58,7 +58,31 @@
   <view class="example-section">
     <view class="section-title">农场示例</view>
     <!-- 底部图片列表 - 垂直排列成长图 -->
-    <view class="example-images-vertical" wx:if="{{acreDetail.bottomImages && acreDetail.bottomImages.length > 0}}"><block wx:for="{{acreDetail.bottomImages}}" wx:key="index"><image src="{{item}}" mode="aspectFill" style="display: block; width: 100%; height: 250rpx;" /></block></view>
+    <view class="example-images-vertical" wx:if="{{acreDetail.bottomImages && acreDetail.bottomImages.length > 0}}">
+      <block wx:for="{{acreDetail.bottomImages}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFill" />
+      </block>
+    </view>
+    <!-- 备用图片来源 -->
+    <view class="example-images-vertical" wx:elif="{{acreDetail.longExampleImages && acreDetail.longExampleImages.length > 0}}">
+      <block wx:for="{{acreDetail.longExampleImages}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFill" />
+      </block>
+    </view>
+    <!-- 备用图片来源2 -->
+    <view class="example-images-vertical" wx:elif="{{acreDetail.longExampleImageList && acreDetail.longExampleImageList.length > 0}}">
+      <block wx:for="{{acreDetail.longExampleImageList}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFill" />
+      </block>
+    </view>
+    <!-- 单个示例图片 -->
+    <view class="example-images-vertical" wx:elif="{{acreDetail.longExampleImage}}">
+      <image src="{{acreDetail.longExampleImage}}" mode="aspectFill" />
+    </view>
+    <!-- 无图片时的提示 -->
+    <view class="no-images" wx:else>
+      <text>暂无农场示例图片</text>
+    </view>
   </view>
 
   <view class="bottom-bar">

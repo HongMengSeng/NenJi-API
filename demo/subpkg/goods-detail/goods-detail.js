@@ -38,6 +38,8 @@ Page({
 
   onShow() {
     this.updateCartCount();
+    // 重新获取地址列表，确保从地址编辑页面返回时能看到最新的地址
+    this.getAddressList();
   },
 
   getGoodsDetail(goodsId) {
@@ -187,9 +189,8 @@ Page({
   },
 
   addAddress() {
-    wx.showToast({
-      title: '添加地址功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/subpkg/address-edit/address-edit'
     });
   },
 

@@ -74,7 +74,8 @@
         }
     },
     "requiredPrivateInfos": [
-        "getLocation"
+        "getLocation",
+        "chooseLocation"
     ],
     "usingComponents": {}
 }

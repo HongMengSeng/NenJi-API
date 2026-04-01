@@ -107,7 +107,7 @@
     <text class="more" bindtap="navigateToOrder">查看更多</text>
   </view>
   <view class="goods-list">
-    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
+    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
       <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
       <view class="goods-info">
         <view class="goods-name">{{item.name}}</view>

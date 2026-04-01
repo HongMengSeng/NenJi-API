@@ -26,7 +26,7 @@
     <view class="form-item" bindtap="chooseRegion">
       <view class="form-label">所在地区</view>
       <view class="region-select">
-        <text class="region-text">{{formData.province}}{{formData.city}}{{formData.district}}</text>
+        <text class="region-text">{{formData.address}}</text>
         <text class="region-arrow">></text>
       </view>
     </view>

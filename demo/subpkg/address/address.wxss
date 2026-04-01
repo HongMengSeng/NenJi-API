@@ -43,39 +43,7 @@
   font-weight: 500;
 }
 
-/* 获取当前位置按钮 */
-.location-section {
-  padding: 20rpx;
-  background-color: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
-}
 
-.location-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80rpx;
-  background: linear-gradient(135deg, #d4a76a 0%, #c99a5a 100%);
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 12rpx rgba(212, 167, 106, 0.3);
-  transition: all 0.3s ease;
-}
-
-.location-btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 2rpx 6rpx rgba(212, 167, 106, 0.2);
-}
-
-.location-icon {
-  font-size: 32rpx;
-  margin-right: 12rpx;
-}
-
-.location-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 500;
-}
 
 /* 地址列表 */
 .address-list {
@@ -141,8 +109,9 @@
 }
 
 .action-icon {
-  width: 24rpx;
-  height: 24rpx;
+  width: 32rpx;
+  height: 32rpx;
+  cursor: pointer;
 }
 
 /* 空地址提示 */
