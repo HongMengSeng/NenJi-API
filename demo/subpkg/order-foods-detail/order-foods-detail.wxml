@@ -11,8 +11,8 @@
     <view class="name">{{goods.name}}</view>
     <view class="desc">{{goods.desc || '新鲜食材，农场直供'}}</view>
     <view class="sales-info">
-      <text class="sold">已售 {{goods.sold}}份</text>
-      <text class="stock">库存 {{goods.stock}}份</text>
+      <text class="sold">已售 {{goods.sold || goods.sales || 0}}</text>
+      <text class="stock">仅剩 {{goods.stock || 0}}份</text>
     </view>
   </view>
 

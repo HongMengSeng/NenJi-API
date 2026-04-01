@@ -36,6 +36,7 @@ Page({
   },
 
   onShow() {
+    // 每次页面显示时更新购物车数据，确保与首页购物车同步
     this.updateCartCount();
   },
 
@@ -269,7 +270,11 @@ Page({
       }
       newCart[key].quantity += 1;
     } else {
-      newCart[key] = { ...goods, quantity: 1 };
+      newCart[key] = { 
+        ...goods, 
+        quantity: 1, 
+        goodsId: goods.id // 确保goodsId存在
+      };
     }
 
     this.syncCartState(newCart);
@@ -293,14 +298,20 @@ Page({
 
   syncCartState(newCart) {
     let count = 0;
-    Object.values(newCart).forEach(item => {
-      count += item.quantity;
+    const cartArray = Object.values(newCart).map(item => ({
+      ...item,
+      count: item.quantity, // 统一使用count字段
+      goodsId: item.id // 添加goodsId字段，确保API调用正确
+    }));
+    
+    cartArray.forEach(item => {
+      count += item.count;
     });
 
     this.setData({ cart: newCart, cartCount: count });
 
     try {
-      wx.setStorageSync('cartList', Object.values(newCart));
+      wx.setStorageSync('cartList', cartArray);
     } catch (e) {}
   },
 
@@ -309,8 +320,18 @@ Page({
     let totalCount = 0;
     const cart = {};
     cartList.forEach(item => {
-      totalCount += item.quantity || 0;
-      cart[String(item.id)] = item;
+      // 处理来自首页购物车的数据，确保字段一致
+      const quantity = item.quantity || item.count || 0;
+      totalCount += quantity;
+      const itemId = item.id || item.goodsId;
+      if (itemId) {
+        cart[String(itemId)] = {
+          ...item,
+          id: itemId,
+          quantity: quantity, // 统一使用quantity字段
+          goodsId: item.goodsId || itemId // 确保goodsId存在
+        };
+      }
     });
     this.setData({ cart, cartCount: totalCount });
   },

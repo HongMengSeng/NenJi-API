@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+const api = require('../../utils/api').api;
 
 Page({
   data: {
@@ -10,9 +10,20 @@ Page({
   },
 
   onLoad(options) {
-    const { id } = options;
+    let goodsData = {};
+    
+    // 解析从点餐页面传递过来的参数
+    if (options.params) {
+      try {
+        goodsData = JSON.parse(decodeURIComponent(options.params));
+      } catch (e) {
+        console.error('解析参数失败', e);
+      }
+    }
+    
+    const id = options.id || goodsData.id;
     if (id) {
-      this.getGoodsDetail(id);
+      this.getGoodsDetail(id, goodsData);
     }
     // 恢复购物车
     this.restoreCart();
@@ -23,13 +34,19 @@ Page({
     this.restoreCart();
   },
 
-  getGoodsDetail(id) {
+  getGoodsDetail(id, goodsData = {}) {
     wx.showLoading({ title: '加载中...' });
     // 调用后端API获取商品详情
     api.goods.getDetail(id)
       .then(data => {
+        // 优先使用从点餐页面传递过来的已售和库存数据，确保数据一致
+        const goods = {
+          ...data,
+          sold: goodsData.sold !== undefined ? goodsData.sold : (data.sold || data.sales || 0),
+          stock: goodsData.stock !== undefined ? goodsData.stock : (data.stock || 0)
+        };
         this.setData({
-          goods: data,
+          goods: goods,
           loading: false
         });
       })
@@ -43,11 +60,9 @@ Page({
       });
   },
 
-
-
   addToCart() {
     const goods = this.data.goods;
-    if (!goods.id) return;
+    if (!goods?.id) return;
     
     // 检查是否选择了桌台
     const tableNumber = wx.getStorageSync('tableNumber');
@@ -74,7 +89,7 @@ Page({
 
   buyNow() {
     const goods = this.data.goods;
-    if (!goods.id) return;
+    if (!goods?.id) return;
     
     // 检查是否选择了桌台
     const tableNumber = wx.getStorageSync('tableNumber');
@@ -98,20 +113,25 @@ Page({
     wx.navigateBack();
   },
 
-
-
   syncCartState(newCart) {
     let count = 0, total = 0;
-    Object.values(newCart).forEach(item => {
-      count += item.quantity;
-      total += item.price * item.quantity;
+    Object.values(newCart || {}).forEach(item => {
+      if (!item) return;
+      const quantity = item.quantity || 0;
+      const price = item.price || 0;
+      count += quantity;
+      total += price * quantity;
     });
     this.setData({
       cart: newCart,
       cartCount: count,
       totalPrice: parseFloat(total.toFixed(2))
     });
-    try { wx.setStorageSync('orderCart', newCart) } catch (e) {}
+    try { 
+      wx.setStorageSync('orderCart', newCart);
+    } catch (e) {
+      console.error('存储购物车失败', e);
+    }
   },
 
   restoreCart() {
@@ -119,16 +139,19 @@ Page({
       const cart = wx.getStorageSync('orderCart') || {};
       let count = 0, total = 0;
       Object.values(cart || {}).forEach(item => {
-        count += item.quantity || 0;
-        total += (item.price || 0) * (item.quantity || 0);
+        if (!item) return;
+        const quantity = item.quantity || 0;
+        const price = item.price || 0;
+        count += quantity;
+        total += price * quantity;
       });
       this.setData({
         cart: cart || {},
         cartCount: count,
         totalPrice: parseFloat(total.toFixed(2))
       });
-    } catch (e) {}
-  },
-
-
+    } catch (e) {
+      console.error('恢复购物车失败', e);
+    }
+  }
 });

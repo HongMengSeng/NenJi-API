@@ -233,7 +233,25 @@ Page({
 
   navigateToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: `/subpkg/order-foods-detail/order-foods-detail?id=${id}` })
+    const goods = this.findGoodsById(id)
+    if (goods) {
+      // 将商品数据传递到详情页，确保已售和库存数据一致
+      const params = encodeURIComponent(JSON.stringify({
+        id: goods.id,
+        sold: goods.sold,
+        stock: goods.stock
+      }))
+      wx.navigateTo({ url: `/subpkg/order-foods-detail/order-foods-detail?params=${params}` })
+    }
+  },
+
+  findGoodsById(id) {
+    const { goodsList, activeCategory } = this.data
+    const goods = goodsList[activeCategory]
+    if (goods) {
+      return goods.find(item => String(item.id) === String(id))
+    }
+    return null
   },
 
   onReachBottom() {

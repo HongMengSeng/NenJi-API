@@ -89,7 +89,6 @@
   background-color: #fff;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 30rpx;
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
   z-index: 10;
@@ -102,6 +101,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 20rpx;
 }
 
 .cart-text {
@@ -124,12 +124,13 @@
 }
 
 .btn-container {
+  flex: 1;
   display: flex;
-  gap: 20rpx;
+  gap: 15rpx;
 }
 
 .add-cart-btn {
-  width: 200rpx;
+  flex: 1;
   height: 60rpx;
   background-color: #fff;
   color: #ff4d4f;
@@ -143,7 +144,7 @@
 }
 
 .buy-btn {
-  width: 200rpx;
+  flex: 1;
   height: 60rpx;
   background-color: #ff4d4f;
   color: #fff;
@@ -156,114 +157,3 @@
   padding: 0;
 }
 
-/* 购物车弹窗 */
-.cart-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.cart-modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.cart-modal-content {
-  background-color: #fff;
-  border-radius: 20rpx 20rpx 0 0;
-  padding: 30rpx;
-  max-height: 60vh;
-  overflow-y: auto;
-  position: relative;
-  z-index: 101;
-}
-
-.cart-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-}
-
-.cart-modal-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.cart-modal-close {
-  font-size: 40rpx;
-  color: #999;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.cart-item-image {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 10rpx;
-  margin-right: 20rpx;
-}
-
-.cart-item-info {
-  flex: 1;
-}
-
-.cart-item-name {
-  font-size: 28rpx;
-  color: #333;
-  margin-bottom: 10rpx;
-}
-
-.cart-item-price {
-  font-size: 26rpx;
-  color: #ff4d4f;
-  font-weight: bold;
-}
-
-.cart-item-quantity {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.quantity-btn {
-  width: 40rpx;
-  height: 40rpx;
-  border: 1rpx solid #ddd;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  color: #333;
-}
-
-.quantity-input {
-  font-size: 26rpx;
-  color: #333;
-  width: 60rpx;
-  text-align: center;
-}
-
-.empty-cart {
-  text-align: center;
-  padding: 60rpx 0;
-  color: #999;
-  font-size: 26rpx;
-}
