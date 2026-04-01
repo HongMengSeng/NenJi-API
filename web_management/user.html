@@ -80,6 +80,10 @@
 			min-height: 0;
 			margin-bottom: 10px;
 		}
+
+		.page-fixed-panel{
+			flex-shrink: 0;
+		}
 		
 		/* 顶部导航栏 */
 		.top-nav{
@@ -362,7 +366,7 @@
 				
 				<!-- 用户管理页面 -->
 				<div class="user-page">
-					<div class="content-container">
+					<div class="page-fixed-panel">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增</button>
 							<button class="btn btn-danger" @click="deleteUser" :disabled="selectedUsers.length === 0">删除</button>
@@ -378,7 +382,9 @@
 							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
-						
+					</div>
+
+					<div class="content-container">
 						<!-- 数据表格 -->
 						<table class="user-table">
 							<thead>

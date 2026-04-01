@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>农场管理后台-产品订单明细</title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+
+		.content{
+			flex: 1;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+			flex-shrink: 0;
+		}
+
+		.user-info{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
+		}
+
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-shrink: 0;
+			font-weight: 600;
+		}
+
+		.back-btn{
+			padding: 8px 16px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			margin-bottom: 20px;
+			transition: all 0.3s;
+			align-self: flex-start;
+			flex-shrink: 0;
+		}
+
+		.back-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+
+		.detail-scroll{
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+		}
+
+		.info-section{
+			background: white;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.section-title{
+			font-size: 16px;
+			font-weight: bold;
+			color: #2d3748;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.info-table{
+			width: 100%;
+		}
+
+		.info-table td{
+			padding: 10px 0;
+			vertical-align: top;
+		}
+
+		.info-table .label{
+			width: 120px;
+			color: #718096;
+			font-size: 14px;
+		}
+
+		.info-table .value{
+			color: #2d3748;
+			font-size: 14px;
+			font-weight: 500;
+		}
+
+		.detail-table-wrapper{
+			overflow-x: auto;
+		}
+
+		.detail-table{
+			width: 100%;
+			min-width: 1180px;
+			border-collapse: collapse;
+		}
+
+		.detail-table th,
+		.detail-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+			vertical-align: top;
+		}
+
+		.detail-table th{
+			background: #f7fafc;
+			font-weight: bold;
+			color: #4a5568;
+			font-size: 14px;
+		}
+
+		.detail-table td{
+			font-size: 14px;
+			color: #2d3748;
+		}
+
+		.detail-table tr:hover{
+			background: #f7fafc;
+		}
+
+		.product-thumb{
+			width: 56px;
+			height: 56px;
+			border-radius: 8px;
+			object-fit: cover;
+			display: block;
+		}
+
+		.product-name{
+			font-weight: 600;
+			color: #1f2937;
+			margin-bottom: 4px;
+		}
+
+		.product-desc,
+		.cell-note{
+			font-size: 12px;
+			line-height: 1.6;
+			color: #718096;
+		}
+
+		.total-row{
+			background: #f7fafc !important;
+			font-weight: bold;
+		}
+
+		.total-row td{
+			color: #e53e3e;
+		}
+
+		.status-tag{
+			padding: 4px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+
+		.status-tag.paid{
+			background: #e6fffa;
+			color: #38b2ac;
+		}
+
+		.status-tag.unpaid{
+			background: #fff5f5;
+			color: #f56565;
+		}
+
+		.status-tag.processing{
+			background: #fffaf0;
+			color: #dd6b20;
+		}
+
+		.status-tag.completed{
+			background: #dcfce7;
+			color: #166534;
+		}
+
+		.status-tag.refunded{
+			background: #fee2e2;
+			color: #b91c1c;
+		}
+
+		.status-tag.pending{
+			background: #e2e8f0;
+			color: #4a5568;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li class="active" @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+
+			<main class="content">
+				<header class="top-nav">
+					<div>农场管理后台-产品订单明细</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+
+				<button class="back-btn" @click="goBack">返回</button>
+
+				<div class="detail-scroll">
+					<div class="info-section">
+						<div class="section-title">产品订单信息</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">订单号</td>
+								<td class="value">{{ orderInfo.orderNo }}</td>
+								<td class="label">订单类型</td>
+								<td class="value">{{ orderInfo.orderType }}</td>
+							</tr>
+							<tr>
+								<td class="label">客户微信号</td>
+								<td class="value">{{ buyerInfo.customerWechat }}</td>
+								<td class="label">收货人/提货人</td>
+								<td class="value">{{ fulfillmentInfo.receiverName }}</td>
+							</tr>
+							<tr>
+								<td class="label">下单时间</td>
+								<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
+								<td class="label">订单状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">{{ orderInfo.orderStatus }}</span>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">支付状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">{{ orderInfo.paymentStatus }}</span>
+								</td>
+								<td class="label">履约状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.deliveryStatus, 'delivery')]">{{ orderInfo.deliveryStatus }}</span>
+								</td>
+							</tr>
+						<tr>
+							<td class="label">订单金额</td>
+							<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+							<td class="label">支付方式</td>
+							<td class="value">{{ orderInfo.paymentMethod }}</td>
+						</tr>
+						<tr>
+							<td class="label">商品件数</td>
+							<td class="value">{{ getTotalItemCount() }} 件</td>
+							<td class="label">配送方式</td>
+							<td class="value">{{ orderInfo.deliveryMethod }}</td>
+						</tr>
+						<tr>
+							<td class="label">履约说明</td>
+							<td class="value" colspan="3">{{ orderInfo.deliveryNote }}</td>
+						</tr>
+						<tr>
+							<td class="label">商品种类</td>
+							<td class="value">{{ orderItems.length }} 种</td>
+							<td class="label">订单来源</td>
+							<td class="value">{{ buyerInfo.orderSource }}</td>
+						</tr>
+					</table>
+				</div>
+
+					<div class="info-section">
+						<div class="section-title">商品订单明细</div>
+						<div class="detail-table-wrapper">
+							<table class="detail-table">
+								<thead>
+									<tr>
+										<th>序号</th>
+										<th>商品ID</th>
+										<th>商品图片</th>
+										<th>商品名称</th>
+										<th>规格说明</th>
+										<th>净含量</th>
+										<th>数量</th>
+										<th>单价(元)</th>
+										<th>商品状态</th>
+										<th>小计(元)</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="(item, index) in orderItems" :key="item.productId + '-' + index">
+										<td>{{ index + 1 }}</td>
+										<td>{{ item.productId }}</td>
+										<td><img :src="item.image" :alt="item.name" class="product-thumb" /></td>
+										<td>
+											<div class="product-name">{{ item.name }}</div>
+											<div class="product-desc">{{ item.description }}</div>
+										</td>
+										<td>{{ item.spec }}</td>
+										<td>{{ item.netWeight }}</td>
+										<td>{{ item.quantity }}</td>
+										<td>¥{{ formatAmount(item.price) }}</td>
+										<td>
+											<span :class="['status-tag', getStatusClass(item.productStatus, 'product')]">{{ item.productStatus }}</span>
+										</td>
+										<td>¥{{ formatAmount(item.subtotal) }}</td>
+									</tr>
+									<tr class="total-row">
+										<td colspan="9" style="text-align: right;">实付合计：</td>
+										<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<div class="info-section">
+						<div class="section-title">{{ orderInfo.deliveryMethod === '到店自提' ? '自提信息' : '配送信息' }}</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '自提门店' : '收货地址' }}</td>
+								<td class="value" colspan="3">{{ fulfillmentInfo.address }}</td>
+							</tr>
+							<tr>
+								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '预约时间' : '物流公司' }}</td>
+								<td class="value">{{ fulfillmentInfo.schedule }}</td>
+								<td class="label">{{ orderInfo.deliveryMethod === '到店自提' ? '提货码' : '物流单号' }}</td>
+								<td class="value">{{ fulfillmentInfo.trackingNo }}</td>
+							</tr>
+							<tr>
+								<td class="label">联系电话</td>
+								<td class="value">{{ fulfillmentInfo.phone }}</td>
+								<td class="label">补充说明</td>
+								<td class="value">{{ fulfillmentInfo.remark }}</td>
+							</tr>
+						</table>
+					</div>
+
+					<div class="info-section">
+						<div class="section-title">下单用户信息</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">昵称</td>
+								<td class="value">{{ buyerInfo.nickname }}</td>
+								<td class="label">姓名</td>
+								<td class="value">{{ buyerInfo.name }}</td>
+							</tr>
+							<tr>
+								<td class="label">客户微信号</td>
+								<td class="value">{{ buyerInfo.customerWechat }}</td>
+								<td class="label">电话</td>
+								<td class="value">{{ buyerInfo.phone }}</td>
+							</tr>
+							<tr>
+								<td class="label">会员等级</td>
+								<td class="value">{{ buyerInfo.memberLevel }}</td>
+								<td class="label">下单来源</td>
+								<td class="value">{{ buyerInfo.orderSource }}</td>
+							</tr>
+							<tr>
+								<td class="label">用户备注</td>
+								<td class="value" colspan="3">{{ buyerInfo.remark }}</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/auth.js"></script>
+	<script>
+		const { createApp } = Vue;
+
+		createApp({
+			data() {
+				return {
+					orderInfo: {
+						orderNo: 'P202604010001',
+						orderType: '农产品购买',
+						createTime: '2026/04/01 09:20:00',
+						orderStatus: '待发货',
+						paymentStatus: '已支付',
+						deliveryMethod: '快递配送',
+						deliveryStatus: '待发货',
+						deliveryNote: '顺丰冷链配送',
+						totalAmount: 158.00,
+						paymentMethod: '微信支付'
+					},
+					orderItems: [],
+					buyerInfo: {
+						nickname: '果园慢生活',
+						name: '李四',
+						customerWechat: 'wx_orchard_229',
+						phone: '13723533044',
+						memberLevel: '普通会员',
+						orderSource: '微信商城下单',
+						remark: '希望优先发货，保鲜包装完整。'
+					},
+					fulfillmentInfo: {
+						receiverName: '李四',
+						phone: '13723533044',
+						address: '浙江省杭州市西湖区文三路 88 号',
+						schedule: '顺丰冷链',
+						trackingNo: 'SF202604010188',
+						remark: '工作日白天可收货'
+					}
+				};
+			},
+
+			mounted() {
+				if (window.Auth && typeof window.Auth.requireAuth === 'function') {
+					window.Auth.requireAuth();
+					if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+						window.Auth.updateHeaderUserInfo();
+					}
+				}
+
+				const urlParams = new URLSearchParams(window.location.search);
+				const orderNo = urlParams.get('orderNo');
+				const phone = urlParams.get('phone');
+				this.loadOrderDetail(orderNo, phone);
+			},
+
+			methods: {
+				formatAmount(value) {
+					const amount = Number(value);
+					if (!Number.isFinite(amount)) {
+						return '0.00';
+					}
+					return amount.toFixed(2);
+				},
+
+				formatDisplayTime(value) {
+					if (!value) {
+						return '';
+					}
+
+					const text = String(value).trim().replace(/\s*日\//g, ' ');
+					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+					if (!match) {
+						return text;
+					}
+
+					const pad = item => String(item).padStart(2, '0');
+					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+				},
+
+				getTotalItemCount() {
+					return this.orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+				},
+
+				getStatusClass(status, type) {
+					if (type === 'payment') {
+						if (status === '已支付') return 'paid';
+						if (status === '待支付') return 'unpaid';
+						if (status === '已退款') return 'refunded';
+						return 'pending';
+					}
+
+					if (type === 'order' || type === 'delivery') {
+						if (status === '已完成') return 'completed';
+						if (status === '待支付') return 'unpaid';
+						if (status === '待发货' || status === '待自提' || status === '配送中') return 'processing';
+						if (status === '已取消') return 'refunded';
+						return 'pending';
+					}
+
+					if (type === 'product') {
+						return status === '已上架' ? 'completed' : 'pending';
+					}
+
+					return 'pending';
+				},
+
+				navigateTo(page) {
+					window.location.href = page;
+				},
+
+				goBack() {
+					window.location.href = 'order.html';
+				},
+
+				getProductCatalog() {
+					return {
+						'20250120120030': {
+							id: '20250120120030',
+							name: '苹果礼盒',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 58,
+							status: '已上架',
+							spec: '精品礼盒装',
+							netWeight: '5kg/箱',
+							description: '精选红富士苹果，适合家庭采购和节日赠送。'
+						},
+						'20261201130021': {
+							id: '20261201130021',
+							name: '雪梨礼盒',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20pear%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 49,
+							status: '已上架',
+							spec: '礼盒装',
+							netWeight: '4kg/箱',
+							description: '果肉细腻多汁，适合家庭储备和探亲送礼。'
+						},
+						'20260301120031': {
+							id: '20260301120031',
+							name: '番茄礼盒',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomato%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 39,
+							status: '已上架',
+							spec: '净菜精选装',
+							netWeight: '3kg/箱',
+							description: '农场现摘番茄，适合凉拌、炒菜和鲜食。'
+						},
+						'20260302120032': {
+							id: '20260302120032',
+							name: '黄瓜礼盒',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumber%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 29,
+							status: '已上架',
+							spec: '净菜精选装',
+							netWeight: '2.5kg/箱',
+							description: '口感清脆，适合凉拌或作为轻食蔬菜组合。'
+						},
+						'20260305120035': {
+							id: '20260305120035',
+							name: '胡萝卜家庭装',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							price: 18,
+							status: '已上架',
+							spec: '家庭实惠装',
+							netWeight: '2kg/袋',
+							description: '适合炖煮、榨汁和儿童辅食制作。'
+						},
+						'20260306120036': {
+							id: '20260306120036',
+							name: '白菜家庭装',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cabbage%20family%20pack%2C%20high%20quality%20photograph&image_size=square',
+							price: 16,
+							status: '已上架',
+							spec: '家庭实惠装',
+							netWeight: '3kg/袋',
+							description: '适合炖菜、炒菜和家庭囤货采购。'
+						},
+						'20260401090011': {
+							id: '20260401090011',
+							name: '农家土鸡蛋',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20eggs%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 26,
+							status: '已上架',
+							spec: '盒装',
+							netWeight: '20枚/盒',
+							description: '散养土鸡蛋，适合早餐和烘焙使用。'
+						},
+						'20260401090012': {
+							id: '20260401090012',
+							name: '农家蜂蜜',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=farm%20honey%20jar%2C%20high%20quality%20photograph&image_size=square',
+							price: 59,
+							status: '已上架',
+							spec: '玻璃瓶装',
+							netWeight: '500g/瓶',
+							description: '花香浓郁，适合冲饮和日常滋补。'
+						},
+						'20260401090013': {
+							id: '20260401090013',
+							name: '有机草莓礼盒',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organic%20strawberry%20gift%20box%2C%20high%20quality%20photograph&image_size=square',
+							price: 66,
+							status: '已上架',
+							spec: '冷链礼盒装',
+							netWeight: '2kg/箱',
+							description: '当季草莓，甜度高，适合冷链礼赠。'
+						}
+					};
+				},
+
+				buildOrderItems(itemConfigs) {
+					const catalog = this.getProductCatalog();
+					return itemConfigs.map(config => {
+						const product = catalog[config.productId] || {};
+						const price = Number(config.price != null ? config.price : product.price || 0);
+						const quantity = Number(config.quantity || 1);
+						return {
+							productId: config.productId,
+							image: config.image || product.image || '',
+							name: config.name || product.name || '未知商品',
+							description: config.description || product.description || '农产品订单商品',
+							spec: config.spec || product.spec || '标准装',
+							netWeight: config.netWeight || product.netWeight || '规格待补充',
+							quantity: quantity,
+							price: price,
+							productStatus: config.productStatus || product.status || '已上架',
+							subtotal: Number((price * quantity).toFixed(2))
+						};
+					});
+				},
+
+				getDefaultProductDetailMap() {
+					return {
+						'P202604010001': {
+							orderInfo: { orderNo: 'P202604010001', orderType: '农产品购买', createTime: '2026/04/01 09:20:00', orderStatus: '待发货', paymentStatus: '已支付', deliveryMethod: '快递配送', deliveryStatus: '待发货', deliveryNote: '顺丰冷链配送', totalAmount: 158.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '果园慢生活', name: '李四', customerWechat: 'wx_orchard_229', phone: '13723533044', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '希望优先发货，保鲜包装完整。' },
+							fulfillmentInfo: { receiverName: '李四', phone: '13723533044', address: '浙江省杭州市西湖区文三路 88 号', schedule: '顺丰冷链', trackingNo: 'SF202604010188', remark: '工作日白天可收货' },
+							itemConfigs: [
+								{ productId: '20260401090013', quantity: 1 },
+								{ productId: '20260401090011', quantity: 1, price: 26 },
+								{ productId: '20260302120032', quantity: 2, price: 33 }
+							]
+						},
+						'P202604010002': {
+							orderInfo: { orderNo: 'P202604010002', orderType: '农产品购买', createTime: '2026/04/01 10:05:00', orderStatus: '待自提', paymentStatus: '已支付', deliveryMethod: '到店自提', deliveryStatus: '待自提', deliveryNote: '预约 2026-04-01 18:30 自提', totalAmount: 96.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '绿色食客', name: '王晴', customerWechat: 'wx_greenlife_88', phone: '13229369824', memberLevel: '银卡会员', orderSource: '微信商城下单', remark: '到店后联系前台核销。' },
+							fulfillmentInfo: { receiverName: '王晴', phone: '13229369824', address: '农场服务中心 1 号提货点', schedule: '2026-04-01 18:30', trackingNo: 'ZT-6021', remark: '凭提货码到店核销' },
+							itemConfigs: [
+								{ productId: '20260301120031', quantity: 1, price: 39 },
+								{ productId: '20260302120032', quantity: 1, price: 29 },
+								{ productId: '20260306120036', quantity: 1, price: 28 }
+							]
+						},
+						'P202604010003': {
+							orderInfo: { orderNo: 'P202604010003', orderType: '农产品购买', createTime: '2026/04/01 10:42:00', orderStatus: '配送中', paymentStatus: '已支付', deliveryMethod: '快递配送', deliveryStatus: '配送中', deliveryNote: '圆通快递，已揽收', totalAmount: 218.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '居家囤货', name: '陈刚', customerWechat: 'wx_farmhome_516', phone: '18612345678', memberLevel: '金卡会员', orderSource: '微信商城下单', remark: '门口可放快递柜。' },
+							fulfillmentInfo: { receiverName: '陈刚', phone: '18612345678', address: '江苏省苏州市工业园区星湖街 66 号', schedule: '圆通速递', trackingNo: 'YT202604010521', remark: '已安排配送中' },
+							itemConfigs: [
+								{ productId: '20250120120030', quantity: 1 },
+								{ productId: '20261201130021', quantity: 1 },
+								{ productId: '20260401090012', quantity: 1, price: 52 },
+								{ productId: '20260305120035', quantity: 2, price: 29 }
+							]
+						},
+						'P202604010004': {
+							orderInfo: { orderNo: 'P202604010004', orderType: '农产品购买', createTime: '2026/04/01 11:08:00', orderStatus: '待支付', paymentStatus: '待支付', deliveryMethod: '快递配送', deliveryStatus: '待确认', deliveryNote: '地址待确认，尚未支付', totalAmount: 59.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '临时访客', name: '赵敏', customerWechat: 'wx_guest_520', phone: '18992469818', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '尚未完成支付，等待用户确认。' },
+							fulfillmentInfo: { receiverName: '赵敏', phone: '18992469818', address: '广东省广州市天河区体育西路 18 号', schedule: '待支付后分配物流', trackingNo: '待支付后生成', remark: '地址已填写，待支付后发货' },
+							itemConfigs: [
+								{ productId: '20260305120035', quantity: 1 },
+								{ productId: '20260306120036', quantity: 1 },
+								{ productId: '20260302120032', quantity: 1, price: 25 }
+							]
+						},
+						'P202604010005': {
+							orderInfo: { orderNo: 'P202604010005', orderType: '农产品购买', createTime: '2026/04/01 11:35:00', orderStatus: '已完成', paymentStatus: '已支付', deliveryMethod: '到店自提', deliveryStatus: '已完成', deliveryNote: '已完成门店核销', totalAmount: 88.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '会员周购', name: '孙悦', customerWechat: 'wx_vip_harvest', phone: '13987654321', memberLevel: 'VIP会员', orderSource: '微信商城下单', remark: '周末固定到店自提。' },
+							fulfillmentInfo: { receiverName: '孙悦', phone: '13987654321', address: '农场服务中心 2 号提货点', schedule: '2026-04-01 17:00', trackingNo: 'ZT-7388', remark: '已完成核销提货' },
+							itemConfigs: [
+								{ productId: '20260301120031', quantity: 1 },
+								{ productId: '20260302120032', quantity: 1 },
+								{ productId: '20260401090011', quantity: 1, price: 20 }
+							]
+						},
+						'P202604010006': {
+							orderInfo: { orderNo: 'P202604010006', orderType: '农产品购买', createTime: '2026/04/01 12:12:00', orderStatus: '已取消', paymentStatus: '已退款', deliveryMethod: '快递配送', deliveryStatus: '已取消', deliveryNote: '用户取消，退款完成', totalAmount: 69.00, paymentMethod: '微信支付' },
+							buyerInfo: { nickname: '退款用户', name: '周婷', customerWechat: 'wx_refund_021', phone: '18500001111', memberLevel: '普通会员', orderSource: '微信商城下单', remark: '下单后地址变更，用户申请取消。' },
+							fulfillmentInfo: { receiverName: '周婷', phone: '18500001111', address: '山东省青岛市崂山区海尔路 99 号', schedule: '无物流履约', trackingNo: '已取消', remark: '退款已原路退回' },
+							itemConfigs: [
+								{ productId: '20260306120036', quantity: 1, price: 19 },
+								{ productId: '20260305120035', quantity: 1, price: 18 },
+								{ productId: '20260302120032', quantity: 1, price: 16 },
+								{ productId: '20260301120031', quantity: 1, price: 16 }
+							]
+						}
+					};
+				},
+
+				getStoredProductSummary(orderNo, phone) {
+					try {
+						const productOrders = JSON.parse(localStorage.getItem('productOrders') || '[]');
+						const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+						const source = Array.isArray(productOrders) && productOrders.length ? productOrders : allOrders;
+						if (!Array.isArray(source)) {
+							return null;
+						}
+
+						return source.find(order => order.orderId === orderNo) ||
+							source.find(order => phone && order.contactPhone === phone) ||
+							null;
+					} catch (error) {
+						console.error('产品订单摘要读取失败:', error);
+						return null;
+					}
+				},
+
+				loadOrderDetail(orderNo, phone) {
+					const detailMap = this.getDefaultProductDetailMap();
+					const fallbackDetail = detailMap['P202604010001'];
+					const summary = this.getStoredProductSummary(orderNo, phone);
+					const detail = detailMap[orderNo] || fallbackDetail;
+
+					this.orderInfo = {
+						...detail.orderInfo,
+						orderNo: (summary && summary.orderId) || orderNo || detail.orderInfo.orderNo,
+						createTime: (summary && summary.orderTime) || detail.orderInfo.createTime,
+						orderStatus: (summary && summary.orderStatus) || detail.orderInfo.orderStatus,
+						paymentStatus: (summary && summary.paymentStatus) || detail.orderInfo.paymentStatus,
+						deliveryMethod: (summary && summary.deliveryMethod) || detail.orderInfo.deliveryMethod,
+						deliveryStatus: (summary && summary.orderStatus) || detail.orderInfo.deliveryStatus,
+						deliveryNote: (summary && summary.deliveryNote) || detail.orderInfo.deliveryNote,
+						totalAmount: (summary && summary.actualAmount != null) ? summary.actualAmount : detail.orderInfo.totalAmount,
+						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod
+					};
+
+					this.orderItems = this.buildOrderItems(detail.itemConfigs || []);
+
+					this.buyerInfo = {
+						...detail.buyerInfo,
+						customerWechat: (summary && summary.customerWechat) || detail.buyerInfo.customerWechat,
+						phone: phone || (summary && summary.contactPhone) || detail.buyerInfo.phone
+					};
+
+					this.fulfillmentInfo = {
+						...detail.fulfillmentInfo,
+						receiverName: (summary && summary.receiverName) || detail.fulfillmentInfo.receiverName,
+						phone: phone || (summary && summary.contactPhone) || detail.fulfillmentInfo.phone
+					};
+
+					this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
+				}
+			}
+		}).mount('#app');
+	</script>
+</body>
+</html>

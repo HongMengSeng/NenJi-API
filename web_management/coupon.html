@@ -77,6 +77,11 @@
 			padding-right: 4px;
 		}
 
+		.page-fixed-panel {
+			flex-shrink: 0;
+			margin-bottom: 10px;
+		}
+
 		.top-nav {
 			display: flex;
 			justify-content: space-between;
@@ -497,7 +502,7 @@
 				</header>
 
 				<div class="coupon-page">
-					<div class="content-container">
+					<div class="page-fixed-panel">
 						<div class="stats-grid">
 							<div class="stat-card">
 								<div class="stat-label">券品总数</div>
@@ -532,7 +537,9 @@
 							>
 							<button class="btn btn-default" @click="searchCoupons">搜索</button>
 						</div>
+					</div>
 
+					<div class="content-container">
 						<div class="table-wrapper">
 							<table class="coupon-table">
 								<thead>

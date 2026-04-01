@@ -83,6 +83,10 @@
 			min-height: 0;
 			margin-bottom: 10px;
 		}
+
+		.page-fixed-panel{
+			flex-shrink: 0;
+		}
 		
 		/* 顶部导航栏 */
 		.top-nav{
@@ -120,6 +124,108 @@
 		}
 		
 		/* 搜索容器 */
+		.visual-panel{
+			margin-bottom: 20px;
+			padding: 22px;
+			border-radius: 18px;
+			background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
+			border: 1px solid #d9e8ff;
+			box-shadow: 0 14px 32px rgba(49, 130, 206, 0.12);
+		}
+
+		.visual-panel-header{
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 16px;
+			margin-bottom: 18px;
+		}
+
+		.visual-panel-title{
+			font-size: 22px;
+			font-weight: 700;
+			color: #1e3a5f;
+			margin-bottom: 6px;
+		}
+
+		.visual-panel-desc{
+			font-size: 13px;
+			color: #5b6b82;
+			line-height: 1.6;
+		}
+
+		.visual-badge{
+			padding: 8px 14px;
+			border-radius: 999px;
+			background: rgba(37, 99, 235, 0.12);
+			color: #1d4ed8;
+			font-size: 12px;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.summary-grid{
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 14px;
+			margin-bottom: 18px;
+		}
+
+		.summary-card{
+			padding: 18px;
+			border-radius: 16px;
+			background: white;
+			border: 1px solid #e5eefc;
+			box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+		}
+
+		.summary-card-label{
+			font-size: 13px;
+			color: #6b7280;
+			margin-bottom: 10px;
+		}
+
+		.summary-card-value{
+			display: flex;
+			align-items: baseline;
+			gap: 6px;
+			margin-bottom: 8px;
+		}
+
+		.summary-card-number{
+			font-size: 28px;
+			font-weight: 700;
+			line-height: 1;
+			color: #111827;
+		}
+
+		.summary-card-unit{
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.summary-card-note{
+			font-size: 12px;
+			color: #64748b;
+			line-height: 1.5;
+		}
+
+		.summary-card.forest .summary-card-number{
+			color: #15803d;
+		}
+
+		.summary-card.sky .summary-card-number{
+			color: #2563eb;
+		}
+
+		.summary-card.sun .summary-card-number{
+			color: #d97706;
+		}
+
+		.summary-card.slate .summary-card-number{
+			color: #475569;
+		}
+
 		.search-container{
 			margin-bottom: 20px;
 		}
@@ -160,11 +266,17 @@
 		}
 		
 		/* 表格样式 */
+		.product-table-wrapper{
+			background: white;
+			border-radius: 14px;
+			overflow: hidden;
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+		}
+
 		.product-table{
 			width: 100%;
 			border-collapse: collapse;
 			background: white;
-			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		}
 		
 		.product-table th,
@@ -354,6 +466,26 @@
 			font-size: 12px;
 			margin-right: 0;
 		}
+
+		@media (max-width: 1200px){
+			.summary-grid{
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+
+		@media (max-width: 768px){
+			.visual-panel{
+				padding: 18px;
+			}
+
+			.visual-panel-header{
+				flex-direction: column;
+			}
+
+			.summary-grid{
+				grid-template-columns: 1fr;
+			}
+		}
 	</style>
 	
 	<body>
@@ -385,7 +517,77 @@
 					
 					<!-- 产品管理页面 -->
 					<div class="product-page">
-						<div class="content-container">
+						<div class="page-fixed-panel">
+							<div class="visual-panel">
+								<div class="visual-panel-header">
+									<div>
+										<div class="visual-panel-title">产品经营看板</div>
+										<div class="visual-panel-desc">根据当前产品列表自动汇总，搜索或刷新后会同步更新，方便在新增产品前先看清库存和上架结构。</div>
+									</div>
+									<div class="visual-badge">实时可视化</div>
+								</div>
+
+								<div class="summary-grid">
+									<div class="summary-card" :class="item.tone" v-for="item in dashboardCards" :key="item.label">
+										<div class="summary-card-label">{{ item.label }}</div>
+										<div class="summary-card-value">
+											<span class="summary-card-number">{{ item.value }}</span>
+											<span class="summary-card-unit">{{ item.unit }}</span>
+										</div>
+										<div class="summary-card-note">{{ item.note }}</div>
+									</div>
+								</div>
+
+								<div class="chart-grid" v-if="false">
+									<div class="chart-card">
+										<div class="chart-title">品类分布</div>
+										<div class="chart-subtitle">优先使用产品品类字段，没有时按名称自动归类</div>
+										<div class="chart-list">
+											<div v-for="item in categoryStats" :key="item.label">
+												<div class="chart-row-head">
+													<span>{{ item.label }}</span>
+													<span>{{ item.value }} 款</span>
+												</div>
+												<div class="chart-track">
+													<div class="chart-fill" :style="{ width: getBarWidth(item.value, categoryStats), background: item.color }"></div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div class="chart-card">
+										<div class="chart-title">状态分布</div>
+										<div class="chart-subtitle">快速查看当前已上架和已下架产品占比</div>
+										<div class="chart-list">
+											<div v-for="item in statusStats" :key="item.label">
+												<div class="chart-row-head">
+													<span>{{ item.label }}</span>
+													<span>{{ item.value }} 款</span>
+												</div>
+												<div class="chart-track">
+													<div class="chart-fill" :style="{ width: getBarWidth(item.value, statusStats), background: item.color }"></div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div class="chart-card">
+										<div class="chart-title">库存区间</div>
+										<div class="chart-subtitle">按低库存、正常库存、充足库存三个区间展示</div>
+										<div class="chart-list">
+											<div v-for="item in inventoryStats" :key="item.label">
+												<div class="chart-row-head">
+													<span>{{ item.label }}</span>
+													<span>{{ item.value }} 款</span>
+												</div>
+												<div class="chart-track">
+													<div class="chart-fill" :style="{ width: getBarWidth(item.value, inventoryStats), background: item.color }"></div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
 								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
@@ -397,43 +599,47 @@
 									<input type="text" v-model="searchKeyword" placeholder="产品ID/产品名称搜索" style="padding: 8px; width: 200px; border: 1px solid #e2e8f0; border-radius: 4px;" />
 									<button class="btn btn-default" @click="searchProducts">搜索</button>
 								</div>
-							
-							<table class="product-table">
-								<thead>
-									<tr>
-										<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-										<th>产品ID</th>
-										<th>产品封面</th>
-										<th>产品名称</th>
-										<th>上架时间</th>
-										<th>价格（斤）</th>
-										<th>库存数量</th>
-										<th>状态</th>
-										<th>操作</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr v-for="product in products" :key="product.id">
-										<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
-										<td>{{ product.id }}</td>
-										<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
-										<td>{{ product.name }}</td>
-										<td>{{ formatDisplayTime(product.uploadTime) }}</td>
-										<td>{{ product.price }}</td>
-										<td>{{ product.stock }}</td>
-										<td>
-											<span :class="['status-tag', product.status === '已上架' ? 'active' : 'inactive']">
-												{{ product.status }}
-											</span>
-										</td>
-										<td>
-											<div class="table-actions">
-												<button class="btn btn-primary" @click="editProduct(product)">编辑</button>
-											</div>
-										</td>
+						</div>
+
+						<div class="content-container">
+							<div class="product-table-wrapper">
+								<table class="product-table">
+									<thead>
+										<tr>
+											<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
+											<th>产品ID</th>
+											<th>产品封面</th>
+											<th>产品名称</th>
+											<th>上架时间</th>
+											<th>价格（斤）</th>
+											<th>库存数量</th>
+											<th>状态</th>
+											<th>操作</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="product in products" :key="product.id">
+											<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
+											<td>{{ product.id }}</td>
+											<td><img :src="product.image" alt="产品封面" class="product-image" /></td>
+											<td>{{ product.name }}</td>
+											<td>{{ formatDisplayTime(product.uploadTime) }}</td>
+											<td>{{ product.price }}</td>
+											<td>{{ product.stock }}</td>
+											<td>
+												<span :class="['status-tag', product.status === '已上架' ? 'active' : 'inactive']">
+													{{ product.status }}
+												</span>
+											</td>
+											<td>
+												<div class="table-actions">
+													<button class="btn btn-primary" @click="editProduct(product)">编辑</button>
+												</div>
+											</td>
 								</tr>
 										</tbody>
 								</table>
+							</div>
 						</div>
 						
 						<!-- 分页 -->
@@ -511,10 +717,120 @@
 					// 计算属性：获取选中的产品
 					selectedProducts() {
 						return this.products.filter(product => product.selected);
+					},
+
+					dashboardCards() {
+						const totalProducts = this.allProducts.length;
+						const activeProducts = this.allProducts.filter(product => product.status === '已上架').length;
+						const lowStockProducts = this.allProducts.filter(product => {
+							const stock = this.getStockValue(product.stock);
+							return stock > 0 && stock <= 20;
+						}).length;
+						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
+						const activeRatio = totalProducts ? Math.round((activeProducts / totalProducts) * 100) : 0;
+						return [
+							{ label: '产品总数', value: totalProducts, unit: '款', note: '当前列表内可管理的全部产品数量', tone: 'forest' },
+							{ label: '已上架', value: activeProducts, unit: '款', note: `上架占比 ${activeRatio}%`, tone: 'sky' },
+							{ label: '库存预警', value: lowStockProducts, unit: '款', note: '库存大于 0 且不超过 20 的产品', tone: 'sun' },
+							{ label: '库存总量', value: totalStock, unit: '件', note: '当前列表全部产品库存累计', tone: 'slate' }
+						];
+					},
+
+					categoryStats() {
+						const colors = {
+							'蔬菜': '#22c55e',
+							'水果': '#f97316',
+							'畜禽产品': '#8b5cf6',
+							'其他': '#64748b'
+						};
+						const counters = {
+							'蔬菜': 0,
+							'水果': 0,
+							'畜禽产品': 0,
+							'其他': 0
+						};
+						this.allProducts.forEach(product => {
+							const category = this.getProductCategory(product);
+							counters[category] = (counters[category] || 0) + 1;
+						});
+						return Object.keys(counters).map(label => ({
+							label,
+							value: counters[label],
+							color: colors[label]
+						}));
+					},
+
+					statusStats() {
+						return [
+							{
+								label: '已上架',
+								value: this.allProducts.filter(product => product.status === '已上架').length,
+								color: '#16a34a'
+							},
+							{
+								label: '已下架',
+								value: this.allProducts.filter(product => product.status !== '已上架').length,
+								color: '#ef4444'
+							}
+						];
+					},
+
+					inventoryStats() {
+						const counters = {
+							'低库存': 0,
+							'正常库存': 0,
+							'充足库存': 0
+						};
+						this.allProducts.forEach(product => {
+							const stock = this.getStockValue(product.stock);
+							if (stock <= 20) {
+								counters['低库存'] += 1;
+							} else if (stock <= 80) {
+								counters['正常库存'] += 1;
+							} else {
+								counters['充足库存'] += 1;
+							}
+						});
+						return [
+							{ label: '低库存', value: counters['低库存'], color: '#ef4444' },
+							{ label: '正常库存', value: counters['正常库存'], color: '#f59e0b' },
+							{ label: '充足库存', value: counters['充足库存'], color: '#3b82f6' }
+						];
 					}
 				},
 				
 				methods: {
+					getStockValue(stock) {
+						const value = Number(stock);
+						return Number.isFinite(value) && value > 0 ? value : 0;
+					},
+
+					getProductCategory(product) {
+						const explicitCategory = String(product.category || '').trim();
+						if (explicitCategory) {
+							return explicitCategory;
+						}
+						const name = String(product.name || '');
+						if (/(苹果|梨|桃|橙|柚|葡萄|草莓|西瓜|蓝莓|樱桃|芒果|香蕉|柠檬|菠萝|雪梨)/.test(name)) {
+							return '水果';
+						}
+						if (/(鸡|鸭|鹅|猪|牛|羊|蛋|鱼|虾|蟹|鸽|兔|畜|禽)/.test(name)) {
+							return '畜禽产品';
+						}
+						if (/(菜|椒|瓜|豆|薯|葱|姜|蒜|芹|萝卜|白菜|番茄|黄瓜|茄子|南瓜|冬瓜|丝瓜|苦瓜|西葫芦|菠菜|生菜|土豆|胡萝卜|韭菜|西红柿|蘑菇|菌菇)/.test(name)) {
+							return '蔬菜';
+						}
+						return '其他';
+					},
+
+					getBarWidth(value, stats) {
+						const maxValue = Math.max(...stats.map(item => item.value), 0);
+						if (!maxValue || value <= 0) {
+							return '0%';
+						}
+						return `${Math.max((value / maxValue) * 100, 12)}%`;
+					},
+
 					formatDisplayTime(value) {
 						if (!value) {
 							return '';

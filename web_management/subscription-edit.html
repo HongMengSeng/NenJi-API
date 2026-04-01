@@ -1,92 +1,104 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>农场管理后台-认购一亩田管理-编辑页面</title>
 	<style>
-		*{
+		* {
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
-		
-		body{
-			height:100vh;
-			font-family:"Microsoft YaHei";
-			background:#f5f7fa;
+
+		body {
+			height: 100vh;
+			font-family: "Microsoft YaHei";
+			background: #f5f7fa;
+			color: #1f2937;
 		}
-		
-		/* 主页面样式 */
-		.main-container{
+
+		.main-container {
 			display: flex;
 			height: 100vh;
 		}
-		
-		/* 主页面样式 */
-		.main-container{
-			display: flex;
-			height: 100vh;
-		}
-		
-		/* 侧边栏样式 */
-		.sidebar{
+
+		.sidebar {
 			width: 200px;
 			background: #1a202c;
 			color: white;
 			padding: 20px 0;
+			flex-shrink: 0;
 		}
-		
-		.sidebar-header{
+
+		.sidebar-header {
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
 			font-size: 18px;
 			font-weight: bold;
 		}
-		
-		.sidebar-menu{
+
+		.sidebar-menu {
 			list-style: none;
 			margin-top: 20px;
 		}
-		
-		.sidebar-menu li{
+
+		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
 		}
-		
-		.sidebar-menu li:hover{
+
+		.sidebar-menu li:hover {
 			background: #2d3748;
 		}
-		
-		.sidebar-menu li.active{
+
+		.sidebar-menu li.active {
 			background: #3182ce;
 		}
-		
-		/* 主内容区样式 */
-		.content{
+
+		.content {
 			flex: 1;
 			padding: 20px;
-			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
-		
-		/* 顶部导航栏 */
-		.top-nav{
+
+		.form-page {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+		}
+
+		.page-fixed-panel {
+			flex-shrink: 0;
+		}
+
+		.page-scroll-panel {
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			padding-bottom: 4px;
+		}
+
+		.top-nav {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
 			margin-bottom: 20px;
-			padding-bottom: 10px;
-			border-bottom: 1px solid #e0e0e0;
+			padding-bottom: 12px;
+			border-bottom: 1px solid #e2e8f0;
 		}
-		
-		.user-info{
+
+		.user-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
-			flex-shrink: 0;
 		}
-		
-		.user-avatar{
+
+		.user-avatar {
 			width: 40px;
 			height: 40px;
 			border-radius: 50%;
@@ -95,157 +107,271 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			flex-shrink: 0;
 			font-weight: 600;
 		}
-		
-		/* 表单容器 */
-		.form-container {
-			background-color: white;
-			padding: 20px;
-			border-radius: 4px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+		.page-intro {
+			background: linear-gradient(135deg, #effcf3 0%, #f0f9ff 100%);
+			border: 1px solid #d4f1dd;
+			border-radius: 18px;
+			padding: 22px 24px;
+			margin-bottom: 20px;
+			box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 		}
-		
-		/* 表单布局 */
+
+		.page-intro h2 {
+			font-size: 24px;
+			margin-bottom: 8px;
+			color: #0f172a;
+		}
+
+		.page-intro p {
+			font-size: 13px;
+			color: #475569;
+			line-height: 1.7;
+			max-width: 860px;
+		}
+
+		.meta-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 12px;
+			margin-top: 16px;
+		}
+
+		.meta-item {
+			background: rgba(255, 255, 255, 0.72);
+			border: 1px solid rgba(255, 255, 255, 0.68);
+			border-radius: 14px;
+			padding: 14px 16px;
+		}
+
+		.meta-label {
+			font-size: 12px;
+			color: #64748b;
+			margin-bottom: 6px;
+		}
+
+		.meta-value {
+			font-size: 15px;
+			font-weight: 700;
+			color: #0f172a;
+			word-break: break-all;
+		}
+
+		.form-card {
+			background: white;
+			border-radius: 18px;
+			padding: 24px;
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+		}
+
 		.form-grid {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 20px;
-			margin-bottom: 20px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 24px;
 		}
-		
-		/* 表单组 */
+
+		.form-section {
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			border-radius: 16px;
+			padding: 20px;
+		}
+
+		.form-section.full-width {
+			grid-column: 1 / -1;
+		}
+
+		.section-title {
+			font-size: 17px;
+			font-weight: 700;
+			color: #0f172a;
+			margin-bottom: 16px;
+		}
+
+		.field-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 16px 18px;
+		}
+
 		.form-group {
-			margin-bottom: 15px;
+			margin-bottom: 16px;
 		}
-		
+
+		.form-group:last-child {
+			margin-bottom: 0;
+		}
+
 		.form-group label {
 			display: block;
-			margin-bottom: 5px;
-			font-weight: bold;
 			font-size: 14px;
+			font-weight: 700;
+			color: #334155;
+			margin-bottom: 8px;
 		}
-		
+
 		.form-group input,
 		.form-group select,
 		.form-group textarea {
 			width: 100%;
-			padding: 8px;
-			border: 1px solid #e0e0e0;
-			border-radius: 4px;
+			border: 1px solid #dbe2ea;
+			border-radius: 12px;
+			padding: 10px 12px;
 			font-size: 14px;
+			color: #1f2937;
+			background: white;
 		}
-		
+
 		.form-group textarea {
+			min-height: 132px;
 			resize: vertical;
-			height: 120px;
+			line-height: 1.7;
 		}
 
-		.input-with-unit {
+		.input-tips {
+			margin-top: 6px;
+			font-size: 12px;
+			color: #64748b;
+			line-height: 1.6;
+		}
+
+		.upload-toolbar {
 			display: flex;
-			gap: 10px;
 			align-items: center;
-		}
-
-		.input-with-unit input {
-			flex: 1;
-		}
-
-		.input-with-unit select {
-			width: 90px;
-			flex-shrink: 0;
-		}
-		
-		/* 图片上传区域 */
-		.image-upload {
-			margin-top: 10px;
-		}
-		
-		.image-preview {
-			display: flex;
-			flex-wrap: wrap;
 			gap: 10px;
-			margin-top: 10px;
+			flex-wrap: wrap;
+			margin-bottom: 14px;
 		}
-		
-		.image-item {
-			position: relative;
+
+		.btn {
+			height: 38px;
+			padding: 0 16px;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 600;
+			transition: transform 0.15s ease, box-shadow 0.15s ease;
 		}
-		
-		.image-item img {
-			width: 80px;
-			height: 80px;
-			object-fit: cover;
-			border-radius: 4px;
+
+		.btn:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 		}
-		
-		.add-image-btn {
-			width: 80px;
-			height: 80px;
-			border: 1px dashed #e0e0e0;
-			border-radius: 4px;
+
+		.btn-success {
+			background: #22c55e;
+			color: white;
+		}
+
+		.btn-primary {
+			background: #3182ce;
+			color: white;
+		}
+
+		.btn-default {
+			background: #e2e8f0;
+			color: #334155;
+		}
+
+		.hidden-input {
+			display: none;
+		}
+
+		.cover-preview,
+		.empty-upload {
+			width: 100%;
+			height: 220px;
+			border-radius: 16px;
+			border: 1px dashed #cbd5e1;
+			background: white;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			cursor: pointer;
-			font-size: 24px;
-			color: #e0e0e0;
+			overflow: hidden;
 		}
-		
-		/* 按钮样式 */
-		.form-buttons {
-			margin-top: 20px;
+
+		.cover-preview img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.empty-upload {
+			color: #94a3b8;
+			font-size: 14px;
+		}
+
+		.image-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+			gap: 14px;
+		}
+
+		.image-card {
+			background: white;
+			border: 1px solid #dbe2ea;
+			border-radius: 14px;
+			padding: 10px;
+		}
+
+		.image-card img {
+			width: 100%;
+			height: 110px;
+			object-fit: cover;
+			border-radius: 10px;
+			display: block;
+			margin-bottom: 10px;
+		}
+
+		.image-card button {
+			width: 100%;
+			height: 32px;
+			border: none;
+			border-radius: 8px;
+			background: #fee2e2;
+			color: #b91c1c;
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.form-actions {
+			margin-top: 24px;
 			display: flex;
 			gap: 10px;
 		}
-		
-		.btn {
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: bold;
+
+		@media (max-width: 1100px) {
+			.form-grid,
+			.field-grid,
+			.meta-grid {
+				grid-template-columns: 1fr;
+			}
 		}
-		
-		.btn-success {
-			background-color: #4caf50;
-			color: white;
-		}
-		
-		.btn-default {
-			background-color: #e0e0e0;
-			color: #333;
-		}
-		
-		/* 规格信息 */
-		.spec-info {
-			margin-top: 20px;
-		}
-		
-		.spec-info h3 {
-			margin-bottom: 15px;
-			font-size: 16px;
-			font-weight: bold;
-		}
-		
-		/* 农场介绍 */
-		.farm-intro {
-			margin-top: 20px;
-		}
-		
-		.farm-intro h3 {
-			margin-bottom: 15px;
-			font-size: 16px;
-			font-weight: bold;
+
+		@media (max-width: 768px) {
+			.sidebar {
+				display: none;
+			}
+
+			.content {
+				padding: 16px;
+			}
+
+			.top-nav {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 12px;
+			}
 		}
 	</style>
 </head>
 <body>
 	<div id="app">
 		<div class="main-container">
-			<!-- 侧边栏 -->
 			<aside class="sidebar">
 				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
@@ -257,234 +383,437 @@
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
-			
-			<!-- 主内容区 -->
+
 			<main class="content">
-				<!-- 顶部导航 -->
-				<header class="top-nav">
-					<div>农场管理后台-认购一亩田管理-编辑页面</div>
-					<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div>用户12312</div>
+				<div class="form-page">
+					<div class="page-fixed-panel">
+						<header class="top-nav">
+							<div>农场管理后台-认购一亩田管理-编辑页面</div>
+							<div class="user-info">
+								<div class="user-avatar">用</div>
+								<div>已登录用户</div>
+							</div>
+						</header>
+
+						<section class="page-intro">
+							<h2>编辑认购套餐</h2>
+							<p>本页与认购套餐列表保持同一套字段结构，适合维护上下架、库存份数、种植周期、收获明细和认购须知。保存后会直接同步回认购套餐列表页。</p>
+							<div class="meta-grid">
+								<div class="meta-item">
+									<div class="meta-label">套餐ID</div>
+									<div class="meta-value">{{ subscriptionId || '--' }}</div>
+								</div>
+								<div class="meta-item">
+									<div class="meta-label">创建时间</div>
+									<div class="meta-value">{{ createTime || '--' }}</div>
+								</div>
+							</div>
+						</section>
 					</div>
-				</header>
-				
-				<!-- 编辑页面表单 -->
-				<div class="form-container">
-					<div class="form-grid">
-						<!-- 左侧表单 -->
-						<div>
-							<div class="form-group">
-								<label for="area">农场面积 (m²)</label>
-								<input type="text" id="area" v-model="form.area">
-							</div>
-							
-							<div class="form-group">
-								<label for="name">农场名称</label>
-								<input type="text" id="name" v-model="form.name">
-							</div>
-							
-							<div class="form-group">
-								<label for="price">认购单价（元/份）</label>
-								<input type="text" id="price" v-model="form.price" placeholder="请输入认购单价">
-							</div>
-							
-							<div class="form-group">
-								<label for="minYield">保底保有量</label>
-								<div class="input-with-unit">
-									<input type="text" id="minYield" v-model="form.minYield" placeholder="请输入保底保有量">
-									<select v-model="form.minYieldUnit" aria-label="保底保有量单位">
-										<option value="g">g</option>
-										<option value="kg">kg</option>
-										<option value="斤">斤</option>
+
+					<div class="page-scroll-panel">
+						<section class="form-card">
+							<div class="form-grid">
+						<div class="form-section">
+							<div class="section-title">基础信息</div>
+							<div class="field-grid">
+								<div class="form-group">
+									<label for="name">套餐名称</label>
+									<input id="name" v-model.trim="form.name" type="text" placeholder="请输入认购套餐名称">
+								</div>
+								<div class="form-group">
+									<label for="status">状态</label>
+									<select id="status" v-model="form.status">
+										<option value="已上架">已上架</option>
+										<option value="已下架">已下架</option>
 									</select>
 								</div>
-							</div>
-							
-							<div class="form-group">
-								<label for="status">状态</label>
-								<select id="status" v-model="form.status">
-									<option value="已上架">已上架</option>
-									<option value="已下架">已下架</option>
-								</select>
-							</div>
-							
-							<div class="form-group">
-								<label>农场封面</label>
-								<div class="image-upload">
-									<div class="image-preview">
-										<div class="image-item">
-											<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square" alt="农场封面">
-										</div>
-									</div>
+								<div class="form-group">
+									<label for="price">认购价格（元/份）</label>
+									<input id="price" v-model.trim="form.price" type="number" min="0" placeholder="请输入认购价格">
+								</div>
+								<div class="form-group">
+									<label for="stock">库存份数</label>
+									<input id="stock" v-model.trim="form.stock" type="number" min="0" placeholder="请输入库存份数">
+								</div>
+								<div class="form-group">
+									<label for="square">平方数（㎡）</label>
+									<input id="square" v-model.trim="form.square" type="number" min="0" step="0.1" placeholder="示例：666.7">
+								</div>
+								<div class="form-group">
+									<label for="cycle">种植周期</label>
+									<input id="cycle" v-model.trim="form.cycle" type="text" placeholder="示例：2026-04 至 2026-09">
+								</div>
+								<div class="form-group">
+									<label for="expectedYield">预计总产量</label>
+									<input id="expectedYield" v-model.trim="form.expectedYield" type="text" placeholder="示例：约 800 斤">
 								</div>
 							</div>
-							
 							<div class="form-group">
-								<label>轮播图(最多添加5张)</label>
-								<div class="image-upload">
-									<div class="image-preview">
-										<div class="image-item">
-											<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square" alt="轮播图1">
-										</div>
-										<div class="image-item">
-											<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sunset%20over%20farm%20field&image_size=square" alt="轮播图2">
-										</div>
-										<div class="add-image-btn" @click="addImage">+</div>
-									</div>
-								</div>
+								<label for="cropSummary">可收获农产品</label>
+								<input id="cropSummary" v-model.trim="form.cropSummary" type="text" placeholder="示例：番茄 / 黄瓜 / 玉米 / 青菜">
+								<div class="input-tips">建议使用“/”分隔作物，便于列表页摘要展示。</div>
 							</div>
 						</div>
-						
-						<!-- 右侧表单 -->
-						<div>
-							<div class="spec-info">
-								<h3>规格信息</h3>
-								<div class="form-group">
-									<label>规格图片(最多添加5张)</label>
-									<div class="image-upload">
-										<div class="image-preview">
-											<div class="image-item">
-												<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sunset%20over%20farm%20field&image_size=square" alt="规格图片1">
-											</div>
-											<div class="image-item">
-												<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20vegetables%20field&image_size=square" alt="规格图片2">
-											</div>
-											<div class="image-item">
-												<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=wheat%20field%20in%20sunshine&image_size=square" alt="规格图片3">
-											</div>
-											<div class="image-item">
-												<img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20field%20with%20farm%20house%20and%20mountains%20in%20background&image_size=square" alt="规格图片4">
-											</div>
-											<div class="add-image-btn" @click="addSpecImage">+</div>
-										</div>
-									</div>
+
+						<div class="form-section">
+							<div class="section-title">套餐封面</div>
+							<div class="upload-toolbar">
+								<button class="btn btn-primary" @click="triggerCoverUpload">更换封面图</button>
+								<button class="btn btn-default" v-if="form.cover" @click="clearCoverImage">清空封面</button>
+								<span class="input-tips">支持上传图片并保存为本地预览数据。</span>
+								<input ref="coverInput" class="hidden-input" type="file" accept="image/*" @change="handleCoverChange">
+							</div>
+							<div v-if="form.cover" class="cover-preview">
+								<img :src="form.cover" alt="套餐封面预览">
+							</div>
+							<div v-else class="empty-upload">暂未选择封面图</div>
+						</div>
+
+						<div class="form-section full-width">
+							<div class="section-title">轮播图</div>
+							<div class="upload-toolbar">
+								<button class="btn btn-primary" @click="triggerCarouselUpload">添加轮播图</button>
+								<span class="input-tips">最多上传 5 张，用于认购展示和明细查看。</span>
+								<input ref="carouselInput" class="hidden-input" type="file" accept="image/*" multiple @change="handleCarouselChange">
+							</div>
+							<div v-if="form.carouselImages.length" class="image-grid">
+								<div class="image-card" v-for="(image, index) in form.carouselImages" :key="'carousel-' + index">
+									<img :src="image" :alt="'轮播图' + (index + 1)">
+									<button @click="removeCarouselImage(index)">移除轮播图</button>
 								</div>
 							</div>
-							
-							<div class="farm-intro">
-								<h3>农场介绍</h3>
-								<div class="form-group">
-									<textarea v-model="form.intro" placeholder="请输入"></textarea>
+							<div v-else class="empty-upload">暂未添加轮播图</div>
+						</div>
+
+						<div class="form-section full-width">
+							<div class="section-title">明细图片</div>
+							<div class="upload-toolbar">
+								<button class="btn btn-primary" @click="triggerDetailUpload">添加明细图</button>
+								<span class="input-tips">最多上传 5 张，可用于展示搭配图片、地块图片、收获图等。</span>
+								<input ref="detailInput" class="hidden-input" type="file" accept="image/*" multiple @change="handleDetailChange">
+							</div>
+							<div v-if="form.detailImages.length" class="image-grid">
+								<div class="image-card" v-for="(image, index) in form.detailImages" :key="'detail-' + index">
+									<img :src="image" :alt="'明细图' + (index + 1)">
+									<button @click="removeDetailImage(index)">移除明细图</button>
 								</div>
+							</div>
+							<div v-else class="empty-upload">暂未添加明细图</div>
+						</div>
+
+						<div class="form-section full-width">
+							<div class="section-title">套餐介绍</div>
+							<div class="form-group">
+								<textarea v-model.trim="form.intro" placeholder="请输入认购套餐介绍，例如适合人群、认购玩法、权益说明等"></textarea>
+							</div>
+						</div>
+
+						<div class="form-section full-width">
+							<div class="section-title">收获明细</div>
+							<div class="form-group">
+								<textarea v-model.trim="form.harvestDetail" placeholder="请输入详细的收获明细，例如种植周期内可收获的农产品种类、预计产量等"></textarea>
+							</div>
+						</div>
+
+						<div class="form-section full-width">
+							<div class="section-title">认购须知</div>
+							<div class="form-group">
+								<textarea v-model.trim="form.notes" placeholder="请输入认购须知，例如联系人填写要求、支付后订单说明、售后规则等"></textarea>
 							</div>
 						</div>
 					</div>
-					
-					<!-- 按钮 -->
-					<div class="form-buttons">
-						<button class="btn btn-success" @click="updateFarm">修改农场</button>
+
+					<div class="form-actions">
+						<button class="btn btn-success" @click="updateSubscription">保存修改</button>
 						<button class="btn btn-default" @click="cancel">取消</button>
+					</div>
+						</section>
 					</div>
 				</div>
 			</main>
 		</div>
 	</div>
-	
+
 	<script src="js/v3.2.8/vue.global.prod.js"></script>
 	<script src="js/auth.js"></script>
+	<script src="js/subscription-storage.js"></script>
 	<script>
-		const { createApp } = Vue
-		
+		const { createApp } = Vue;
+
+		function getDefaultForm() {
+			return {
+				name: '',
+				price: '',
+				stock: '',
+				square: '',
+				cycle: '',
+				cropSummary: '',
+				expectedYield: '',
+				status: '已上架',
+				cover: '',
+				carouselImages: [],
+				detailImages: [],
+				intro: '',
+				harvestDetail: '',
+				notes: ''
+			};
+		}
+
 		createApp({
 			data() {
 				return {
-					form: {
-						area: '',
-						name: '',
-						price: '',
-						minYield: '',
-						minYieldUnit: '斤',
-						status: '已上架',
-						intro: ''
-					}
-				}
+					subscriptionId: '',
+					createTime: '',
+					form: getDefaultForm()
+				};
 			},
-			
+
 			mounted() {
-				// 检查是否是编辑模式
-				const urlParams = new URLSearchParams(window.location.search);
-				const subscriptionId = urlParams.get('id');
-				if (subscriptionId) {
-					// 模拟加载认购一亩田数据
-					this.loadSubscriptionData(subscriptionId);
+				if (window.Auth && typeof window.Auth.requireAuth === 'function') {
+					window.Auth.requireAuth();
+					if (typeof window.Auth.updateHeaderUserInfo === 'function') {
+						window.Auth.updateHeaderUserInfo();
+					}
 				}
+
+				this.loadSubscription();
 			},
-			
+
 			methods: {
-				// 加载认购一亩田数据
-				extractMinYieldValue(value) {
-					const match = String(value || '').match(/[\d.]+/);
-					return match ? match[0] : '';
-				},
-
-				extractMinYieldUnit(value) {
-					const text = String(value || '').toLowerCase();
-					if (text.includes('kg')) {
-						return 'kg';
-					}
-					if (text.includes('g')) {
-						return 'g';
-					}
-					if (String(value || '').includes('斤')) {
-						return '斤';
-					}
-					return '斤';
-				},
-
-				loadSubscriptionData(id) {
-					// 从localStorage中获取认购一亩田数据
-					const subscriptionsData = localStorage.getItem('subscriptions');
-					if (subscriptionsData) {
-						const subscriptions = JSON.parse(subscriptionsData);
-						const subscription = subscriptions.find(s => s.id === id);
-						if (subscription) {
-							// 根据认购一亩田数据填充表单
-							this.form = {
-								area: subscription.area,
-								name: subscription.name,
-								price: subscription.price,
-								minYield: this.extractMinYieldValue(subscription.minYield),
-								minYieldUnit: this.extractMinYieldUnit(subscription.minYield),
-								status: subscription.status,
-								intro: ''
-							};
-						}
-					}
-				},
-				// 跳转到指定页面
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				
-				// 添加轮播图
-				addImage() {
-					// 模拟添加图片
-					console.log('添加轮播图');
-				},
-				
-				// 添加规格图片
-				addSpecImage() {
-					// 模拟添加规格图片
-					console.log('添加规格图片');
-				},
-				
-				// 修改农场
-				updateFarm() {
-					// 模拟修改农场
-					console.log('修改农场', this.form);
-					// 跳转到列表页面
-					window.location.href = 'subscription.html';
-				},
-				
-				// 取消
+
 				cancel() {
-					// 跳转到列表页面
-					window.location.href = 'subscription.html';
+					this.navigateTo('subscription.html');
+				},
+
+				loadSubscription() {
+					const params = new URLSearchParams(window.location.search);
+					const id = params.get('id');
+
+					if (!id) {
+						alert('未找到认购套餐ID');
+						this.cancel();
+						return;
+					}
+
+					const subscriptions = window.SubscriptionStore.load();
+					const current = subscriptions.find((subscription) => String(subscription.id) === String(id));
+
+					if (!current) {
+						alert('未找到对应的认购套餐');
+						this.cancel();
+						return;
+					}
+
+					this.subscriptionId = current.id;
+					this.createTime = current.createTime;
+					this.form = {
+						name: current.name,
+						price: current.price,
+						stock: current.stock,
+						square: current.square,
+						cycle: current.cycle,
+						cropSummary: current.cropSummary,
+						expectedYield: current.expectedYield,
+						status: current.status,
+						cover: current.cover,
+						carouselImages: [...(current.carouselImages || [])],
+						detailImages: [...(current.detailImages || [])],
+						intro: current.intro,
+						harvestDetail: current.harvestDetail,
+						notes: current.notes
+					};
+				},
+
+				triggerCoverUpload() {
+					this.$refs.coverInput.click();
+				},
+
+				triggerCarouselUpload() {
+					this.$refs.carouselInput.click();
+				},
+
+				triggerDetailUpload() {
+					this.$refs.detailInput.click();
+				},
+
+				clearCoverImage() {
+					this.form.cover = '';
+					if (this.$refs.coverInput) {
+						this.$refs.coverInput.value = '';
+					}
+				},
+
+				async readFilesAsDataUrls(fileList, limit) {
+					const files = Array.from(fileList || [])
+						.filter((file) => file && file.type && file.type.startsWith('image/'))
+						.slice(0, limit);
+
+					return Promise.all(files.map((file) => {
+						return new Promise((resolve, reject) => {
+							const reader = new FileReader();
+							reader.onload = () => resolve(reader.result);
+							reader.onerror = () => reject(new Error('图片读取失败'));
+							reader.readAsDataURL(file);
+						});
+					}));
+				},
+
+				async handleCoverChange(event) {
+					try {
+						const images = await this.readFilesAsDataUrls(event.target.files, 1);
+						this.form.cover = images[0] || '';
+					} catch (error) {
+						alert('封面图读取失败，请重新选择');
+					} finally {
+						event.target.value = '';
+					}
+				},
+
+				async handleCarouselChange(event) {
+					const remaining = 5 - this.form.carouselImages.length;
+
+					if (remaining <= 0) {
+						alert('轮播图最多添加 5 张');
+						event.target.value = '';
+						return;
+					}
+
+					try {
+						const images = await this.readFilesAsDataUrls(event.target.files, remaining);
+						this.form.carouselImages.push(...images);
+					} catch (error) {
+						alert('轮播图读取失败，请重新选择');
+					} finally {
+						event.target.value = '';
+					}
+				},
+
+				async handleDetailChange(event) {
+					const remaining = 5 - this.form.detailImages.length;
+
+					if (remaining <= 0) {
+						alert('明细图最多添加 5 张');
+						event.target.value = '';
+						return;
+					}
+
+					try {
+						const images = await this.readFilesAsDataUrls(event.target.files, remaining);
+						this.form.detailImages.push(...images);
+					} catch (error) {
+						alert('明细图读取失败，请重新选择');
+					} finally {
+						event.target.value = '';
+					}
+				},
+
+				removeCarouselImage(index) {
+					this.form.carouselImages.splice(index, 1);
+				},
+
+				removeDetailImage(index) {
+					this.form.detailImages.splice(index, 1);
+				},
+
+				validateForm() {
+					if (!this.form.name) {
+						alert('请输入套餐名称');
+						return false;
+					}
+
+					if (!this.form.price) {
+						alert('请输入认购价格');
+						return false;
+					}
+
+					if (!this.form.stock) {
+						alert('请输入库存份数');
+						return false;
+					}
+
+					if (!this.form.square) {
+						alert('请输入平方数');
+						return false;
+					}
+
+					if (!this.form.cycle) {
+						alert('请输入种植周期');
+						return false;
+					}
+
+					if (!this.form.cropSummary) {
+						alert('请输入可收获农产品');
+						return false;
+					}
+
+					if (!this.form.expectedYield) {
+						alert('请输入预计总产量');
+						return false;
+					}
+
+					if (!this.form.intro) {
+						alert('请输入套餐介绍');
+						return false;
+					}
+
+					if (!this.form.harvestDetail) {
+						alert('请输入收获明细');
+						return false;
+					}
+
+					if (!this.form.notes) {
+						alert('请输入认购须知');
+						return false;
+					}
+
+					return true;
+				},
+
+				buildPayload() {
+					return window.SubscriptionStore.normalize({
+						id: this.subscriptionId,
+						createTime: this.createTime,
+						name: this.form.name,
+						price: this.form.price,
+						stock: this.form.stock,
+						square: this.form.square,
+						cycle: this.form.cycle,
+						cropSummary: this.form.cropSummary,
+						expectedYield: this.form.expectedYield,
+						status: this.form.status,
+						cover: this.form.cover || window.SubscriptionStore.createPlaceholderImage(this.form.name || '认购套餐', '认购套餐封面图', '#16a34a', '#4ade80'),
+						carouselImages: this.form.carouselImages,
+						detailImages: this.form.detailImages,
+						intro: this.form.intro,
+						harvestDetail: this.form.harvestDetail,
+						notes: this.form.notes
+					}, 0);
+				},
+
+				updateSubscription() {
+					if (!this.validateForm()) {
+						return;
+					}
+
+					const subscriptions = window.SubscriptionStore.load();
+					const currentIndex = subscriptions.findIndex((subscription) => String(subscription.id) === String(this.subscriptionId));
+
+					if (currentIndex === -1) {
+						alert('未找到对应的认购套餐');
+						this.cancel();
+						return;
+					}
+
+					subscriptions.splice(currentIndex, 1, this.buildPayload());
+					window.SubscriptionStore.save(subscriptions);
+					this.navigateTo('subscription.html');
 				}
 			}
-		}).mount('#app')
+		}).mount('#app');
 	</script>
 </body>
 </html>
-

@@ -139,7 +139,7 @@
 		}
 		
 		.btn-danger{
-			background: #e53e3e;
+			background: #f44336;
 			color: white;
 		}
 		
@@ -499,6 +499,12 @@
 			gap: 16px;
 			flex-wrap: wrap;
 			margin-bottom: 20px;
+			position: sticky;
+			top: 0;
+			z-index: 6;
+			background: white;
+			padding-bottom: 12px;
+			box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 		}
 
 		.search-container{
@@ -528,14 +534,6 @@
 			background: #f8fafc;
 			border: 1px dashed #cbd5e1;
 			border-radius: 8px;
-		}
-
-		.management-body .pagination{
-			position: static;
-			border-top: none;
-			background: transparent;
-			padding: 18px 0 0;
-			gap: 10px;
 		}
 
 		@media (max-width: 768px){
@@ -592,6 +590,7 @@
 										<div class="management-toolbar">
 											<div class="action-buttons">
 												<button class="btn btn-success" @click="navigateToAdd">新增菜品</button>
+												<button class="btn btn-danger" @click="openDishDeleteModal()" :disabled="selectedDishes.length === 0">删除菜品</button>
 												<button class="btn btn-default" @click="refreshDishData">刷新数据</button>
 											</div>
 											<div class="search-container">
@@ -602,6 +601,7 @@
 										<table class="dish-table" v-if="dishes.length > 0">
 											<thead>
 												<tr>
+													<th><input type="checkbox" v-model="dishSelectAll" @change="toggleSelectAllDishes" /></th>
 													<th>菜品ID</th>
 													<th>菜品封面</th>
 													<th>菜品名称</th>
@@ -614,6 +614,7 @@
 											</thead>
 											<tbody>
 												<tr v-for="dish in dishes" :key="dish.id">
+													<td><input type="checkbox" v-model="dish.selected" @change="updateSelectedDish" /></td>
 													<td>{{ dish.id }}</td>
 													<td><img :src="dish.image" alt="菜品封面" class="dish-image" /></td>
 													<td>{{ dish.name }}</td>
@@ -626,22 +627,13 @@
 													<td>
 														<div class="table-actions">
 															<button class="btn btn-primary" @click="editDish(dish)">编辑</button>
+															<button class="btn btn-danger" @click="openDishDeleteModal(dish)">删除</button>
 														</div>
 													</td>
 												</tr>
 											</tbody>
 										</table>
 										<div class="empty-state" v-else>暂无符合条件的菜品数据</div>
-										<div class="pagination" v-if="totalDishes > 0">
-											<span class="pagination-info">共 {{ totalDishes }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
-											<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-											<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
-											<div style="display: flex; align-items: center; gap: 5px;">
-												<span>跳转到</span>
-												<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
-												<button class="pagination-btn" @click="jumpToPage">跳转</button>
-											</div>
-										</div>
 									</div>
 								</section>
 								<section class="management-card">
@@ -656,7 +648,7 @@
 										<div class="management-toolbar">
 											<div class="action-buttons">
 												<button class="btn btn-success" @click="addTable">新增餐桌</button>
-												<button class="btn btn-danger" @click="deleteTable()" :disabled="selectedTables.length === 0">删除餐桌</button>
+												<button class="btn btn-danger" @click="openTableDeleteModal()" :disabled="selectedTables.length === 0">删除餐桌</button>
 												<button class="btn btn-default" @click="refreshTableData">刷新数据</button>
 											</div>
 											<div class="search-container">
@@ -693,7 +685,7 @@
 															<button class="btn btn-primary" @click="editTable(table)">编辑</button>
 															<button class="btn btn-primary" @click="openTableDetail(table)">查看明细</button>
 															<button class="btn btn-default" @click="toggleTableStatus(table)">{{ getTableActionText(table.status) }}</button>
-															<button class="btn btn-danger" @click="deleteTable(table)">删除</button>
+															<button class="btn btn-danger" @click="openTableDeleteModal(table)">删除</button>
 														</div>
 													</td>
 												</tr>
@@ -702,6 +694,16 @@
 										<div class="empty-state" v-else>暂无符合条件的餐桌数据</div>
 									</div>
 								</section>
+							</div>
+						</div>
+						<div class="pagination" v-if="dishSectionOpen && totalDishes > 0">
+							<span class="pagination-info">共 {{ totalDishes }} 条，第 {{ currentPage }}/{{ totalPages }} 页</span>
+							<button class="pagination-btn" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+							<button class="pagination-btn" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+							<div style="display: flex; align-items: center; gap: 5px;">
+								<span>跳转到</span>
+								<input type="number" v-model.number="jumpPage" min="1" :max="totalPages" style="width: 60px; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;" />
+								<button class="pagination-btn" @click="jumpToPage">跳转</button>
 							</div>
 						</div>
 					</div>
@@ -763,6 +765,25 @@
 				</div>
 			</div>
 
+			<div class="modal-overlay" v-if="showDeleteModal">
+				<div class="modal">
+					<div class="modal-header">
+						<h3 class="modal-title">删除确认</h3>
+					</div>
+					<div class="modal-body">
+						<div style="text-align: center;">
+							<p style="margin-bottom: 10px;">{{ getDeleteMessage() }}</p>
+							<p class="modal-warning">{{ getDeleteWarningText() }}</p>
+							<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-default" @click="cancelDelete">取消</button>
+						<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+					</div>
+				</div>
+			</div>
+
 		</div>
 		
 		<script>
@@ -779,12 +800,17 @@
 						pageSize: 15,
 						totalPages: 1,
 						totalDishes: 0,
+						dishSelectAll: false,
 						selectedTable: null,
 						tableSelectAll: false,
 						showTableDetailModal: false,
 						tableDetailItem: null,
 						tableQrPayload: '',
 						tableQrCodeUrl: '',
+						showDeleteModal: false,
+						deleteTargetType: '',
+						deleteTargetIds: [],
+						deleteTargetLabel: '',
 						searchKeyword: '',
 						tableSearchKeyword: '',
 						jumpPage: 1,
@@ -797,6 +823,9 @@
 					this.loadTablesFromLocalStorage();
 				},
 				computed: {
+					selectedDishes() {
+						return this.dishes.filter(dish => dish.selected);
+					},
 					selectedTables() {
 						return this.tables.filter(table => table.selected);
 					},
@@ -975,10 +1004,15 @@
 						const startIndex = (this.currentPage - 1) * this.pageSize;
 						this.dishes = filtered.slice(startIndex, startIndex + this.pageSize);
 						this.jumpPage = this.currentPage;
+						this.syncDishSelectionState();
 					},
 					applyTableFilter() {
 						this.tables = this.filterTables();
 						this.syncTableSelectionState();
+					},
+					syncDishSelectionState() {
+						const selected = this.dishes.filter(dish => dish.selected);
+						this.dishSelectAll = this.dishes.length > 0 && selected.length === this.dishes.length;
 					},
 					syncTableSelectionState() {
 						const selected = this.tables.filter(table => table.selected);
@@ -991,6 +1025,17 @@
 					},
 					searchTables() {
 						this.applyTableFilter();
+					},
+					toggleSelectAllDishes() {
+						this.dishes.forEach(dish => {
+							dish.selected = this.dishSelectAll;
+						});
+						this.syncDishSelectionState();
+						this.saveDishesToLocalStorage();
+					},
+					updateSelectedDish() {
+						this.syncDishSelectionState();
+						this.saveDishesToLocalStorage();
 					},
 					toggleSelectAllTables() {
 						this.tables.forEach(table => {
@@ -1005,6 +1050,17 @@
 					},
 					editDish(dish) {
 						window.location.href = 'dish-edit.html?id=' + dish.id;
+					},
+					openDishDeleteModal(dish = null) {
+						const targets = dish ? [dish] : this.selectedDishes.slice();
+						if (!targets.length) return;
+						this.deleteTargetType = 'dish';
+						this.deleteTargetIds = targets.map(item => item.id);
+						this.deleteTargetLabel = targets.length === 1 ? targets[0].name : `${targets.length} 个菜品`;
+						this.showDeleteModal = true;
+					},
+					deleteDish(dish = null) {
+						this.openDishDeleteModal(dish);
 					},
 					editTable(table) {
 						window.location.href = 'table-form.html?id=' + encodeURIComponent(table.id);
@@ -1033,6 +1089,14 @@
 					},
 					addTable() {
 						window.location.href = 'table-form.html';
+					},
+					openTableDeleteModal(table = null) {
+						const targets = table ? [table] : this.selectedTables.slice();
+						if (!targets.length) return;
+						this.deleteTargetType = 'table';
+						this.deleteTargetIds = targets.map(item => item.id);
+						this.deleteTargetLabel = targets.length === 1 ? targets[0].id : `${targets.length} 张餐桌`;
+						this.showDeleteModal = true;
 					},
 					getTableStatusClass(status) {
 						if (status === '空闲') return 'free';
@@ -1076,6 +1140,47 @@
 						this.tableQrPayload = '';
 						this.tableQrCodeUrl = '';
 					},
+					getDeleteMessage() {
+						if (this.deleteTargetIds.length > 1) {
+							return this.deleteTargetType === 'table'
+								? `确定要删除已选择的 ${this.deleteTargetIds.length} 张餐桌吗？`
+								: `确定要删除已选择的 ${this.deleteTargetIds.length} 个菜品吗？`;
+						}
+						return this.deleteTargetType === 'table' ? '确定要删除该餐桌吗？' : '确定要删除该菜品吗？';
+					},
+					getDeleteWarningText() {
+						return this.deleteTargetLabel || '';
+					},
+					resetDeleteState() {
+						this.showDeleteModal = false;
+						this.deleteTargetType = '';
+						this.deleteTargetIds = [];
+						this.deleteTargetLabel = '';
+					},
+					cancelDelete() {
+						this.resetDeleteState();
+					},
+					confirmDelete() {
+						if (!this.deleteTargetIds.length || !this.deleteTargetType) {
+							this.resetDeleteState();
+							return;
+						}
+
+						const removeSet = new Set(this.deleteTargetIds);
+
+						if (this.deleteTargetType === 'table') {
+							this.allTables = this.allTables.filter(item => !removeSet.has(item.id));
+							this.saveTablesToLocalStorage();
+							this.applyTableFilter();
+							this.resetDeleteState();
+							return;
+						}
+
+						this.allDishes = this.allDishes.filter(item => !removeSet.has(item.id));
+						this.saveDishesToLocalStorage();
+						this.applyDishFilter();
+						this.resetDeleteState();
+					},
 					toggleTableStatus(table) {
 						const nextStatusMap = { '空闲': '使用中', '使用中': '停用', '停用': '空闲' };
 						table.status = nextStatusMap[table.status] || '空闲';
@@ -1084,14 +1189,7 @@
 						this.applyTableFilter();
 					},
 					deleteTable(table = null) {
-						const targets = table ? [table] : this.selectedTables.slice();
-						if (!targets.length) return;
-						const message = targets.length === 1 ? `确定删除餐桌 ${targets[0].id} 吗？` : `确定删除已选择的 ${targets.length} 张餐桌吗？`;
-						if (!window.confirm(message)) return;
-						const removeSet = new Set(targets.map(item => item.id));
-						this.allTables = this.allTables.filter(item => !removeSet.has(item.id));
-						this.saveTablesToLocalStorage();
-						this.applyTableFilter();
+						this.openTableDeleteModal(table);
 					}
 				}
 			}).mount('#app')

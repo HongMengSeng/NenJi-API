@@ -1,0 +1,1039 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>农场管理后台-菜品订单明细</title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body{
+			height:100vh;
+			font-family:"Microsoft YaHei";
+			background:#f5f7fa;
+		}
+		
+		/* 主页面样式 */
+		.main-container{
+			display: flex;
+			height: 100vh;
+		}
+		
+		/* 侧边栏样式 */
+		.sidebar{
+			width: 200px;
+			background: #1a202c;
+			color: white;
+			padding: 20px 0;
+		}
+		
+		.sidebar-header{
+			padding: 0 20px 20px;
+			border-bottom: 1px solid #2d3748;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		
+		.sidebar-menu{
+			list-style: none;
+			margin-top: 20px;
+		}
+		
+		.sidebar-menu li{
+			padding: 12px 20px;
+			cursor: pointer;
+		}
+		
+		.sidebar-menu li:hover{
+			background: #2d3748;
+		}
+		
+		.sidebar-menu li.active{
+			background: #3182ce;
+		}
+		
+		/* 主内容区样式 */
+		.content{
+			flex: 1;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden;
+		}
+		
+		/* 顶部导航栏 */
+		.top-nav{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+			flex-shrink: 0;
+		}
+		
+		.user-info{
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-shrink: 0;
+		}
+		
+		.user-avatar{
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #3182ce;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-shrink: 0;
+			font-weight: 600;
+		}
+		
+		/* 返回按钮 */
+		.back-btn{
+			padding: 8px 16px;
+			border: 1px solid #e2e8f0;
+			background: white;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #4a5568;
+			margin-bottom: 20px;
+			transition: all 0.3s;
+			align-self: flex-start;
+			flex-shrink: 0;
+		}
+		
+		.back-btn:hover{
+			background: #3182ce;
+			color: white;
+			border-color: #3182ce;
+		}
+
+		.detail-scroll{
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+		}
+		
+		/* 信息卡片样式 */
+		.info-section{
+			background: white;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		
+		.section-title{
+			font-size: 16px;
+			font-weight: bold;
+			color: #2d3748;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		/* 信息表格样式 */
+		.info-table{
+			width: 100%;
+		}
+		
+		.info-table td{
+			padding: 10px 0;
+			vertical-align: top;
+		}
+		
+		.info-table .label{
+			width: 120px;
+			color: #718096;
+			font-size: 14px;
+		}
+		
+		.info-table .value{
+			color: #2d3748;
+			font-size: 14px;
+			font-weight: 500;
+		}
+		
+		/* 明细表格样式 */
+		.detail-table-wrapper{
+			overflow-x: auto;
+		}
+
+		.detail-table{
+			width: 100%;
+			min-width: 1280px;
+			border-collapse: collapse;
+		}
+		
+		.detail-table th,
+		.detail-table td{
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		
+		.detail-table th{
+			background: #f7fafc;
+			font-weight: bold;
+			color: #4a5568;
+			font-size: 14px;
+		}
+		
+		.detail-table td{
+			font-size: 14px;
+			color: #2d3748;
+		}
+		
+		.detail-table tr:hover{
+			background: #f7fafc;
+		}
+
+		.dish-thumb{
+			width: 56px;
+			height: 56px;
+			border-radius: 8px;
+			object-fit: cover;
+			display: block;
+		}
+
+		.dish-name{
+			font-weight: 600;
+			color: #1f2937;
+			margin-bottom: 4px;
+		}
+
+		.dish-desc,
+		.cell-note{
+			font-size: 12px;
+			line-height: 1.6;
+			color: #718096;
+		}
+		
+		/* 合计行样式 */
+		.total-row{
+			background: #f7fafc !important;
+			font-weight: bold;
+		}
+		
+		.total-row td{
+			color: #e53e3e;
+		}
+		
+		/* 状态标签 */
+		.status-tag{
+			padding: 4px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.status-tag.paid{
+			background: #e6fffa;
+			color: #38b2ac;
+		}
+		
+		.status-tag.unpaid{
+			background: #fff5f5;
+			color: #f56565;
+		}
+		
+		.status-tag.delivered{
+			background: #e6fffa;
+			color: #38b2ac;
+		}
+		
+		.status-tag.active{
+			background: #dcfce7;
+			color: #166534;
+		}
+
+		.status-tag.inactive{
+			background: #e2e8f0;
+			color: #475569;
+		}
+
+		.status-tag.processing{
+			background: #feebc8;
+			color: #9a3412;
+		}
+
+		.status-tag.completed{
+			background: #dcfce7;
+			color: #166534;
+		}
+
+		.status-tag.refunded{
+			background: #fee2e2;
+			color: #b91c1c;
+		}
+
+		.status-tag.pending{
+			background: #fffaf0;
+			color: #ed8936;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main-container">
+			<!-- 侧边栏 -->
+			<aside class="sidebar">
+				<div class="sidebar-header">农场管理后台</div>
+				<ul class="sidebar-menu">
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li class="active" @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
+					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
+					<li @click="navigateTo('user.html')">用户管理</li>
+				</ul>
+			</aside>
+			
+			<!-- 主内容区 -->
+			<main class="content">
+				<!-- 顶部导航 -->
+				<header class="top-nav">
+					<div>农场管理后台-菜品订单明细</div>
+					<div class="user-info">
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
+					</div>
+				</header>
+				
+				<!-- 返回按钮 -->
+				<button class="back-btn" @click="goBack">返回</button>
+
+				<div class="detail-scroll">
+					<!-- 菜品订单信息 -->
+					<div class="info-section">
+						<div class="section-title">菜品订单信息</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">订单号</td>
+								<td class="value">{{ orderInfo.orderNo }}</td>
+								<td class="label">菜品点餐类型</td>
+								<td class="value">{{ orderInfo.orderType }}</td>
+							</tr>
+							<tr>
+								<td class="label">客户微信号</td>
+								<td class="value">{{ buyerInfo.customerWechat }}</td>
+								<td class="label">餐桌号</td>
+								<td class="value">{{ orderInfo.tableNo }}</td>
+							</tr>
+							<tr>
+								<td class="label">下单时间</td>
+								<td class="value">{{ formatDisplayTime(orderInfo.createTime) }}</td>
+								<td class="label">订单状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.orderStatus, 'order')]">
+										{{ orderInfo.orderStatus }}
+									</span>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">支付状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.paymentStatus, 'payment')]">
+										{{ orderInfo.paymentStatus }}
+									</span>
+								</td>
+								<td class="label">后厨状态</td>
+								<td class="value">
+									<span :class="['status-tag', getStatusClass(orderInfo.kitchenStatus, 'kitchen')]">
+										{{ orderInfo.kitchenStatus }}
+									</span>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">订单金额</td>
+								<td class="value" style="color: #e53e3e; font-weight: bold;">¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+								<td class="label">支付方式</td>
+								<td class="value">{{ orderInfo.paymentMethod }}</td>
+							</tr>
+						</table>
+					</div>
+					
+					<!-- 菜品点单明细 -->
+					<div class="info-section">
+						<div class="section-title">菜品点单明细</div>
+						<div class="detail-table-wrapper">
+							<table class="detail-table">
+								<thead>
+									<tr>
+										<th>序号</th>
+										<th>菜品ID</th>
+										<th>菜品图片</th>
+										<th>菜品名称</th>
+										<th>规格说明</th>
+										<th>点餐备注</th>
+										<th>数量</th>
+										<th>单价(元)</th>
+										<th>菜品状态</th>
+										<th>小计(元)</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="(item, index) in orderItems" :key="item.dishId + '-' + index">
+										<td>{{ index + 1 }}</td>
+										<td>{{ item.dishId }}</td>
+										<td><img :src="item.image" :alt="item.name" class="dish-thumb" /></td>
+										<td>
+											<div class="dish-name">{{ item.name }}</div>
+											<div class="dish-desc">{{ item.description }}</div>
+										</td>
+										<td>{{ item.spec }}</td>
+										<td>
+											<div>{{ item.remark || '无' }}</div>
+											<div class="cell-note">{{ item.cookingNote || '按标准出品' }}</div>
+										</td>
+										<td>{{ item.quantity }}</td>
+										<td>¥{{ formatAmount(item.price) }}</td>
+										<td>
+											<span :class="['status-tag', getStatusClass(item.dishStatus, 'dish')]">
+												{{ item.dishStatus }}
+											</span>
+										</td>
+										<td>¥{{ formatAmount(item.subtotal) }}</td>
+									</tr>
+									<tr class="total-row">
+										<td colspan="9" style="text-align: right;">实付合计：</td>
+										<td>¥{{ formatAmount(orderInfo.totalAmount) }}</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					
+					<!-- 点餐用户信息 -->
+					<div class="info-section">
+						<div class="section-title">点餐用户信息</div>
+						<table class="info-table">
+							<tr>
+								<td class="label">昵称</td>
+								<td class="value">{{ buyerInfo.nickname }}</td>
+								<td class="label">姓名</td>
+								<td class="value">{{ buyerInfo.name }}</td>
+							</tr>
+							<tr>
+								<td class="label">客户微信号</td>
+								<td class="value">{{ buyerInfo.customerWechat }}</td>
+								<td class="label">电话</td>
+								<td class="value">{{ buyerInfo.phone }}</td>
+							</tr>
+							<tr>
+								<td class="label">会员等级</td>
+								<td class="value">{{ buyerInfo.memberLevel }}</td>
+								<td class="label">下单来源</td>
+								<td class="value">{{ buyerInfo.orderSource }}</td>
+							</tr>
+							<tr>
+								<td class="label">用餐人数</td>
+								<td class="value">{{ buyerInfo.dinerCount }} 人</td>
+								<td class="label">就餐区域</td>
+								<td class="value">{{ buyerInfo.seatArea }}</td>
+							</tr>
+							<tr>
+								<td class="label">下单备注</td>
+								<td class="value" colspan="3">{{ buyerInfo.remark }}</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script src="js/v3.2.8/vue.global.prod.js"></script>
+	<script src="js/auth.js"></script>
+	<script>
+		const { createApp } = Vue
+		
+		createApp({
+			data() {
+				return {
+					orderInfo: {
+						orderNo: 'D202604010001',
+						orderType: '现场菜品点餐',
+						createTime: '2026/04/01 12:34:00',
+						orderStatus: '备餐中',
+						paymentStatus: '已支付',
+						kitchenStatus: '待出餐',
+						tableNo: 'A01',
+						totalAmount: 86.00,
+						paymentMethod: '微信支付',
+					},
+					orderItems: [
+						{
+							dishId: '20240601120000',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=kung%20pao%20chicken%2C%20high%20quality%20photograph&image_size=square',
+							name: '宫保鸡丁',
+							description: '农场散养鸡肉搭配花生与时蔬，口味偏川香。',
+							spec: '标准份 / 微辣',
+							remark: '少花生',
+							cookingNote: '优先出餐',
+							quantity: 1,
+							price: 28.50,
+							dishStatus: '已上架',
+							subtotal: 28.50
+						}
+					],
+					buyerInfo: {
+						nickname: '快乐农场主',
+						name: '张三',
+						customerWechat: 'wx_farmer_001',
+						phone: '137****3212',
+						memberLevel: 'VIP会员',
+						orderSource: '微信扫码点餐',
+						dinerCount: 3,
+						seatArea: '大厅A区',
+						remark: '先上热菜，微辣即可。'
+					}
+				}
+			},
+			
+			mounted() {
+				const urlParams = new URLSearchParams(window.location.search);
+				const orderNo = urlParams.get('orderNo');
+				const phone = urlParams.get('phone');
+				this.loadOrderDetail(orderNo, phone);
+			},
+			
+			methods: {
+				formatAmount(value) {
+					const amount = Number(value);
+					if (!Number.isFinite(amount)) {
+						return '0.00';
+					}
+					return amount.toFixed(2);
+				},
+
+				formatDisplayTime(value) {
+					if (!value) {
+						return '';
+					}
+					const text = String(value).trim().replace(/\s*日\//g, ' ');
+					const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
+					if (!match) {
+						return text;
+					}
+					const pad = item => String(item).padStart(2, '0');
+					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
+				},
+
+				getStatusClass(status, type) {
+					if (type === 'payment') {
+						if (status === '已支付') return 'paid';
+						if (status === '待支付') return 'unpaid';
+						if (status === '已退款') return 'refunded';
+						return 'pending';
+					}
+
+					if (type === 'order') {
+						if (status === '已完成') return 'completed';
+						if (status === '待支付') return 'unpaid';
+						if (status === '备餐中') return 'processing';
+						if (status === '已取消') return 'refunded';
+						return 'pending';
+					}
+
+					if (type === 'kitchen') {
+						if (status === '已出餐') return 'completed';
+						if (status === '待出餐' || status === '待接单') return 'processing';
+						if (status === '已取消') return 'refunded';
+						return 'pending';
+					}
+
+					if (type === 'dish') {
+						return status === '已上架' ? 'active' : 'inactive';
+					}
+
+					return 'pending';
+				},
+
+				navigateTo(page) {
+					window.location.href = page;
+				},
+				
+				goBack() {
+					window.location.href = 'order.html';
+				},
+
+				getDishCatalog() {
+					return {
+						'20251121090000': {
+							id: '20251121090000',
+							name: '番茄披萨',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20pizza%2C%20high%20quality%20photograph&image_size=square',
+							price: 23,
+							status: '已上架',
+							description: '番茄酱底搭配芝士与时令蔬菜，口感清爽。'
+						},
+						'20251010100001': {
+							id: '20251010100001',
+							name: '三文鱼片',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20sashimi%2C%20high%20quality%20photograph&image_size=square',
+							price: 45.7,
+							status: '已上架',
+							description: '精选三文鱼切片，适合搭配清爽凉菜。'
+						},
+						'20240501120022': {
+							id: '20240501120022',
+							name: '牛肉堡',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beef%20burger%2C%20high%20quality%20photograph&image_size=square',
+							price: 12.4,
+							status: '已上架',
+							description: '手作牛肉饼夹层丰富，适合儿童或轻食搭配。'
+						},
+						'20240601120000': {
+							id: '20240601120000',
+							name: '宫保鸡丁',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=kung%20pao%20chicken%2C%20high%20quality%20photograph&image_size=square',
+							price: 28.5,
+							status: '已上架',
+							description: '农场散养鸡肉搭配花生与时蔬，口味偏川香。'
+						},
+						'20240701120000': {
+							id: '20240701120000',
+							name: '麻婆豆腐',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mapo%20tofu%2C%20high%20quality%20photograph&image_size=square',
+							price: 18.9,
+							status: '已上架',
+							description: '豆腐细嫩入味，适合搭配米饭。'
+						},
+						'20240801120000': {
+							id: '20240801120000',
+							name: '糖醋排骨',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sweet%20and%20sour%20ribs%2C%20high%20quality%20photograph&image_size=square',
+							price: 35.6,
+							status: '已上架',
+							description: '酸甜口味平衡，适合家庭聚餐。'
+						},
+						'20240901120000': {
+							id: '20240901120000',
+							name: '清蒸鱼',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=steamed%20fish%2C%20high%20quality%20photograph&image_size=square',
+							price: 42.8,
+							status: '已上架',
+							description: '现蒸鱼肉鲜嫩，主打原味与食材新鲜。'
+						},
+						'20241001120000': {
+							id: '20241001120000',
+							name: '红烧肉',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20belly%2C%20high%20quality%20photograph&image_size=square',
+							price: 38.5,
+							status: '已上架',
+							description: '肥瘦相间，适合多人拼桌分享。'
+						},
+						'20241101120000': {
+							id: '20241101120000',
+							name: '鱼香肉丝',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=yuxiang%20shredded%20pork%2C%20high%20quality%20photograph&image_size=square',
+							price: 22.8,
+							status: '已上架',
+							description: '经典下饭菜，酸甜微辣层次分明。'
+						},
+						'20241201120000': {
+							id: '20241201120000',
+							name: '水煮鱼',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=boiled%20fish%2C%20high%20quality%20photograph&image_size=square',
+							price: 48.6,
+							status: '已上架',
+							description: '麻辣鲜香，适合喜欢重口味的食客。'
+						},
+						'20250101120000': {
+							id: '20250101120000',
+							name: '蒜蓉空心菜',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20choy%20sum%2C%20high%20quality%20photograph&image_size=square',
+							price: 12.5,
+							status: '已上架',
+							description: '时令青菜现炒，口感清爽。'
+						},
+						'20250201120000': {
+							id: '20250201120000',
+							name: '椒盐排骨',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20salt%20ribs%2C%20high%20quality%20photograph&image_size=square',
+							price: 32.8,
+							status: '已上架',
+							description: '椒盐香气突出，适合作为招牌热菜。'
+						},
+						'20250301120000': {
+							id: '20250301120000',
+							name: '酸辣土豆丝',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=sour%20and%20spicy%20shredded%20potato%2C%20high%20quality%20photograph&image_size=square',
+							price: 15.8,
+							status: '已上架',
+							description: '清脆爽口，适合搭配主菜解腻。'
+						},
+						'20250401120000': {
+							id: '20250401120000',
+							name: '葱爆羊肉',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=scallion%20lamb%2C%20high%20quality%20photograph&image_size=square',
+							price: 45.6,
+							status: '已上架',
+							description: '葱香浓郁，羊肉鲜嫩不膻。'
+						},
+						'20250501120000': {
+							id: '20250501120000',
+							name: '梅菜扣肉',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=braised%20pork%20with%20preserved%20vegetables%2C%20high%20quality%20photograph&image_size=square',
+							price: 36.8,
+							status: '已上架',
+							description: '梅菜香气入肉，肥而不腻。'
+						},
+						'20250601120000': {
+							id: '20250601120000',
+							name: '干煸四季豆',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stir-fried%20green%20beans%2C%20high%20quality%20photograph&image_size=square',
+							price: 18.5,
+							status: '已上架',
+							description: '锅气足，适合作为配菜或下饭菜。'
+						},
+						'20250701120000': {
+							id: '20250701120000',
+							name: '辣子鸡',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=spicy%20chicken%2C%20high%20quality%20photograph&image_size=square',
+							price: 38.8,
+							status: '已上架',
+							description: '外酥里嫩，香辣过瘾。'
+						},
+						'20250801120000': {
+							id: '20250801120000',
+							name: '蒜蓉蒸虾',
+							image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=garlic%20steamed%20shrimp%2C%20high%20quality%20photograph&image_size=square',
+							price: 58.6,
+							status: '已上架',
+							description: '鲜虾现蒸，蒜香浓郁，适合聚餐点选。'
+						}
+					};
+				},
+
+				buildOrderItems(itemConfigs) {
+					const dishCatalog = this.getDishCatalog();
+					return itemConfigs.map(config => {
+						const dish = dishCatalog[config.dishId] || {};
+						const price = Number(config.price != null ? config.price : dish.price || 0);
+						const quantity = Number(config.quantity || 1);
+						return {
+							dishId: config.dishId,
+							image: config.image || dish.image || '',
+							name: config.name || dish.name || '未知菜品',
+							description: config.description || dish.description || '现场点餐菜品',
+							spec: config.spec || '标准份',
+							remark: config.remark || '无',
+							cookingNote: config.cookingNote || '按标准出品',
+							quantity: quantity,
+							price: price,
+							dishStatus: config.dishStatus || dish.status || '已上架',
+							subtotal: Number((price * quantity).toFixed(2))
+						};
+					});
+				},
+
+				getDefaultOrderDetailMap() {
+					return {
+						'D202604010001': {
+							orderInfo: {
+								orderNo: 'D202604010001',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 12:34:00',
+								orderStatus: '备餐中',
+								paymentStatus: '已支付',
+								kitchenStatus: '待出餐',
+								tableNo: 'A01',
+								totalAmount: 86.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '快乐农场主',
+								name: '张三',
+								customerWechat: 'wx_farmer_001',
+								phone: '13778493212',
+								memberLevel: 'VIP会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 3,
+								seatArea: '大厅A区',
+								remark: '先上热菜，微辣即可。'
+							},
+							itemConfigs: [
+								{ dishId: '20240601120000', quantity: 1, spec: '标准份 / 微辣', remark: '少花生', cookingNote: '优先出餐' },
+								{ dishId: '20240701120000', quantity: 1, spec: '标准份 / 微辣', remark: '多点汤汁' },
+								{ dishId: '20250101120000', quantity: 1, spec: '时蔬份', remark: '蒜香浓一点' },
+								{ dishId: '20251121090000', quantity: 1, spec: '8寸薄底', price: 26.10, remark: '现烤即可' }
+							]
+						},
+						'D202604010002': {
+							orderInfo: {
+								orderNo: 'D202604010002',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 12:40:00',
+								orderStatus: '待支付',
+								paymentStatus: '待支付',
+								kitchenStatus: '待接单',
+								tableNo: 'B03',
+								totalAmount: 128.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '果园慢生活',
+								name: '李四',
+								customerWechat: 'wx_orchard_229',
+								phone: '13723533044',
+								memberLevel: '普通会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 5,
+								seatArea: '大厅B区',
+								remark: '等同桌客人到齐后再统一出菜。'
+							},
+							itemConfigs: [
+								{ dishId: '20241201120000', quantity: 1, spec: '标准份 / 中辣', remark: '少麻少油' },
+								{ dishId: '20240601120000', quantity: 1, spec: '标准份 / 微辣', remark: '不要香菜' },
+								{ dishId: '20251121090000', quantity: 1, spec: '8寸厚底', remark: '芝士正常' },
+								{ dishId: '20250601120000', quantity: 1, spec: '下饭份', remark: '四季豆煸干一点' },
+								{ dishId: '20250101120000', quantity: 1, spec: '小份时蔬', price: 9.40, remark: '少盐' }
+							]
+						},
+						'D202604010003': {
+							orderInfo: {
+								orderNo: 'D202604010003',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 11:58:00',
+								orderStatus: '已完成',
+								paymentStatus: '已支付',
+								kitchenStatus: '已出餐',
+								tableNo: 'C02',
+								totalAmount: 102.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '绿色食客',
+								name: '王晴',
+								customerWechat: 'wx_greenlife_88',
+								phone: '13229369824',
+								memberLevel: '银卡会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 4,
+								seatArea: '露台区',
+								remark: '菜齐再上，偏清淡。'
+							},
+							itemConfigs: [
+								{ dishId: '20240901120000', quantity: 1, spec: '整鱼 / 清蒸', remark: '少姜丝' },
+								{ dishId: '20241101120000', quantity: 1, spec: '标准份', remark: '正常口味' },
+								{ dishId: '20240701120000', quantity: 1, spec: '标准份 / 微辣', remark: '豆腐嫩一点' },
+								{ dishId: '20250301120000', quantity: 1, spec: '清爽份', price: 17.50, remark: '少醋' }
+							]
+						},
+						'D202604010004': {
+							orderInfo: {
+								orderNo: 'D202604010004',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 13:02:00',
+								orderStatus: '已取消',
+								paymentStatus: '已退款',
+								kitchenStatus: '已取消',
+								tableNo: 'A05',
+								totalAmount: 56.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '周末来野餐',
+								name: '赵敏',
+								customerWechat: 'wx_guest_520',
+								phone: '18992469818',
+								memberLevel: '普通会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 2,
+								seatArea: '大厅A区',
+								remark: '下单后改去包厢，原单已取消。'
+							},
+							itemConfigs: [
+								{ dishId: '20240501120022', quantity: 1, spec: '经典牛肉堡', remark: '番茄酱分开' },
+								{ dishId: '20251121090000', quantity: 1, spec: '6寸薄底', remark: '芝士少一点' },
+								{ dishId: '20250101120000', quantity: 1, spec: '标准份', remark: '蒜香正常' },
+								{ dishId: '20250301120000', quantity: 1, spec: '小份', price: 8.10, remark: '酸味轻一点' }
+							]
+						},
+						'D202604010005': {
+							orderInfo: {
+								orderNo: 'D202604010005',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 13:18:00',
+								orderStatus: '备餐中',
+								paymentStatus: '已支付',
+								kitchenStatus: '待出餐',
+								tableNo: 'VIP01',
+								totalAmount: 218.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '家庭聚会',
+								name: '陈刚',
+								customerWechat: 'wx_family_318',
+								phone: '18442698238',
+								memberLevel: '金卡会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 6,
+								seatArea: '包厢',
+								remark: '先上凉菜和海鲜，热菜分两轮出。'
+							},
+							itemConfigs: [
+								{ dishId: '20250801120000', quantity: 1, spec: '大份 / 蒜香', remark: '保持热度' },
+								{ dishId: '20250701120000', quantity: 1, spec: '标准份 / 中辣', remark: '花椒少一点' },
+								{ dishId: '20250501120000', quantity: 1, spec: '标准份', remark: '肥瘦均匀' },
+								{ dishId: '20241201120000', quantity: 1, spec: '分享份 / 中辣', remark: '先上这一道', price: 48.60 },
+								{ dishId: '20250601120000', quantity: 1, spec: '家庭份', price: 22.70, remark: '锅气足一点' },
+								{ dishId: '20250101120000', quantity: 1, spec: '时蔬份', remark: '蒜蓉正常' }
+							]
+						},
+						'D202604010006': {
+							orderInfo: {
+								orderNo: 'D202604010006',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 13:31:00',
+								orderStatus: '备餐中',
+								paymentStatus: '已支付',
+								kitchenStatus: '待出餐',
+								tableNo: 'B08',
+								totalAmount: 32.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '轻食工作餐',
+								name: '林佳',
+								customerWechat: 'wx_farmfood_66',
+								phone: '18442698238',
+								memberLevel: '普通会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 1,
+								seatArea: '大厅B区',
+								remark: '一人食，尽快出餐。'
+							},
+							itemConfigs: [
+								{ dishId: '20240701120000', quantity: 1, spec: '标准份 / 微辣', remark: '不要葱花' },
+								{ dishId: '20240501120022', quantity: 1, spec: '单人餐加料版', price: 13.10, remark: '不加酸黄瓜' }
+							]
+						},
+						'D202604010007': {
+							orderInfo: {
+								orderNo: 'D202604010007',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 13:42:00',
+								orderStatus: '已完成',
+								paymentStatus: '已支付',
+								kitchenStatus: '已出餐',
+								tableNo: 'TERRACE02',
+								totalAmount: 94.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '露台午餐',
+								name: '何超',
+								customerWechat: 'wx_ruraltrip_07',
+								phone: '13812345678',
+								memberLevel: '银卡会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 3,
+								seatArea: '露台',
+								remark: '室外就餐，出餐后帮忙尽快送达露台。'
+							},
+							itemConfigs: [
+								{ dishId: '20240801120000', quantity: 1, spec: '标准份', remark: '酸甜正常' },
+								{ dishId: '20241101120000', quantity: 1, spec: '标准份', remark: '不要胡萝卜丝' },
+								{ dishId: '20250301120000', quantity: 1, spec: '标准份', remark: '正常口味' },
+								{ dishId: '20250101120000', quantity: 1, spec: '大份时蔬', price: 19.80, remark: '蒜香浓一点' }
+							]
+						},
+						'D202604010008': {
+							orderInfo: {
+								orderNo: 'D202604010008',
+								orderType: '现场菜品点餐',
+								createTime: '2026/04/01 13:55:00',
+								orderStatus: '备餐中',
+								paymentStatus: '已支付',
+								kitchenStatus: '待出餐',
+								tableNo: 'A03',
+								totalAmount: 68.00,
+								paymentMethod: '微信支付'
+							},
+							buyerInfo: {
+								nickname: '午后农场客',
+								name: '孙悦',
+								customerWechat: 'wx_guest_1122',
+								phone: '13987654321',
+								memberLevel: '普通会员',
+								orderSource: '微信扫码点餐',
+								dinerCount: 2,
+								seatArea: '大厅A区',
+								remark: '两位女士用餐，菜量适中即可。'
+							},
+							itemConfigs: [
+								{ dishId: '20240601120000', quantity: 1, spec: '标准份 / 微辣', remark: '不要太辣' },
+								{ dishId: '20250101120000', quantity: 1, spec: '标准份', remark: '蒜蓉正常' },
+								{ dishId: '20240501120022', quantity: 1, spec: '经典牛肉堡', remark: '不加洋葱' },
+								{ dishId: '20250301120000', quantity: 1, spec: '定制份', price: 14.60, remark: '少油' }
+							]
+						}
+					};
+				},
+
+				getStoredOrderSummary(orderNo, phone) {
+					try {
+						const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+						if (!Array.isArray(orders)) {
+							return null;
+						}
+
+						return orders.find(order => order.orderId === orderNo) ||
+							orders.find(order => phone && order.contactPhone === phone) ||
+							null;
+					} catch (error) {
+						console.error('订单摘要读取失败:', error);
+						return null;
+					}
+				},
+				
+				loadOrderDetail(orderNo, phone) {
+					const detailMap = this.getDefaultOrderDetailMap();
+					const fallbackDetail = detailMap['D202604010001'];
+					const summary = this.getStoredOrderSummary(orderNo, phone);
+					const detail = detailMap[orderNo] || fallbackDetail;
+
+					this.orderInfo = {
+						...detail.orderInfo,
+						orderNo: (summary && summary.orderId) || orderNo || detail.orderInfo.orderNo,
+						orderType: '现场菜品点餐',
+						createTime: (summary && summary.orderTime) || detail.orderInfo.createTime,
+						orderStatus: (summary && summary.orderStatus) || detail.orderInfo.orderStatus,
+						paymentStatus: (summary && summary.paymentStatus) || detail.orderInfo.paymentStatus,
+						kitchenStatus: (summary && summary.kitchenStatus) || detail.orderInfo.kitchenStatus,
+						tableNo: (summary && summary.tableNo) || detail.orderInfo.tableNo,
+						totalAmount: (summary && summary.actualAmount != null) ? summary.actualAmount : detail.orderInfo.totalAmount,
+						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod
+					};
+
+					this.orderItems = this.buildOrderItems(detail.itemConfigs || []);
+
+					this.buyerInfo = {
+						...detail.buyerInfo,
+						customerWechat: (summary && summary.customerWechat) || detail.buyerInfo.customerWechat,
+						phone: phone || (summary && summary.contactPhone) || detail.buyerInfo.phone
+					};
+
+					this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
+				}
+			}
+		}).mount('#app')
+	</script>
+</body>
+</html>
+
