@@ -91,7 +91,7 @@ Page({
     // 清空购物车数据
     this.clearCart();
     wx.navigateTo({ 
-      url: `/subpkg/order-detail/order-detail?id=${this.data.orderId}`
+      url: `/subpkg/orders-detail/orders-detail?id=${this.data.orderId}`
     });
   },
   

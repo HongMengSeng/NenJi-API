@@ -21,7 +21,7 @@
                 "goods-detail/goods-detail",
                 "buy/buy",
                 "orders/orders",
-                "order-detail/order-detail",
+                "orders-detail/orders-detail",
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",

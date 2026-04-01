@@ -43,9 +43,21 @@
 
   <!-- 功能按钮 -->
   <view class="function-buttons">
-    <view class="function-btn" wx:for="{{functionButtons}}" wx:key="id" bindtap="onFunctionBtnClick" data-item="{{item}}">
-      <view class="function-btn-icon" style="background-color: {{item.color}};">{{item.id === 1 ? '🌾' : item.id === 2 ? '🍅' : item.id === 3 ? '🍽️' : '🎉'}}</view>
-      <view class="function-btn-text">{{item.name}}</view>
+    <view class="function-btn" bindtap="navigateToAcre">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🌾</view>
+      <view class="function-btn-text">认购一亩田</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToFarmGoods">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🍅</view>
+      <view class="function-btn-text">农场优选</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToOrder">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🍽️</view>
+      <view class="function-btn-text">点餐</view>
+    </view>
+    <view class="function-btn" bindtap="navigateToActivity">
+      <view class="function-btn-icon" style="background-color: #D4A574;">🎉</view>
+      <view class="function-btn-text">活动中心</view>
     </view>
   </view>
 

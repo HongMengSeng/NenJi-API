@@ -64,7 +64,7 @@ Page({
   viewOrderDetail(e) {
     const orderId = e.currentTarget.dataset.orderId;
     wx.navigateTo({
-      url: `/subpkg/order-detail/order-detail?id=${orderId}`
+      url: `/subpkg/orders-detail/orders-detail?id=${orderId}`
     });
   },
 

@@ -183,11 +183,9 @@ Page({
     }
   },
 
-  // ====================== 修复完毕的万能模糊搜索 ======================
   performSearch(keyword) {
     wx.showLoading({ title: '搜索中...' });
 
-    // 从所有分类里拿全部商品
     let allGoods = [];
     Object.values(this.data.goodsCache).forEach(list => {
       if (Array.isArray(list)) {
@@ -195,12 +193,10 @@ Page({
       }
     });
 
-    // 兜底：没有缓存就用当前列表
     if (allGoods.length === 0) {
       allGoods = this.data.currentCategoryGoods || [];
     }
 
-    // 只要名字里包含你输入的字，就出来（万能模糊）
     const result = allGoods.filter(item => {
       const name = item.name || '';
       return name.includes(keyword);
@@ -213,7 +209,6 @@ Page({
 
     wx.hideLoading();
 
-    // 如果没有搜索结果，显示提示信息
     if (result.length === 0) {
       wx.showToast({
         title: '目前没找到您搜索的商品',
@@ -221,7 +216,6 @@ Page({
       });
     }
   },
-  // ===================================================================
 
   showFilterDrawer() {
     this.setData({ showFilterDrawer: true });

@@ -2,8 +2,6 @@ Page({
   data: {
     // 轮播图数据
     swiperList: [],
-    // 功能按钮数据
-    functionButtons: [],
     // 农场优选商品数据
     farmGoods: [],
     // 热销菜品数据
@@ -42,7 +40,6 @@ Page({
           ...item,
           image: item.image ? item.image.replace(/[`\s]/g, '') : ''
         })),
-        functionButtons: data.functionButtons || [],
         farmGoods: (data.farmGoods || []).map(item => ({
           ...item,
           image: item.image ? item.image.replace(/[`\s]/g, '') : ''
@@ -59,7 +56,6 @@ Page({
       
       this.setData({
         swiperList: cleanData.swiperList,
-        functionButtons: cleanData.functionButtons,
         farmGoods: cleanData.farmGoods,
         hotDishes: cleanData.hotDishes,
         acreProjects: cleanData.acreProjects,
@@ -115,44 +111,6 @@ Page({
   search: function () {
     wx.showToast({
       title: '搜索功能开发中',
-      icon: 'none'
-    })
-  },
-
-  // 功能按钮点击事件
-  onFunctionBtnClick: function (e) {
-    const item = e.currentTarget.dataset.item
-    if (item && item.path) {
-      if (item.path.indexOf('/pages/index/index') !== -1 || item.path.indexOf('/pages/activity/activity') !== -1) {
-        wx.switchTab({ url: item.path })
-      } else {
-        wx.navigateTo({ url: item.path })
-      }
-    }
-  },
-
-  functionBtnClick: function (e) {
-    const id = e.currentTarget.dataset.id
-    wx.showToast({
-      title: `点击了${this.data.functionButtons[id - 1].name}`,
-      icon: 'none'
-    })
-  },
-
-  // 商品点击事件
-  goodsClick: function (e) {
-    const id = e.currentTarget.dataset.id
-    wx.showToast({
-      title: '商品详情页开发中',
-      icon: 'none'
-    })
-  },
-
-  // 查看更多点击事件
-  viewMore: function (e) {
-    const type = e.currentTarget.dataset.type
-    wx.showToast({
-      title: `查看更多${type}`,
       icon: 'none'
     })
   },
