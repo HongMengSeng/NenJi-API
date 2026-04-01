@@ -23,14 +23,26 @@ Page({
     tableList: []
   },
 
-  onLoad() {
-     // 恢复购物车
-     const cart = wx.getStorageSync('orderCart') || {};
-     this.restoreCart(cart);
-     // 获取桌台
-     const tableNumber = wx.getStorageSync('tableNumber');
-     if (tableNumber) {
+  onLoad(options) {
+     // 检查是否通过扫码进入，处理URL参数
+     if (options.tableId && options.secret) {
+       // 绑定桌台号码
+       const tableNumber = options.tableId;
        this.setData({ tableNumber });
+       wx.setStorageSync('tableNumber', tableNumber);
+       // 延迟显示提示，确保能够正常显示
+       setTimeout(() => {
+         wx.showToast({ title: `已绑定桌台 ${tableNumber}`, icon: 'success', duration: 2000 });
+       }, 100);
+     } else {
+       // 恢复购物车
+       const cart = wx.getStorageSync('orderCart') || {};
+       this.restoreCart(cart);
+       // 获取桌台
+       const storedTableNumber = wx.getStorageSync('tableNumber');
+       if (storedTableNumber) {
+         this.setData({ tableNumber: storedTableNumber });
+       }
      }
  
     try {
@@ -38,7 +50,10 @@ Page({
       this.restoreCart(cart);
     } catch (e) {}
     this.getTableList();
-    this.getOrderData();
+    // 延迟加载数据，确保提示能够先显示
+    setTimeout(() => {
+      this.getOrderData();
+    }, 500);
   },
 
   onShow() {
