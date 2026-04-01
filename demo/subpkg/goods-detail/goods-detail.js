@@ -142,7 +142,7 @@ Page({
 
   getAddressList() {
     api.request({
-      url: '/api/user/address',
+      url: '/api/address/list',
       method: 'GET'
     }).then((data) => {
       // 处理响应数据 - 直接返回地址数组
@@ -153,7 +153,7 @@ Page({
         id: address.id || String(index + 1),
         name: address.name || '',
         phone: address.phone || '',
-        address: `${address.province || ''}${address.city || ''}${address.district || ''}${address.address || ''}`,
+        address: address.address || '',
         isDefault: address.isDefault || false
       }));
       

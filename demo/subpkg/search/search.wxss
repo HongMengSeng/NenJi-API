@@ -277,12 +277,4 @@
     width: 140rpx;
     height: 140rpx;
   }
-  
-  .goods-name {
-    font-size: 26rpx;
-  }
-  
-  .goods-price {
-    font-size: 28rpx;
-  }
 }
