@@ -75,7 +75,7 @@ Page({
     });
   },
 
-  // 选择地址
+  // 选择地址（修改为直接调用getLocation）
   chooseRegion: function () {
     let that = this;
     // 1. 先判断用户是否授权位置权限
@@ -86,8 +86,8 @@ Page({
           wx.authorize({
             scope: 'scope.userLocation',
             success() {
-              // 授权成功 -> 选择位置
-              that.chooseLocation();
+              // 授权成功 -> 获取位置
+              that.getLocation();
             },
             fail() {
               // 授权失败 -> 提示去设置页开启
@@ -104,20 +104,27 @@ Page({
             }
           })
         } else {
-          // 已授权 -> 直接选择位置
-          that.chooseLocation();
+          // 已授权 -> 直接获取位置
+          that.getLocation();
         }
       }
     })
   },
 
-  // 使用微信 chooseLocation 获取地址
-  chooseLocation: function () {
+  // 获取当前位置（修改为获取完整地址信息）
+  getLocation() {
     let that = this;
     wx.showLoading({ title: '获取位置中...' });
 
+    // 设置超时机制，防止一直转圈
+    const timeout = setTimeout(() => {
+      wx.hideLoading();
+      wx.showToast({ title: '获取位置超时，请重试', icon: 'none' });
+    }, 15000); // 15秒超时
+
     wx.chooseLocation({
       success: function(res) {
+        clearTimeout(timeout);
         console.log('选择位置结果：', res);
         
         // 解析逻辑封装
@@ -184,6 +191,11 @@ Page({
               'formData.address': result.address,
               'formData.detail': result.detail
             });
+            
+            wx.showToast({
+              title: '位置获取成功',
+              icon: 'success'
+            });
           },
           fail: function(error) {
             wx.hideLoading();
@@ -197,12 +209,23 @@ Page({
               'formData.address': result.province + result.city + result.district,
               'formData.detail': result.detail
             });
+            
+            wx.showToast({
+              title: '位置获取成功',
+              icon: 'success'
+            });
           }
         });
       },
       fail: function(err) {
+        clearTimeout(timeout);
         wx.hideLoading();
         console.error('选择位置失败:', err);
+        if (err.errCode === 1 || err.errCode === 2) {
+          wx.showToast({ title: '位置权限被拒绝，请在设置中开启', icon: 'none' });
+        } else {
+          wx.showToast({ title: '获取位置失败，请重试', icon: 'none' });
+        }
       }
     });
   },

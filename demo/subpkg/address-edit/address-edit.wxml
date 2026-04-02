@@ -23,7 +23,7 @@
     </view>
     
     <!-- 所在地区 -->
-    <view class="form-item" bindtap="chooseRegion">
+    <view class="form-item" bindtap="getLocation">
       <view class="form-label">所在地区</view>
       <view class="region-select">
         <text class="region-text">{{formData.address}}</text>
