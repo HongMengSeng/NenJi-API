@@ -28,8 +28,25 @@
     <text class="address-arrow">{{showAddressForm ? '▼' : '>'}}</text>
   </view>
 
+  <!-- 地址选择列表 -->
+  <view class="address-list" wx:if="{{showAddressForm && deliveryType === 'delivery' && addressList.length > 0}}">
+    <view wx:for="{{addressList}}" wx:key="id" class="address-item {{selectedAddressId === item.id ? 'active' : ''}}" bindtap="selectAddress" data-id="{{item.id}}">
+      <view class="address-info">
+        <text class="address-name">{{item.name}} {{item.phone}}</text>
+        <text class="address-detail">{{item.address}} {{item.door}}</text>
+      </view>
+      <view class="address-select {{selectedAddressId === item.id ? 'selected' : ''}}">
+        <text class="select-icon">✓</text>
+      </view>
+    </view>
+    <view class="add-address-btn" bindtap="showAddAddressForm">
+      <text class="add-icon">+</text>
+      <text class="add-text">添加新地址</text>
+    </view>
+  </view>
+
   <!-- 地址填写表单 -->
-  <view class="address-form" wx:if="{{showAddressForm}}">
+  <view class="address-form" wx:if="{{(showAddressForm && (addressList.length === 0 || showAddAddressFormFlag)) || (showAddressForm && deliveryType === 'pickup')}}">
     <!-- 快递地址表单 -->
     <view wx:if="{{deliveryType === 'delivery'}}">
       <view class="form-item">

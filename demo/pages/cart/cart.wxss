@@ -79,17 +79,71 @@
     font-size: 24rpx;
     font-weight: bold;
   }
-  
+
+  /* 区域分组样式 */
+  .region-section {
+    margin: 0 24rpx;
+    margin-bottom: 24rpx;
+    border-radius: 16rpx;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
+  }
+
+  .region-header {
+    display: flex;
+    align-items: center;
+    padding: 16rpx 24rpx;
+    background-color: #FAF6F0;
+    border-bottom: 1rpx solid #F0E6D2;
+    cursor: pointer;
+  }
+
+  .region-select {
+    margin-right: 12rpx;
+  }
+
+  .region-name {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+  }
+
+  /* 到店吃选项 */
+  .take-away-option {
+    display: flex;
+    align-items: center;
+  }
+
+  .take-away-option text {
+    font-size: 22rpx;
+    color: #666;
+    margin-right: 8rpx;
+  }
+
+  .take-away-switch {
+    transform: scale(0.8);
+  }
+
+  .region-items {
+    padding: 0 24rpx 24rpx;
+  }
+
   /* 商品项样式 */
   .cart-item {
     display: flex;
     align-items: center;
-    padding: 24rpx;
-    margin: 0 24rpx;
-    background-color: #fff;
-    border-radius: 16rpx;
-    margin-bottom: 16rpx;
-    box-shadow: 0 2rpx 12rpx rgba(212, 167, 106, 0.08);
+    padding: 24rpx 0;
+    border-bottom: 1rpx solid #F5F5F5;
+  }
+
+  .cart-item:last-child {
+    border-bottom: none;
+  }
+
+  .cart-item:first-child {
+    padding-top: 24rpx;
   }
   
   /* 商品图片 */
@@ -292,6 +346,88 @@
   }
   
   /* 商品详情列表 */
+  /* 收货地址 */
+  .address-section {
+    background-color: #FAF6F0;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    margin-bottom: 20rpx;
+  }
+  
+  .address-header {
+    margin-bottom: 16rpx;
+  }
+  
+  .address-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .address-info {
+    background-color: #fff;
+    border-radius: 8rpx;
+    padding: 16rpx;
+  }
+  
+  .address-name {
+    font-size: 26rpx;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 8rpx;
+  }
+  
+  .address-phone {
+    font-size: 24rpx;
+    color: #666;
+    margin-bottom: 8rpx;
+  }
+  
+  .address-detail {
+    font-size: 24rpx;
+    color: #999;
+    line-height: 1.4;
+  }
+
+  .address-list {
+    margin-bottom: 16rpx;
+  }
+
+  .address-item {
+    background-color: #fff;
+    border-radius: 8rpx;
+    padding: 16rpx;
+    margin-bottom: 12rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: all 0.3s ease;
+  }
+
+  .address-item.active {
+    border: 2rpx solid #D4A76A;
+  }
+
+  .address-check-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    min-width: 40rpx;
+  }
+
+  .address-check {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background-color: #D4A76A;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    font-weight: bold;
+  }
+
   .cart-detail-list {
     max-height: 400rpx;
     overflow-y: auto;

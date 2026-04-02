@@ -11,6 +11,7 @@ Page({
         totalAmount: '0.00', // 合计金额
         deliveryType: 'delivery', // 默认快递地址
         showAddressForm: false, // 地址表单显示状态
+        showAddAddressFormFlag: false, // 是否显示添加地址表单
         addressInfo: {
             name: '',
             phone: '',
@@ -19,6 +20,8 @@ Page({
             pickupTime: ''
         }, // 地址信息
         hasAddress: false, // 是否已填写地址
+        addressList: [], // 用户地址列表
+        selectedAddressId: null, // 选中的地址ID
         products: [
             {
                 id: '1',
@@ -47,6 +50,38 @@ Page({
             // 这里可以根据orderId获取订单详情
             this.loadOrderInfo(options.orderId);
         }
+        // 获取用户地址列表
+        this.getUserAddressList();
+    },
+
+    /**
+     * 获取用户地址列表
+     */
+    getUserAddressList() {
+        api.api.user.getAddressList()
+            .then((addresses) => {
+                console.log('用户地址列表:', addresses);
+                if (addresses && addresses.length > 0) {
+                    // 选择第一个地址作为默认地址
+                    const defaultAddress = addresses[0];
+                    this.setData({
+                        addressList: addresses,
+                        selectedAddressId: defaultAddress.id,
+                        addressInfo: {
+                            name: defaultAddress.name,
+                            phone: defaultAddress.phone,
+                            detail: defaultAddress.address,
+                            door: defaultAddress.door || '',
+                            pickupTime: ''
+                        },
+                        hasAddress: true
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error('获取地址列表失败:', err);
+                // 如果获取失败，不影响页面正常显示
+            });
     },
 
     /**
@@ -107,7 +142,41 @@ Page({
      */
     toggleAddressForm() {
         this.setData({
-            showAddressForm: !this.data.showAddressForm
+            showAddressForm: !this.data.showAddressForm,
+            showAddAddressFormFlag: false
+        });
+    },
+
+    /**
+     * 选择地址
+     */
+    selectAddress(e) {
+        const addressId = e.currentTarget.dataset.id;
+        const addressList = this.data.addressList;
+        const selectedAddress = addressList.find(item => item.id === addressId);
+        
+        if (selectedAddress) {
+            this.setData({
+                selectedAddressId: addressId,
+                addressInfo: {
+                    name: selectedAddress.name,
+                    phone: selectedAddress.phone,
+                    detail: selectedAddress.address,
+                    door: selectedAddress.door || '',
+                    pickupTime: ''
+                },
+                hasAddress: true,
+                showAddressForm: false
+            });
+        }
+    },
+
+    /**
+     * 显示添加地址表单
+     */
+    showAddAddressForm() {
+        this.setData({
+            showAddAddressFormFlag: true
         });
     },
 
@@ -167,12 +236,31 @@ Page({
      * 保存地址
      */
     saveAddress() {
-        const {name, phone, detail, pickupTime} = this.data.addressInfo;
+        const {name, phone, detail, door, pickupTime} = this.data.addressInfo;
         const {deliveryType} = this.data;
+        
+        // 验证手机号
+        if (!phone) {
+            wx.showToast({
+                title: '请输入手机号',
+                icon: 'none'
+            });
+            return;
+        }
+        
+        // 验证手机号格式
+        const phoneRegex = /^1[3-9]\d{9}$/;
+        if (!phoneRegex.test(phone)) {
+            wx.showToast({
+                title: '请输入11位有效手机号',
+                icon: 'none'
+            });
+            return;
+        }
         
         // 验证快递地址信息
         if (deliveryType === 'delivery') {
-            if (!name || !phone || !detail) {
+            if (!name || !detail) {
                 wx.showToast({
                     title: '请填写完整地址信息',
                     icon: 'none'
@@ -181,7 +269,7 @@ Page({
             }
         } else {
             // 验证到店自提信息
-            if (!name || !phone || !pickupTime) {
+            if (!name || !pickupTime) {
                 wx.showToast({
                     title: '请填写收货人、手机号和取货时间',
                     icon: 'none'
@@ -190,16 +278,35 @@ Page({
             }
         }
         
-        // 保存地址逻辑
-        this.setData({
-            hasAddress: true,
-            showAddressForm: false
-        });
+        // 保存地址到服务器
+        const addressData = {
+            name: name,
+            phone: phone,
+            address: detail,
+            door: door
+        };
         
-        wx.showToast({
-            title: '地址保存成功',
-            icon: 'success'
-        });
+        api.api.user.addAddress(addressData)
+            .then((res) => {
+                console.log('添加地址成功:', res);
+                // 刷新地址列表
+                this.getUserAddressList();
+                this.setData({
+                    showAddressForm: false
+                });
+                
+                wx.showToast({
+                    title: '地址保存成功',
+                    icon: 'success'
+                });
+            })
+            .catch((err) => {
+                console.error('添加地址失败:', err);
+                wx.showToast({
+                    title: '地址保存失败，请重试',
+                    icon: 'none'
+                });
+            });
     },
 
     /**
