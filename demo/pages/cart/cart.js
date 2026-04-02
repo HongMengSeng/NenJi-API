@@ -6,6 +6,7 @@ Page({
     totalPrice: '0.00', 
     selectedCount: 0, 
     showModal: false,
+    showSeparateSettleModal: false,
     showCartDetail: false,
     selectAll: false,
     addressList: [],
@@ -239,8 +240,17 @@ Page({
       this.setData({ showCartDetail: false });
     }
 
-    // 然后显示结算弹窗
-    this.setData({ showModal: true }); 
+    // 检查选中的区域
+    const hasFood = this.data.regions.food.selected;
+    const hasGoods = this.data.regions.goods.selected;
+
+    // 如果同时选中了点餐和商品区域，显示分别结算弹窗
+    if (hasFood && hasGoods) {
+      this.setData({ showSeparateSettleModal: true });
+    } else {
+      // 否则显示确认购买弹窗
+      this.setData({ showModal: true });
+    }
   }, 
 
   handleConfirmPurchase() { 
@@ -390,5 +400,45 @@ Page({
     this.setData({
       isTakeAway: e.detail.value
     });
-  } 
+  },
+
+  // 关闭分别结算弹窗
+  handleCloseSeparateSettleModal() {
+    this.setData({ showSeparateSettleModal: false });
+  },
+
+  // 结算点餐区域
+  settleFood() {
+    // 检查是否选择了地址（仅外卖需要）
+    if (!this.data.isTakeAway && !this.data.selectedAddress) {
+      wx.showToast({
+        title: '请选择收货地址',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({ showSeparateSettleModal: false }, () => {
+      if (this.data.isTakeAway) {
+        // 到店吃订单
+        wx.navigateTo({ 
+          url: '/subpkg/buy/buy?orderId=1' 
+        });
+      } else {
+        // 外卖订单
+        wx.navigateTo({ 
+          url: '/subpkg/order-foods/order-foods' 
+        });
+      }
+    });
+  },
+
+  // 结算商品区域
+  settleGoods() {
+    this.setData({ showSeparateSettleModal: false }, () => {
+      wx.navigateTo({ 
+        url: '/subpkg/buy/buy?orderId=1' 
+      });
+    });
+  }
 });

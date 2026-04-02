@@ -21,19 +21,10 @@
     <!-- 类型分组 -->
     <!-- 点餐区域 -->
     <view class="region-section" wx:if="{{regions.food.items.length > 0}}">
-      <!-- 区域标题 -->
-      <view class="region-header" bindtap="toggleRegionSelect" data-region="food">
-        <view class="region-select">
-          <view class="checkbox-circle {{regions.food.selected ? 'checked' : ''}}">
-            <text wx:if="{{regions.food.selected}}">✓</text>
-          </view>
-        </view>
-        <view class="region-name">{{regions.food.name}}</view>
-        <!-- 到店吃选项 -->
-        <view class="take-away-option" wx:if="{{regions.food.items.length > 0}}">
-          <text>到店吃</text>
-          <switch class="take-away-switch" bindchange="toggleTakeAway" checked="{{isTakeAway}}" />
-        </view>
+      <!-- 到店吃选项 -->
+      <view class="take-away-option" wx:if="{{regions.food.items.length > 0}}">
+        <text>到店吃</text>
+        <switch class="take-away-switch" bindchange="toggleTakeAway" checked="{{isTakeAway}}" />
       </view>
       <!-- 区域商品 -->
       <view class="region-items">
@@ -68,15 +59,6 @@
 
     <!-- 商品区域 -->
     <view class="region-section" wx:if="{{regions.goods.items.length > 0}}">
-      <!-- 区域标题 -->
-      <view class="region-header" bindtap="toggleRegionSelect" data-region="goods">
-        <view class="region-select">
-          <view class="checkbox-circle {{regions.goods.selected ? 'checked' : ''}}">
-            <text wx:if="{{regions.goods.selected}}">✓</text>
-          </view>
-        </view>
-        <view class="region-name">{{regions.goods.name}}</view>
-      </view>
       <!-- 区域商品 -->
       <view class="region-items">
         <view class="cart-item" wx:for="{{regions.goods.items}}" wx:key="id">
@@ -164,11 +146,6 @@
       <!-- 区域商品详细信息 -->
       <!-- 点餐区域 -->
       <view wx:if="{{regions.food.selected}}">
-        <view class="region-title">
-          <text>点餐</text>
-          <text wx:if="{{isTakeAway}}">(到店吃)</text>
-          <text wx:else>(外卖)</text>
-        </view>
         <view class="cart-detail-list">
           <view class="cart-detail-item" wx:for="{{regions.food.items}}" wx:key="id" wx:if="{{item.checked}}">
             <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
@@ -180,15 +157,10 @@
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>
         </view>
-        <view class="region-total">
-          <text class="region-total-label">点餐合计：</text>
-          <text class="region-total-price">¥{{regions.food.totalPrice}}</text>
-        </view>
       </view>
 
       <!-- 商品区域 -->
       <view wx:if="{{regions.goods.selected}}">
-        <view class="region-title">商品</view>
         <view class="cart-detail-list">
           <view class="cart-detail-item" wx:for="{{regions.goods.items}}" wx:key="id" wx:if="{{item.checked}}">
             <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
@@ -199,10 +171,6 @@
             </view>
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>
-        </view>
-        <view class="region-total">
-          <text class="region-total-label">商品合计：</text>
-          <text class="region-total-price">¥{{regions.goods.totalPrice}}</text>
         </view>
       </view>
       
@@ -263,6 +231,59 @@
     <view class="modal-footer">
       <view class="modal-btn cancel" bindtap="handleCloseCartDetail">关闭</view>
       <view class="modal-btn confirm" bindtap="handleSettle">去结算</view>
+    </view>
+  </view>
+</view>
+
+<!-- 🌟 分别结算弹窗 -->
+<view class="modal" wx:if="{{showSeparateSettleModal}}">
+  <view class="modal-mask" bindtap="handleCloseSeparateSettleModal"></view>
+  <view class="modal-content separate-settle-modal">
+    <view class="modal-header">
+      <text class="modal-title">分别结算</text>
+      <icon class="modal-close" type="clear" size="20" color="#999" bindtap="handleCloseSeparateSettleModal"></icon>
+    </view>
+    <view class="modal-body">
+      <!-- 点餐区域 -->
+      <view class="settle-section" wx:if="{{regions.food.selected}}">
+        <view class="cart-detail-list">
+          <view class="cart-detail-item" wx:for="{{regions.food.items}}" wx:key="id" wx:if="{{item.checked}}">
+            <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
+            <view class="detail-item-info">
+              <view class="detail-item-name">{{item.name}}</view>
+              <view class="detail-item-tag">{{item.tag}}</view>
+              <view class="detail-item-price">¥{{item.price}}</view>
+            </view>
+            <view class="detail-item-quantity">×{{item.count}}</view>
+          </view>
+        </view>
+        <view class="section-settle">
+          <button class="section-settle-btn" bindtap="settleFood">去结算</button>
+        </view>
+      </view>
+
+      <!-- 商品区域 -->
+      <view class="settle-section" wx:if="{{regions.goods.selected}}">
+        <view class="cart-detail-list">
+          <view class="cart-detail-item" wx:for="{{regions.goods.items}}" wx:key="id" wx:if="{{item.checked}}">
+            <image class="detail-item-img" src="{{item.image}}" mode="aspectFill"></image>
+            <view class="detail-item-info">
+              <view class="detail-item-name">{{item.name}}</view>
+              <view class="detail-item-tag">{{item.tag}}</view>
+              <view class="detail-item-price">¥{{item.price}}</view>
+            </view>
+            <view class="detail-item-quantity">×{{item.count}}</view>
+          </view>
+        </view>
+        <view class="section-settle">
+          <button class="section-settle-btn" bindtap="settleGoods">去结算</button>
+        </view>
+      </view>
+      
+      <!-- 提示信息 -->
+      <view class="settle-tip">
+        <text>请分别结算以下类型</text>
+      </view>
     </view>
   </view>
 </view>
