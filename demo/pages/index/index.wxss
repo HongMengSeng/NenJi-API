@@ -364,7 +364,7 @@
 }
 
 .goods-item {
-  width: calc(50% - 10rpx);
+  width: 48%;
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
