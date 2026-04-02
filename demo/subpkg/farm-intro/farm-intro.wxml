@@ -1,5 +1,4 @@
 <view class="container">
-  <image class="background-image" src="/images/NengJi5.jpg" mode="aspectFill" />
 
   <!-- 加载中提示 -->
   <view wx:if="{{loading}}" class="loading-container">
@@ -10,7 +9,7 @@
   <view wx:else>
     <!-- 农场主图 -->
     <view class="main-image-container">
-      <image class="main-image" src="{{farmInfo.mainImage}}" mode="aspectFill" />
+      <image class="main-image" src="http://192.168.203.56/api/file/image/{{farmInfo.mainImage}}" mode="aspectFill" />
     </view>
     
     <!-- 农场简介 -->
@@ -20,8 +19,6 @@
         <text class="content-text">{{farmInfo.introduction}}</text>
       </view>
     </view>
-    
- 
     
     <!-- 农场理念 -->
     <view class="section">
