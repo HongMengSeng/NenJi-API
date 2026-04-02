@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
@@ -172,14 +172,14 @@
 	<div id="app">
 		<div class="main-container">
 			<aside class="sidebar">
-				<div class="sidebar-header">&#x519C;&#x573A;&#x7BA1;&#x7406;&#x540E;&#x53F0;</div>
+				<div class="sidebar-header">农场管理后台</div>
 				<ul class="sidebar-menu">
-					<li @click="navigateTo('product.html')">&#x4EA7;&#x54C1;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('order.html')">&#x8BA2;&#x5355;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('dish.html')">&#x83DC;&#x54C1;&#x7BA1;&#x7406;</li>
-					<li @click="navigateTo('coupon.html')">&#x5238;&#x7C7B;&#x7BA1;&#x7406;</li>
+					<li @click="navigateTo('product.html')">产品管理</li>
+					<li @click="navigateTo('order.html')">订单管理</li>
+					<li @click="navigateTo('dish.html')">菜品管理</li>
+					<li @click="navigateTo('coupon.html')">券类管理</li>
 					<li @click="navigateTo('subscription.html')">认购一亩田管理</li>
-					<li class="active" @click="navigateTo('user.html')">&#x7528;&#x6237;&#x7BA1;&#x7406;</li>
+					<li class="active" @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
 
@@ -187,19 +187,19 @@
 				<header class="top-nav">
 					<div>农场管理后台-用户管理-编辑普通用户</div>
 					<div class="user-info">
-						<div class="user-avatar">&#x7528;</div>
-						<div>&#x7528;&#x6237;12312</div>
+						<div class="user-avatar">用</div>
+						<div>用户12312</div>
 					</div>
 				</header>
 
 				<div class="form-container">
 					<div class="form-group">
-						<label for="nickname">&#x7528;&#x6237;&#x6635;&#x79F0;</label>
+						<label for="nickname">用户昵称</label>
 						<input type="text" id="nickname" v-model.trim="form.nickname">
 					</div>
 
 					<div class="form-group">
-						<label for="gender">&#x6027;&#x522B;</label>
+						<label for="gender">性别</label>
 						<select id="gender" v-model="form.gender">
 							<option :value="maleLabel">{{ maleLabel }}</option>
 							<option :value="femaleLabel">{{ femaleLabel }}</option>
@@ -207,12 +207,12 @@
 					</div>
 
 					<div class="form-group">
-						<label for="phone">&#x7535;&#x8BDD;&#x53F7;&#x7801;</label>
+						<label for="phone">电话号码</label>
 						<input type="text" id="phone" v-model.trim="form.phone">
 					</div>
 
 					<div class="form-group">
-						<label for="status">&#x72B6;&#x6001;</label>
+						<label for="status">状态</label>
 						<select id="status" v-model="form.status">
 							<option :value="enabledStatus">{{ enabledStatus }}</option>
 							<option :value="disabledStatus">{{ disabledStatus }}</option>
@@ -220,13 +220,13 @@
 					</div>
 
 					<div class="form-group">
-						<label for="role">&#x8EAB;&#x4EFD;</label>
+						<label for="role">身份</label>
 						<input id="role" class="readonly-input" type="text" :value="displayRole" readonly>
 					</div>
 
 					<div class="form-buttons">
-						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">&#x4FDD;&#x5B58;&#x4FEE;&#x6539;</button>
-						<button class="btn btn-primary" @click="cancel">&#x53D6;&#x6D88;</button>
+						<button class="btn btn-success" @click="updateUser" :disabled="submitting || !allowEditNormalUser">保存修改</button>
+						<button class="btn btn-primary" @click="cancel">取消</button>
 						<div v-if="form.errormsg" class="errormsg">{{ form.errormsg }}</div>
 					</div>
 				</div>
@@ -238,11 +238,11 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const MALE_LABEL = '\u7537';
-		const FEMALE_LABEL = '\u5973';
-		const ENABLED_STATUS = '\u542F\u7528';
-		const DISABLED_STATUS = '\u7981\u7528';
-		const NORMAL_USER_ROLE = '\u666E\u901A\u7528\u6237';
+		const MALE_LABEL = '男';
+		const FEMALE_LABEL = '女';
+		const ENABLED_STATUS = '启用';
+		const DISABLED_STATUS = '禁用';
+		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
@@ -273,7 +273,7 @@
 				if (userId) {
 					this.loadUserData(userId);
 				} else {
-					this.form.errormsg = '\u7F3A\u5C11\u7528\u6237 ID';
+					this.form.errormsg = '缺少用户 ID';
 				}
 			},
 			methods: {
@@ -316,14 +316,14 @@
 									this.form.errormsg = '该页面仅允许编辑普通用户，管理员不可在此页面修改';
 								}
 							} else {
-								this.form.errormsg = '\u7528\u6237\u4E0D\u5B58\u5728';
+								this.form.errormsg = '用户不存在';
 							}
 						} else {
-							this.form.errormsg = data.message || '\u83B7\u53D6\u7528\u6237\u6570\u636E\u5931\u8D25';
+							this.form.errormsg = data.message || '获取用户数据失败';
 						}
 					} catch (error) {
 						console.error('Load user request failed:', error);
-						this.form.errormsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5';
+						this.form.errormsg = '网络错误，请重试';
 					}
 				},
 				// 页面跳转统一走这里，便于保持管理页跳转方式一致。
@@ -338,22 +338,22 @@
 					}
 
 					if (!this.form.id) {
-						this.form.errormsg = '\u7F3A\u5C11\u7528\u6237 ID';
+						this.form.errormsg = '缺少用户 ID';
 						return;
 					}
 
 					if (!this.form.nickname) {
-						this.form.errormsg = '\u6635\u79F0\u4E0D\u80FD\u4E3A\u7A7A';
+						this.form.errormsg = '昵称不能为空';
 						return;
 					}
 
 					if (!this.form.phone) {
-						this.form.errormsg = '\u624B\u673A\u53F7\u4E0D\u80FD\u4E3A\u7A7A';
+						this.form.errormsg = '手机号不能为空';
 						return;
 					}
 
 					if (!/^\d{11}$/.test(this.form.phone)) {
-						this.form.errormsg = '\u8BF7\u8F93\u5165\u6B63\u786E\u7684 11 \u4F4D\u624B\u673A\u53F7';
+						this.form.errormsg = '请输入正确的 11 位手机号';
 						return;
 					}
 
@@ -381,11 +381,11 @@
 						if (data.code === 200) {
 							window.location.href = 'user.html';
 						} else {
-							this.form.errormsg = data.message || '\u4FEE\u6539\u5931\u8D25';
+							this.form.errormsg = data.message || '修改失败';
 						}
 					} catch (error) {
 						console.error('Update user request failed:', error);
-						this.form.errormsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5';
+						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}

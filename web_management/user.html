@@ -72,6 +72,24 @@
 			flex: 1;
 			min-height: 0;
 		}
+
+		/* 非管理员进入时，仅保留查看提示，正文区域统一置灰并禁用交互。 */
+		.page-disabled {
+			opacity: 0.55;
+			pointer-events: none;
+			user-select: none;
+		}
+
+		/* 权限提示条，直接说明当前账号为什么不能操作该页面。 */
+		.permission-banner {
+			margin-bottom: 16px;
+			padding: 12px 14px;
+			border-radius: 8px;
+			background: #fff7e6;
+			border: 1px solid #f6ad55;
+			color: #9c4221;
+			line-height: 1.5;
+		}
 		
 		/* 内容容器 */
 		.content-container{
@@ -365,7 +383,8 @@
 				</header>
 				
 				<!-- 用户管理页面 -->
-				<div class="user-page">
+				<div v-if="!isAdminSession" class="permission-banner">当前登录身份不是管理员，用户管理页面已禁用。</div>
+				<div class="user-page" :class="{ 'page-disabled': !isAdminSession }">
 					<div class="page-fixed-panel">
 						<div class="action-buttons">
 							<button class="btn btn-success" @click="addUser">新增</button>
@@ -375,7 +394,7 @@
 						
 						<!-- 搜索功能 -->
 						<div class="search-container" style="margin-bottom: 20px;">
-							<input type="text" v-model="searchKeyword" placeholder="用户ID/电话号码/用户昵称搜索" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
+							<input type="text" v-model="searchKeyword" placeholder="电话号码/用户昵称搜索" style="padding: 8px; width: 300px; border: 1px solid #e0e0e0; border-radius: 4px;" />
 							<select v-model="roleFilter" style="padding: 8px; width: 120px; border: 1px solid #e0e0e0; border-radius: 4px; margin-left: 10px;">
 								<option value=""></option>
 								<option value="普通用户">普通用户</option>
@@ -390,7 +409,8 @@
 							<thead>
 								<tr>
 									<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-									<th>微信用户ID</th>
+									<th>用户ID</th>
+									<th>微信号</th>
 									<th>电话号码</th>
 									<th>用户昵称</th>
 									<th>登录时间</th>
@@ -403,14 +423,15 @@
 							<tbody>
 								<tr v-for="user in users" :key="user.id">
 									<td><input type="checkbox" v-model="user.selected" @change="updateSelectedUser" /></td>
-									<td>{{ user.id }}</td>
+									<td>{{ user.id || '-' }}</td>
+									<td></td>
 									<td>{{ user.phone }}</td>
 									<td>{{ user.nickname }}</td>
 									<td>{{ user.loginTime }}</td>
 									<td>{{ user.gender }}</td>
 									<td>
-										<span v-if="user.role" :class="['role-tag', user.role === '管理员' ? 'admin' : 'user']">
-											{{ user.role }}
+										<span v-if="user.originalRole || user.role" :class="['role-tag', user.role === '管理员' ? 'admin' : 'user']">
+											{{ user.originalRole || user.role }}
 										</span>
 									</td>
 									<td>
@@ -444,7 +465,7 @@
 		</div>
 		
 		<!-- 删除确认弹窗 -->
-		<div class="modal-overlay" v-if="showDeleteModal">
+		<div class="modal-overlay" v-if="showDeleteModal && isAdminSession">
 			<div class="modal">
 				<div class="modal-header">
 					<h3 class="modal-title">删除确认</h3>
@@ -496,24 +517,75 @@
 					// 原始用户数据备份
 					originalUsers: [],
 					// 跳转页码
-					jumpPage: 1
+					jumpPage: 1,
+					isAdminSession: false,
+					adminAccessMessage: '当前登录身份不是管理员，用户管理页面已禁用。'
 				}
 			},
 			
+			// 页面初始化时先校验登录态和管理员身份，未通过则保持禁用态。
 			mounted() {
 				// 从API加载用户数据
+				const session = window.Auth.requireAuth();
+				if (!session) {
+					return;
+				}
+
+				this.isAdminSession = this.isAdminRole(session.userInfo);
+				if (!this.isAdminSession) {
+					return;
+				}
+
 				this.loadUsersFromAPI();
 			},
 
 			computed: {
+				// 删除确认只从当前勾选行取 id，避免误删未选中的数据。
 				selectedUsers() {
 					return this.users.filter(user => user.selected);
 				}
 			},
 			
 			methods: {
+				// 统一兼容管理员角色的不同返回值写法。
+				isAdminRole(userInfo) {
+					const role = userInfo && userInfo.role ? String(userInfo.role).trim() : '';
+					return role === '管理员' || role.toLowerCase() === 'admin';
+				},
+
+				// 兼容普通用户角色文案，避免按钮状态受“普通用户/普通员工”差异影响。
+				isNormalUserRole(role) {
+					const value = role ? String(role).trim() : '';
+					return value === '普通用户' || value === '普通员工' || value.toLowerCase() === 'user';
+				},
+
+				// 编辑入口只允许普通用户类型的数据进入。
+				isNormalUser(user) {
+					return !!user && this.isNormalUserRole(user.role);
+				},
+
+				// 所有敏感操作统一走这里做管理员校验，避免绕过按钮直接调用。
+				ensureAdminAccess(showMessage = true) {
+					const session = window.Auth.requireAuth();
+					if (!session) {
+						return false;
+					}
+
+					const allowed = this.isAdminRole(session.userInfo);
+					this.isAdminSession = allowed;
+
+					if (!allowed && showMessage) {
+						alert(this.adminAccessMessage);
+					}
+
+					return allowed;
+				},
 				// 获取默认用户数据
 				async getDefaultUsers() {
+					if (!this.ensureAdminAccess(false)) {
+						return [];
+					}
+
 					try {
 						const session = window.Auth.requireAuth();
 						if (!session) {
@@ -534,13 +606,14 @@
 						}
 
 						const records = Array.isArray(data?.data?.records)
-							? data.data.records.filter(item => item.role === '普通用户')
+							? data.data.records.filter(item => this.isNormalUserRole(item.role))
 							: [];
 
 						// ✅ 核心判断
 						if (data.code === 200 && records.length > 0) {
 						  return records.map(item => ({
 							...item,
+							originalRole: item.role || '',
 							role: '普通用户',
 							selected: false
 						  }));
@@ -559,6 +632,16 @@
 				
 				// 从API加载用户数据
 				async loadUsersFromAPI() {
+					if (!this.ensureAdminAccess(false)) {
+						this.allUsers = [];
+						this.originalUsers = [];
+						this.users = [];
+						this.totalUsers = 0;
+						this.totalPages = 1;
+						this.currentPage = 1;
+						return;
+					}
+
 					try {
 						// 直接从API获取最新数据
 						const usersData = await this.getDefaultUsers();
@@ -577,13 +660,16 @@
 				
 				// 搜索用户
 				async searchUsers() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					try {
 						// 根据搜索关键字和身份过滤用户
 						const keyword = this.searchKeyword.toLowerCase();
 						this.allUsers = this.originalUsers.filter(user => {
 							const matchRole = !this.roleFilter || user.role === this.roleFilter;
 							const matchKeyword = !keyword ||
-							       user.id.toLowerCase().includes(keyword) || 
 							       user.phone.toLowerCase().includes(keyword) ||
 							       user.nickname.toLowerCase().includes(keyword);
 							return matchRole && matchKeyword;
@@ -643,19 +729,29 @@
 				navigateTo(page) {
 					window.location.href = page;
 				},
+				/*
 
 				// 这里只允许普通用户进入新增/编辑页面。
 				isNormalUser(user) {
-					return !!user && user.role === '普通用户';
+					return !!user && this.isNormalUserRole(user.role);
 				},
 				
 				// 新增用户
+				*/
 				addUser() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					window.location.href = 'user-add.html';
 				},
 				
 				// 编辑用户
 				editUser(user = this.selectedUser) {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					if (user && !this.isNormalUser(user)) {
 						alert('该页面仅允许编辑普通用户');
 						return;
@@ -679,6 +775,10 @@
 				
 				// 删除用户
 				deleteUser(user = this.selectedUser) {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					if (user) {
 						this.selectedUser = user;
 						this.showDeleteModal = true;
@@ -701,15 +801,29 @@
 				
 				// 确认删除
 				async confirmDelete() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
+					const selectedIds = this.selectedUsers
+						.map(user => user.id)
+						.filter(Boolean);
+					const targetId = selectedIds.length === 1 ? selectedIds[0] : '';
+					if (!targetId) {
+						this.showDeleteModal = false;
+						console.log('缺少要删除的用户 ID，请重新选择');
+						return;
+					}
+
 					try {
-						const index = this.allUsers.findIndex(u => u.id === this.selectedUser.id);
-						console.log(`${this.selectedUser.id}`)
 						const res = await fetch('https://localhost:7138/api/user/delete', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 							'Content-Type': 'application/json'
 							}),
-							body: JSON.stringify({id: `${this.selectedUser.id}`})
+							body: JSON.stringify({
+								id: targetId
+							})
 						});
 						
 						const data = await res.json();
@@ -720,7 +834,7 @@
 							this.loadUsersFromAPI();
 							this.updatePagination();
 						} else {
-								
+							console.log(data.message);
 						}
 					}
 					catch (error) {
@@ -730,6 +844,10 @@
 				
 				// 刷新数据
 				refreshData() {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					try {
 						console.log('开始刷新数据...');
 						this.loadUsersFromAPI();
@@ -758,6 +876,10 @@
 				
 				// 切换用户状态
 				async toggleStatus(user) {
+					if (!this.ensureAdminAccess()) {
+						return;
+					}
+
 					if (!user || !user.id) {
 						alert('缺少用户信息，无法修改状态');
 						return;

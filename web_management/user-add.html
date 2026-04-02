@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8">
@@ -238,11 +238,11 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
-		const MALE_LABEL = '\u7537';
-		const FEMALE_LABEL = '\u5973';
-		const ENABLED_STATUS = '\u542F\u7528';
-		const DISABLED_STATUS = '\u7981\u7528';
-		const NORMAL_USER_ROLE = '\u666E\u901A\u7528\u6237';
+		const MALE_LABEL = '男';
+		const FEMALE_LABEL = '女';
+		const ENABLED_STATUS = '启用';
+		const DISABLED_STATUS = '禁用';
+		const NORMAL_USER_ROLE = '普通员工';
 
 		createApp({
 			data() {
@@ -271,17 +271,17 @@
 				// 校验表单后调用新增接口，成功时返回用户列表页。
 				async addUser() {
 					if (!this.form.nickname) {
-						this.form.errormsg = '\u6635\u79F0\u4E0D\u80FD\u4E3A\u7A7A';
+						this.form.errormsg = '昵称不能为空';
 						return;
 					}
 
 					if (!this.form.phone) {
-						this.form.errormsg = '\u624B\u673A\u53F7\u4E0D\u80FD\u4E3A\u7A7A';
+						this.form.errormsg = '手机号不能为空';
 						return;
 					}
 
 					if (!/^\d{11}$/.test(this.form.phone)) {
-						this.form.errormsg = '\u8BF7\u8F93\u5165\u6B63\u786E\u7684 11 \u4F4D\u624B\u673A\u53F7';
+						this.form.errormsg = '请输入正确的 11 位手机号';
 						return;
 					}
 
@@ -308,11 +308,11 @@
 						if (data.code === 200) {
 							window.location.href = 'user.html';
 						} else {
-							this.form.errormsg = data.message || '\u65B0\u589E\u5931\u8D25';
+							this.form.errormsg = data.message || '新增失败';
 						}
 					} catch (error) {
 						console.error('Add user request failed:', error);
-						this.form.errormsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5';
+						this.form.errormsg = '网络错误，请重试';
 					} finally {
 						this.submitting = false;
 					}
