@@ -131,6 +131,14 @@ const api = {
     getList: () => get('/api/file/videos')
   },
   
+  // 文件相关
+  file: {
+    // 获取图片列表
+    getImages: () => get('/api/file/images'),
+    // 获取图片
+    getImage: (name) => get(`/api/file/image/${name}`)
+  },
+  
   // 活动相关
   activity: {
     // 获取活动列表
