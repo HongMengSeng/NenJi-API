@@ -15,18 +15,12 @@ Page({
       title: '加载中...',
     });
     
-    // 并行获取认购详情和视频列表
-    Promise.all([
-      api.request({
-        url: '/api/acres/' + id,
-        method: 'GET'
-      }),
-      api.request({
-        url: '/api/file/videos',
-        method: 'GET'
-      })
-    ])
-    .then(([acreData, videoData]) => {
+    // 获取认购详情
+    api.request({
+      url: '/api/acres/' + id,
+      method: 'GET'
+    })
+    .then(acreData => {
       wx.hideLoading();
       
       // 清理图片路径中的反引号和空格
@@ -43,11 +37,9 @@ Page({
         bottomImages: (acreData.acreDetail.bottomImages || []).map(image => image.replace(/[`\s]/g, ''))
       };
       
-      // 处理视频列表数据
-      let videoUrl = '';
-      if (videoData.files && videoData.files.length > 0) {
-        videoUrl = `${videoData.path}/${videoData.files[0]}`;
-      }
+      // 使用新的视频URL
+      const BASE_URL = 'http://192.168.203.56';
+      const videoUrl = BASE_URL + '/api/file/video/farm_intro.mp4';
       
       // 确保数据结构完整
       const acreDetail = {
