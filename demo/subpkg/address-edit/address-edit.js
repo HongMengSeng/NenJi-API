@@ -4,6 +4,7 @@ const qqmapsdk = new QQMapWX({
   key: '6R6BZ-7SHJW-WDPKT-LTC4N-6UXD6-48RVW'
 });
 
+
 Page({
   data: {
     addressId: null,
@@ -24,6 +25,20 @@ Page({
     if (options.id) {
       this.setData({ addressId: options.id });
       this.loadAddressDetail(options.id);
+    } else if (options.name) {
+      // 从地址页面传递过来的地址信息
+      this.setData({
+        formData: {
+          name: options.name || '',
+          phone: options.phone || '',
+          province: options.province || '',
+          city: options.city || '',
+          district: options.district || '',
+          address: (options.province || '') + (options.city || '') + (options.district || ''),
+          detail: options.detail || '',
+          isDefault: false
+        }
+      });
     }
   },
 
@@ -75,56 +90,13 @@ Page({
     });
   },
 
-  // 选择地址（修改为直接调用getLocation）
+  // 选择地址（使用wx.chooseLocation打开地图选择位置）
   chooseRegion: function () {
     let that = this;
-    // 1. 先判断用户是否授权位置权限
-    wx.getSetting({
-      success(res) {
-        // 未授权 -> 引导授权
-        if (!res.authSetting['scope.userLocation']) {
-          wx.authorize({
-            scope: 'scope.userLocation',
-            success() {
-              // 授权成功 -> 获取位置
-              that.getLocation();
-            },
-            fail() {
-              // 授权失败 -> 提示去设置页开启
-              wx.showModal({
-                title: '提示',
-                content: '请开启位置权限',
-                confirmText: '去设置',
-                success(res) {
-                  if (res.confirm) {
-                    wx.openSetting();
-                  }
-                }
-              })
-            }
-          })
-        } else {
-          // 已授权 -> 直接获取位置
-          that.getLocation();
-        }
-      }
-    })
-  },
 
-  // 获取当前位置（修改为获取完整地址信息）
-  getLocation() {
-    let that = this;
-    wx.showLoading({ title: '获取位置中...' });
-
-    // 设置超时机制，防止一直转圈
-    const timeout = setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({ title: '获取位置超时，请重试', icon: 'none' });
-    }, 15000); // 15秒超时
-
+    // 使用wx.chooseLocation打开地图选择位置
     wx.chooseLocation({
       success: function(res) {
-        clearTimeout(timeout);
         console.log('选择位置结果：', res);
         
         // 解析逻辑封装
@@ -174,7 +146,6 @@ Page({
         qqmapsdk.reverseGeocoder({
           location: { latitude: res.latitude, longitude: res.longitude },
           success: function(addressRes) {
-            wx.hideLoading();
             const comp = addressRes.result.address_component;
             const result = {
               province: comp.province,
@@ -198,7 +169,6 @@ Page({
             });
           },
           fail: function(error) {
-            wx.hideLoading();
             console.error('SDK解析失败，使用正则解析', error);
             const result = parseAddress(res.address, res.name);
             
@@ -218,8 +188,6 @@ Page({
         });
       },
       fail: function(err) {
-        clearTimeout(timeout);
-        wx.hideLoading();
         console.error('选择位置失败:', err);
         if (err.errCode === 1 || err.errCode === 2) {
           wx.showToast({ title: '位置权限被拒绝，请在设置中开启', icon: 'none' });
