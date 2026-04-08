@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -7,7 +7,7 @@ Page({
       status: '',
       statusText: '',
       createTime: '',
-      payTime: null,
+      paymentTime: null,
       shippingTime: null,
       completeTime: null,
       totalPrice: 0,
@@ -41,18 +41,15 @@ Page({
   getOrderDetail(orderId) {
     wx.showLoading({ title: '加载中...' });
 
-    api.request({
-      url: `/api/OrderDetails/${orderId}`,
-      method: 'GET'
-    })
+    api.order.getDetail(orderId)
       .then((data) => {
         this.setData({
-          order: data.order || {
+          order: data || {
             id: orderId,
             status: '',
             statusText: '',
             createTime: '',
-            payTime: null,
+            paymentTime: null,
             shippingTime: null,
             completeTime: null,
             totalPrice: 0,
@@ -108,16 +105,15 @@ Page({
           wx.showLoading({ title: '取消中...' });
           
           api.request({
-            url: `/api/OrderDetails/${this.data.order.id}/cancel`,
-            method: 'POST',
+            url: `/api/orders/${this.data.order.id}/status`,
+            method: 'PUT',
             data: {
-              reason: '用户主动取消'
+              status: 'cancelled'
             }
           })
           .then((data) => {
             wx.hideLoading();
             wx.showToast({ title: '订单已取消', icon: 'success' });
-            // 刷新订单详情
             this.getOrderDetail(this.data.order.id);
           })
           .catch((err) => {
@@ -140,13 +136,15 @@ Page({
           wx.showLoading({ title: '确认中...' });
           
           api.request({
-            url: `/api/OrderDetails/${this.data.order.id}/confirm`,
-            method: 'POST'
+            url: `/api/orders/${this.data.order.id}/status`,
+            method: 'PUT',
+            data: {
+              status: 'completed'
+            }
           })
           .then((data) => {
             wx.hideLoading();
             wx.showToast({ title: '收货成功', icon: 'success' });
-            // 刷新订单详情
             this.getOrderDetail(this.data.order.id);
           })
           .catch((err) => {

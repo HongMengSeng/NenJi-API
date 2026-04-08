@@ -36,9 +36,9 @@
         <view class="info-label">下单时间</view>
         <view class="info-value">{{order.createTime}}</view>
       </view>
-      <view wx:if="{{order.payTime}}" class="info-item">
+      <view wx:if="{{order.paymentTime}}" class="info-item">
         <view class="info-label">支付时间</view>
-        <view class="info-value">{{order.payTime}}</view>
+        <view class="info-value">{{order.paymentTime}}</view>
       </view>
       <view wx:if="{{order.shippingTime}}" class="info-item">
         <view class="info-label">发货时间</view>

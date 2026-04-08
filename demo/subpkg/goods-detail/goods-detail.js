@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { api, request } = require('../../utils/api');
 
 Page({
   data: {
@@ -45,30 +45,21 @@ Page({
   getGoodsDetail(goodsId) {
     wx.showLoading({ title: '加载中...' });
 
-    api.request({
-      url: `/api/goods/${goodsId}`,
-      method: 'GET'
-    })
+    request({
+      url: `/api/goods/detail`,
+      method: 'GET',
+      data: {
+        goodsId: goodsId
+      }
+    })    
       .then((data) => {
-        // 将图片链接从HTTP改为HTTPS
-        let image = data.image || '';
-        let detailImage = data.detailImage || data.image || '';
-        
-        if (image.startsWith('http://')) {
-          image = image.replace('http://', 'https://');
-        }
-        
-        if (detailImage.startsWith('http://')) {
-          detailImage = detailImage.replace('http://', 'https://');
-        }
-        
         this.setData({
           goods: {
             id: data.id || goodsId,
             name: data.name || '',
             price: Number(data.price || 0),
-            image: image,
-            detailImage: detailImage,
+            image: data.image || '',
+            detailImage: data.detailImage || data.image || '',
             description: data.description || '',
             weight: data.weight || '',
             storage: data.storage || ''
@@ -109,13 +100,9 @@ Page({
 
     wx.showLoading({ title: '加入中...' });
 
-    api.request({
-      url: '/api/cart',
-      method: 'POST',
-      data: {
-        goodsId: goods.id,
-        quantity: 1
-      }
+    api.cart.add({
+      goodsId: goods.id,
+      count: 1
     })
       .then((data) => {
         // 即使API返回的数据结构不同，也要更新本地购物车
@@ -128,13 +115,6 @@ Page({
       })
       .catch((err) => {
         console.error('加入购物车失败:', err);
-        // 即使 API 调用失败，也将商品添加到本地购物车
-        wx.setStorageSync('cartList', nextCart);
-        this.updateCartCount();
-        wx.showToast({
-          title: '已加入购物车',
-          icon: 'success'
-        });
       })
       .finally(() => {
         wx.hideLoading();
@@ -150,7 +130,7 @@ Page({
   },
 
   getAddressList() {
-    api.request({
+    request({
       url: '/api/address/list',
       method: 'GET'
     }).then((data) => {
@@ -226,7 +206,7 @@ Page({
 
     wx.showLoading({ title: '提交订单中...' });
 
-    api.request({
+    request({
       url: '/api/order/create',
       method: 'POST',
       data: {

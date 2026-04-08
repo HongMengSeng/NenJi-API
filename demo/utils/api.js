@@ -176,7 +176,7 @@ const api = {
     // 获取购物车列表
     getList: () => get('/api/cart'),
     // 添加商品到购物车
-    add: (data) => post('/api/cart', data),
+    add: (data) => post('/api/cart/add', data),
     // 更新购物车商品数量
     update: (id, data) => put(`/api/cart/${id}`, data),
     // 删除购物车商品

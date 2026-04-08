@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -37,30 +37,22 @@ Page({
   getOrders() {
     wx.showLoading({ title: '加载中...' });
 
-    // 确定订单类型和状态
     let orderType = '';
     let status = '';
     
-    // 处理订单类型标签
     if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
       orderType = this.data.activeTab;
     } else if (this.data.activeTab !== 'all') {
-      // 处理订单状态标签
       status = this.data.activeTab;
     }
 
-    // API调用
-    api.request({
-      url: '/api/OrderDetails',
-      method: 'GET',
-      data: {
-        type: orderType,
-        status: status,
-        page: 1,
-        pageSize: 10,
-        sortBy: 'createTime',
-        sortOrder: 'desc'
-      }
+    api.order.getList({
+      type: orderType,
+      status: status,
+      page: 1,
+      pageSize: 10,
+      sortBy: 'createTime',
+      sortOrder: 'desc'
     })
       .then((data) => {
         this.setData({
@@ -71,7 +63,6 @@ Page({
       .catch((err) => {
         console.error('获取订单列表失败:', err);
         this.setData({ loading: false });
-        // 出错时显示空订单状态
         this.setData({ orders: [] });
       })
       .finally(() => {
