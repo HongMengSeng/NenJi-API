@@ -43,6 +43,10 @@ public class AppDbContext : DbContext
 
     public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
 
+    public DbSet<OrderFood> OrderFoods => Set<OrderFood>();
+
+    public DbSet<MealsOrderDetail> MealsOrderDetails => Set<MealsOrderDetail>();
+
     public DbSet<Video> Videos => Set<Video>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
@@ -150,6 +154,18 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.OrderDetailsId);
             entity.Property(x => x.OrderDetailsId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<OrderFood>(entity =>
+        {
+            entity.HasKey(x => x.OrderFoodId);
+            entity.Property(x => x.OrderFoodId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<MealsOrderDetail>(entity =>
+        {
+            entity.HasKey(x => x.MealsOrderDetailsId);
+            entity.Property(x => x.MealsOrderDetailsId).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<Video>(entity =>

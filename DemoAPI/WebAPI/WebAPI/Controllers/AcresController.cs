@@ -95,15 +95,16 @@ public class AcresController : ControllerBase
             return Ok(ApiResult.Fail("认养项目不存在", 404));
         }
 
-        var detailImages = await _dbContext.AcreProjectImages
+        var detailImageRows = await _dbContext.AcreProjectImages
             .AsNoTracking()
             .Where(x => x.AcreProjectId == projectId)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Id)
-            .Select(x => NormalizeImageUrl(x.ImageUrl))
+            .Select(x => x.ImageUrl)
             .ToListAsync(cancellationToken);
 
-        var normalizedImages = detailImages
+        var normalizedImages = detailImageRows
+            .Select(NormalizeImageUrl)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Cast<string>()
@@ -124,13 +125,15 @@ public class AcresController : ControllerBase
             })
             .ToList();
 
-        var videoUrl = await _dbContext.Videos
+        var videoUrlRaw = await _dbContext.Videos
             .AsNoTracking()
             .Where(x => x.Status == 1)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.VideoId)
-            .Select(x => NormalizeImageUrl(x.VideoUrl))
-            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+            .Select(x => x.VideoUrl)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var videoUrl = NormalizeImageUrl(videoUrlRaw) ?? string.Empty;
 
         var detailData = new
         {
@@ -207,26 +210,35 @@ public class AcresController : ControllerBase
 
     private async Task<List<AcreDto>> LoadProjectsAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.AcreProjects
+        var rows = await _dbContext.AcreProjects
             .AsNoTracking()
             .Where(x => x.Status == 1)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.AcreProjectId)
-            .Select(x => new AcreDto
+            .Select(x => new
             {
-                Id = x.AcreProjectId.ToString(),
-                Name = x.Name,
-                Status = "available",
-                Price = FormatPrice(x.Price),
-                Image = x.ImageUrl,
-                Description = x.Description
+                x.AcreProjectId,
+                x.Name,
+                x.Price,
+                x.ImageUrl,
+                x.Description
             })
             .ToListAsync(cancellationToken);
+
+        return rows.Select(x => new AcreDto
+        {
+            Id = x.AcreProjectId.ToString(),
+            Name = x.Name,
+            Status = "available",
+            Price = FormatPrice(x.Price),
+            Image = NormalizeImageUrl(x.ImageUrl) ?? string.Empty,
+            Description = x.Description
+        }).ToList();
     }
 
     private async Task<List<object>> LoadSwiperListAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Carousels
+        var rows = await _dbContext.Carousels
             .AsNoTracking()
             .Where(x => x.Status == 1 && x.Position == "acres")
             .OrderBy(x => x.SortOrder)
@@ -238,8 +250,15 @@ public class AcresController : ControllerBase
                 title = x.Title,
                 linkUrl = x.LinkUrl ?? string.Empty
             })
-            .Cast<object>()
             .ToListAsync(cancellationToken);
+
+        return rows.Select(x => (object)new
+        {
+            id = x.id,
+            image = NormalizeImageUrl(x.image) ?? string.Empty,
+            title = x.title,
+            linkUrl = x.linkUrl
+        }).ToList();
     }
 
     private static object MapListItem(AcreDto acre)
@@ -283,13 +302,32 @@ public class AcresController : ControllerBase
         return result;
     }
 
-    private static string? NormalizeImageUrl(string? imageUrl)
+    private string? NormalizeImageUrl(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
             return null;
         }
 
-        return imageUrl.Trim();
+        var trimmed = imageUrl.Trim();
+
+        // 如果已经是完整的 URL，直接返回
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        // 处理本地文件名，拼接完整的 API 访问路径
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        // 视频文件
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
+        {
+            return $"{baseUrl}/api/file/video/{trimmed}";
+        }
+
+        // 默认作为图片处理
+        return $"{baseUrl}/api/file/image/{trimmed}";
     }
 }

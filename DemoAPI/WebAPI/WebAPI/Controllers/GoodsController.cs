@@ -23,6 +23,100 @@ public class GoodsController : ControllerBase
         return BuildDetailResponseAsync(id, cancellationToken);
     }
 
+    /// <summary>
+    /// 根据关键词搜索商品
+    /// </summary>
+    /// <param name="keyword">搜索关键词</param>
+    /// <param name="page">页码 (默认1)</param>
+    /// <param name="pageSize">每页条数 (默认20)</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string? keyword,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return Ok(ApiResult.Fail("关键词不能为空", 400));
+            }
+
+            page = Math.Max(1, page);
+            pageSize = Math.Max(1, pageSize);
+
+            // 1. 构建基础查询：已上架商品
+            var query = _dbContext.Commodities
+                .AsNoTracking()
+                .Where(x => (x.ProductStatus ?? 0) == 1);
+
+            // 2. 关键词模糊匹配 (名称 或 描述)
+            query = query.Where(x => 
+                (x.ProductName != null && x.ProductName.Contains(keyword)) || 
+                (x.SpecDescription != null && x.SpecDescription.Contains(keyword)));
+
+            // 3. 排序规则：优先匹配名称，其次按价格升序
+            var total = await query.CountAsync(cancellationToken);
+            var commodities = await query
+                .OrderByDescending(x => x.ProductName != null && x.ProductName.Contains(keyword))
+                .ThenBy(x => x.UnitPrice ?? 0m)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            // 4. 批量加载搜索结果的标签
+            var commodityIds = commodities.Select(x => x.CommodityId).ToList();
+            var tagRelations = await (
+                from relation in _dbContext.CommodityTagRelations.AsNoTracking()
+                join tag in _dbContext.Tags.AsNoTracking() on relation.TagId equals tag.TagId
+                where commodityIds.Contains(relation.CommodityId)
+                select new { relation.CommodityId, tag.TagName }
+            ).ToListAsync(cancellationToken);
+
+            var tagMap = tagRelations
+                .GroupBy(x => x.CommodityId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.TagName).ToList());
+
+            // 5. 组装响应数据
+            var goodsList = commodities.Select(x =>
+            {
+                var stock = x.InStock ?? 0;
+                var status = (x.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+                var imageUrl = NormalizeImageUrl(x.ImageUrl) ?? string.Empty;
+                return new
+                {
+                    id = x.CommodityId,
+                    name = x.ProductName,
+                    price = x.UnitPrice ?? 0m,
+                    originalPrice = x.OriginalPrice ?? (x.UnitPrice ?? 0m),
+                    image = imageUrl,
+                    mainImage = imageUrl,
+                    main_image = imageUrl,
+                    tags = tagMap.TryGetValue(x.CommodityId, out var tags) ? tags : new List<string>(),
+                    stock = stock,
+                    status = status,
+                    description = x.SpecDescription ?? string.Empty,
+                    desc = x.SpecDescription ?? string.Empty
+                };
+            }).ToList();
+
+            return Ok(ApiResult.Success(new
+            {
+                goods = goodsList,
+                total,
+                page,
+                pageSize
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"搜索失败：{ex.Message}", 500));
+        }
+    }
+
     [HttpGet("detail")]
     public Task<IActionResult> Detail(
         [FromQuery(Name = "goodsId")] int? goodsId,
@@ -153,16 +247,16 @@ public class GoodsController : ControllerBase
         }
     }
 
-    private static string ResolveDetailImageUrl(string primaryImage, IReadOnlyCollection<string?> detailImages)
+    private string ResolveDetailImageUrl(string primaryImage, IReadOnlyCollection<string?> detailImages)
     {
         var detailImage = detailImages
-            .Select(NormalizeImageUrl)
+            .Select(x => NormalizeImageUrl(x))
             .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
         return string.IsNullOrWhiteSpace(detailImage) ? primaryImage : detailImage;
     }
 
-    private static string ResolvePrimaryImageUrl(string? imageUrl, IReadOnlyCollection<string?> detailImages)
+    private string ResolvePrimaryImageUrl(string? imageUrl, IReadOnlyCollection<string?> detailImages)
     {
         var normalizedMainImage = NormalizeImageUrl(imageUrl);
         if (!string.IsNullOrWhiteSpace(normalizedMainImage))
@@ -171,12 +265,12 @@ public class GoodsController : ControllerBase
         }
 
         return detailImages
-            .Select(NormalizeImageUrl)
+            .Select(x => NormalizeImageUrl(x))
             .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
             ?? string.Empty;
     }
 
-    private static string? NormalizeImageUrl(string? imageUrl)
+    private string? NormalizeImageUrl(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
@@ -184,18 +278,30 @@ public class GoodsController : ControllerBase
         }
 
         var trimmed = imageUrl.Trim();
-        var duplicateMarkerIndex = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
-        if (duplicateMarkerIndex > 0)
+
+        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
-            trimmed = trimmed[..duplicateMarkerIndex];
+            var duplicateMarkerIndex = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
+
+            duplicateMarkerIndex = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
+
+            return trimmed.Trim();
         }
 
-        duplicateMarkerIndex = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
-        if (duplicateMarkerIndex > 0)
+        // 处理本地文件名，拼接完整的 API 访问路径
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        // 视频文件
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
         {
-            trimmed = trimmed[..duplicateMarkerIndex];
+            return $"{baseUrl}/api/file/video/{trimmed}";
         }
 
-        return trimmed.Trim();
+        // 默认作为图片处理
+        return $"{baseUrl}/api/file/image/{trimmed}";
     }
 }

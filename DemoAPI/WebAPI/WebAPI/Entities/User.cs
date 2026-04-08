@@ -28,6 +28,12 @@ public class User
     [Column("wx_nickname")]
     public string WxName { get; set; } = string.Empty;
 
+    [Column("real_name")]
+    public string RealName { get; set; } = string.Empty;
+
+    [Column("gender")]
+    public string Gender { get; set; } = "保密";
+
     [Column("role_id")]
     public int RoleId { get; set; }
 

@@ -201,7 +201,12 @@ public class OrderController : ControllerBase
             var sourceItems = new List<OrderSourceItem>();
             if (normalizedRequest.CartIds.Count > 0)
             {
-                var cartItems = CartController.GetCartItemsByIds(userId, normalizedRequest.CartIds);
+                // 改为从数据库的 ShippingCarts 获取购物车项
+                var cartItems = await _dbContext.ShippingCarts
+                    .Where(x => x.UserId == userId && normalizedRequest.CartIds.Contains(x.ShippingCartId))
+                    .Select(x => new { Id = x.ShippingCartId, GoodsId = x.CommodityId, Count = x.CartQuantity })
+                    .ToListAsync(cancellationToken);
+
                 if (cartItems.Count == 0)
                 {
                     return Ok(ApiResult.Fail("购物车商品不存在", 1003));
@@ -295,9 +300,13 @@ public class OrderController : ControllerBase
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
+            // 从购物车中移除已下单的商品（数据库实现）
             if (normalizedRequest.CartIds.Count > 0)
             {
-                CartController.RemoveCartItems(userId, normalizedRequest.CartIds);
+                var removeCarts = _dbContext.ShippingCarts
+                    .Where(x => x.UserId == userId && normalizedRequest.CartIds.Contains(x.ShippingCartId));
+                _dbContext.ShippingCarts.RemoveRange(removeCarts);
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
             return Ok(ApiResult.Success(new
@@ -341,6 +350,37 @@ public class OrderController : ControllerBase
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
+
+            // 演示环境兜底：当数据库暂无订单时，返回静态假订单，方便前端联调。
+            if (total == 0)
+            {
+                var mockOrders = BuildMockOrders();
+                var filteredMockOrders = ApplyMockStatusFilter(mockOrders, status);
+                var mockTotal = filteredMockOrders.Count;
+                var pagedMockOrders = filteredMockOrders
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return Ok(ApiResult.Success(new
+                {
+                    orders = pagedMockOrders.Select(x => new
+                    {
+                        id = x.Id,
+                        status = x.Status,
+                        statusText = x.StatusText,
+                        createTime = x.CreateTime,
+                        totalPrice = x.TotalPrice,
+                        orderType = 1,
+                        orderTypeText = "商城订单",
+                        items = x.Items
+                    }).ToList(),
+                    total = mockTotal,
+                    page,
+                    pageSize,
+                    hasMore = page * pageSize < mockTotal
+                }));
+            }
 
             var orderIds = orders.Select(x => x.OrderId).ToList();
             var items = await _dbContext.OrderDetails
@@ -393,6 +433,7 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpGet("info")]
     [HttpGet("detail")]
     [HttpGet("getOrderData/detail")]
     [HttpGet("getOrderData/{orderId:long}")]
@@ -434,6 +475,7 @@ public class OrderController : ControllerBase
 
             return Ok(ApiResult.Success(new
             {
+                totalAmount = order.TotalOrderAmount,
                 order = new
                 {
                     id = order.OrderId.ToString(),
@@ -442,6 +484,7 @@ public class OrderController : ControllerBase
                     createTime = order.OrderCreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
                     payTime = order.PaymentStatus == 1 ? order.PaymentTime.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     totalPrice = order.TotalOrderAmount,
+                    totalAmount = order.TotalOrderAmount,
                     orderType = order.OrderType,
                     orderTypeText = MapOrderTypeText(order.OrderType),
                     shippingAddress = new
@@ -456,7 +499,7 @@ public class OrderController : ControllerBase
                         name = commodities.TryGetValue(x.CommodityId, out var goods) ? goods.ProductName : $"商品{x.CommodityId}",
                         price = x.ActualUnitPrice,
                         quantity = x.PurchaseQuantity,
-                        image = commodities.TryGetValue(x.CommodityId, out var commodity) ? commodity.ImageUrl ?? string.Empty : string.Empty
+                        image = NormalizeImageUrl(commodities.TryGetValue(x.CommodityId, out var commodity) ? commodity.ImageUrl ?? string.Empty : string.Empty)
                     }).ToList()
                 }
             }));
@@ -600,8 +643,8 @@ public class OrderController : ControllerBase
         var goodsId = request.GoodsId > 0 ? request.GoodsId : request.GoodsIdAlias;
         var count = request.Count > 0 ? request.Count : request.Quantity;
 
-        if (cartIds.Count == 0 && goodsId <= 0)
-        {
+            if (cartIds.Count == 0 && goodsId <= 0)
+            {
             message = "请提供 cartIds 或 goodsId";
             return false;
         }
@@ -802,6 +845,25 @@ public class OrderController : ControllerBase
         public decimal PayAmount { get; set; }
     }
 
+    private string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        var trimmed = imageUrl.Trim();
+
+        // 如果是本地文件名（不包含 http），拼接 API 接口地址
+        if (!trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            return $"{baseUrl}/api/file/image/{trimmed}";
+        }
+
+        return trimmed;
+    }
+
     private sealed class OrderCategoryItem
     {
         public int CategoryId { get; set; }
@@ -813,5 +875,110 @@ public class OrderController : ControllerBase
     {
         public int GoodsId { get; set; }
         public int Count { get; set; }
+    }
+
+    private static List<MockOrderItem> BuildMockOrders()
+    {
+        return
+        [
+            new MockOrderItem
+            {
+                Id = "MOCK-20260407-1001",
+                Status = "pending",
+                StatusText = "待支付",
+                CreateTime = DateTime.Now.AddHours(-2).ToString("yyyy-MM-dd HH:mm:ss"),
+                TotalPrice = 58.80m,
+                Items =
+                [
+                    new { id = "101", name = "有机生菜", price = 12.8m, quantity = 2, image = "" },
+                    new { id = "102", name = "甜脆玉米", price = 8.8m, quantity = 3, image = "" }
+                ]
+            },
+            new MockOrderItem
+            {
+                Id = "MOCK-20260407-1002",
+                Status = "pending",
+                StatusText = "待支付",
+                CreateTime = DateTime.Now.AddHours(-6).ToString("yyyy-MM-dd HH:mm:ss"),
+                TotalPrice = 39.60m,
+                Items =
+                [
+                    new { id = "103", name = "农家西红柿", price = 9.9m, quantity = 4, image = "" }
+                ]
+            },
+            new MockOrderItem
+            {
+                Id = "MOCK-20260406-2001",
+                Status = "shipping",
+                StatusText = "待收货",
+                CreateTime = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss"),
+                TotalPrice = 76.00m,
+                Items =
+                [
+                    new { id = "104", name = "土猪肉", price = 38.0m, quantity = 2, image = "" }
+                ]
+            },
+            new MockOrderItem
+            {
+                Id = "MOCK-20260405-2002",
+                Status = "shipping",
+                StatusText = "待收货",
+                CreateTime = DateTime.Now.AddDays(-2).ToString("yyyy-MM-dd HH:mm:ss"),
+                TotalPrice = 99.80m,
+                Items =
+                [
+                    new { id = "105", name = "农家大米", price = 49.9m, quantity = 2, image = "" }
+                ]
+            },
+            new MockOrderItem
+            {
+                Id = "MOCK-20260404-3001",
+                Status = "paid",
+                StatusText = "已支付",
+                CreateTime = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd HH:mm:ss"),
+                TotalPrice = 45.70m,
+                Items =
+                [
+                    new { id = "106", name = "鲜牛奶", price = 19.9m, quantity = 1, image = "" },
+                    new { id = "107", name = "香甜橙子", price = 12.9m, quantity = 2, image = "" }
+                ]
+            }
+        ];
+    }
+
+    private static List<MockOrderItem> ApplyMockStatusFilter(List<MockOrderItem> orders, string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status) || status.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            return orders
+                .OrderByDescending(x => x.CreateTime)
+                .ThenByDescending(x => x.Id)
+                .ToList();
+        }
+
+        var normalized = status.Trim().ToLowerInvariant();
+        return orders
+            .Where(x => normalized switch
+            {
+                "pending_payment" or "pending" => x.Status == "pending",
+                "paid" => x.Status == "paid",
+                "shipped" or "shipping" => x.Status == "shipping",
+                "completed" => x.Status == "completed",
+                "cancelled" => x.Status == "cancelled",
+                _ => true
+            })
+            .OrderByDescending(x => x.CreateTime)
+            .ThenByDescending(x => x.Id)
+            .ToList();
+    }
+
+    private sealed class MockOrderItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string StatusText { get; set; } = string.Empty;
+        public string CreateTime { get; set; } = string.Empty;
+        public decimal TotalPrice { get; set; }
+        public List<object> Items { get; set; } = [];
     }
 }

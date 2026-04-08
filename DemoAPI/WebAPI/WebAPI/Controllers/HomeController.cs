@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using System.IO;
+
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
@@ -61,35 +63,52 @@ public class HomeController : ControllerBase
             page = page <= 0 ? 1 : page;
             pageSize = pageSize <= 0 ? 6 : pageSize;
 
-            var homeSwiperList = await _dbContext.Carousels
+            var homeSwiperRows = await _dbContext.Carousels
                 .AsNoTracking()
                 .Where(x => x.Status == 1 && x.Position == "home")
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.CarouselId)
-                .Select(x => new SwiperItem
+                .Select(x => new
                 {
-                    Id = (int)x.CarouselId,
-                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-                    LinkUrl = x.LinkUrl ?? string.Empty,
-                    Title = x.Title
+                    x.CarouselId,
+                    x.ImageUrl,
+                    x.LinkUrl,
+                    x.Title
                 })
                 .ToListAsync(cancellationToken);
 
-            var acreProjects = await _dbContext.AcreProjects
+            var homeSwiperList = homeSwiperRows.Select(x => new SwiperItem
+            {
+                Id = (int)x.CarouselId,
+                Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                LinkUrl = x.LinkUrl ?? string.Empty,
+                Title = x.Title
+            }).ToList();
+
+            var acreProjectRows = await _dbContext.AcreProjects
                 .AsNoTracking()
                 .Where(x => x.Status == 1)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.AcreProjectId)
                 .Take(6)
-                .Select(x => new AcreProjectItem
+                .Select(x => new
                 {
-                    Id = (int)x.AcreProjectId,
-                    Name = x.Name,
-                    Description = x.Description,
-                    Price = x.Price,
-                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty
+                    x.AcreProjectId,
+                    x.Name,
+                    x.Description,
+                    x.Price,
+                    x.ImageUrl
                 })
                 .ToListAsync(cancellationToken);
+
+            var acreProjects = acreProjectRows.Select(x => new AcreProjectItem
+            {
+                Id = (int)x.AcreProjectId,
+                Name = x.Name,
+                Description = x.Description,
+                Price = x.Price,
+                Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty
+            }).ToList();
 
             var homeVideos = await LoadHomeVideosAsync(cancellationToken);
 
@@ -102,22 +121,31 @@ public class HomeController : ControllerBase
 
             allFarmGoods = EnsureBlackPorkImage(allFarmGoods);
 
-            var allHotDishes = await _dbContext.Dishes
+            var hotDishRows = await _dbContext.Dishes
                 .AsNoTracking()
                 .Where(x => x.Status == 1)
                 .OrderByDescending(x => x.DishSold)
                 .ThenByDescending(x => x.DishId)
-                .Select(x => new HotDishItem
+                .Select(x => new
                 {
-                    Id = x.DishId,
-                    Name = x.DishName,
-                    Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-                    Price = x.DishPrice,
-                    Tags = string.IsNullOrWhiteSpace(x.AttributeName)
-                        ? new List<string>()
-                        : new List<string> { x.AttributeName }
+                    x.DishId,
+                    x.DishName,
+                    x.ImageUrl,
+                    x.DishPrice,
+                    x.AttributeName
                 })
                 .ToListAsync(cancellationToken);
+
+            var allHotDishes = hotDishRows.Select(x => new HotDishItem
+            {
+                Id = x.DishId,
+                Name = x.DishName,
+                Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+                Price = x.DishPrice,
+                Tags = string.IsNullOrWhiteSpace(x.AttributeName)
+                    ? new List<string>()
+                    : new List<string> { x.AttributeName }
+            }).ToList();
 
             var farmGoods = allFarmGoods
                 .Skip((page - 1) * pageSize)
@@ -264,7 +292,7 @@ public class HomeController : ControllerBase
                 group => group.Select(x => x.TagName).Distinct().ToList());
     }
 
-    private static string? NormalizeMediaUrl(string? url)
+    private string? NormalizeMediaUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
@@ -273,33 +301,33 @@ public class HomeController : ControllerBase
 
         var trimmed = url.Trim();
 
-        var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
-        if (duplicateHttps > 0)
+        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
-            trimmed = trimmed[..duplicateHttps];
+            var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttps > 0) trimmed = trimmed[..duplicateHttps];
+
+            var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttp > 0) trimmed = trimmed[..duplicateHttp];
+
+            return trimmed.Trim();
         }
 
-        var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
-        if (duplicateHttp > 0)
+        // 处理本地文件名，拼接完整的 API 访问路径
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        // 视频文件
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
         {
-            trimmed = trimmed[..duplicateHttp];
+            return $"{baseUrl}/api/file/video/{trimmed}";
         }
 
-        return trimmed.Trim();
+        // 默认作为图片处理
+        return $"{baseUrl}/api/file/image/{trimmed}";
     }
 
-    private sealed class HomeIndexResponse
-    {
-        public List<SwiperItem> SwiperList { get; set; } = [];
-        public List<FunctionButton> FunctionButtons { get; set; } = [];
-        public List<AcreProjectItem> AcreProjects { get; set; } = [];
-        public List<HomeVideoItem> Videos { get; set; } = [];
-        public List<FarmGoodsItem> FarmGoods { get; set; } = [];
-        public List<HotDishItem> HotDishes { get; set; } = [];
-        public bool HasMore { get; set; }
-    }
-
-    private sealed class SwiperItem
+    public sealed class SwiperItem
     {
         public int Id { get; set; }
         public string Image { get; set; } = string.Empty;
@@ -307,7 +335,7 @@ public class HomeController : ControllerBase
         public string Title { get; set; } = string.Empty;
     }
 
-    private sealed class FunctionButton
+    public sealed class FunctionButton
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -315,7 +343,7 @@ public class HomeController : ControllerBase
         public string Path { get; set; } = string.Empty;
     }
 
-    private sealed class AcreProjectItem
+    public sealed class AcreProjectItem
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -324,14 +352,14 @@ public class HomeController : ControllerBase
         public string Image { get; set; } = string.Empty;
     }
 
-    private sealed class HomeVideoItem
+    public sealed class HomeVideoItem
     {
         public int Id { get; set; }
         public string CoverImage { get; set; } = string.Empty;
         public string VideoUrl { get; set; } = string.Empty;
     }
 
-    private sealed class FarmGoodsItem
+    public sealed class FarmGoodsItem
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -342,12 +370,23 @@ public class HomeController : ControllerBase
         public int Stock { get; set; }
     }
 
-    private sealed class HotDishItem
+    public sealed class HotDishItem
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public List<string> Tags { get; set; } = [];
+    }
+
+    public sealed class HomeIndexResponse
+    {
+        public List<SwiperItem> SwiperList { get; set; } = [];
+        public List<FunctionButton> FunctionButtons { get; set; } = [];
+        public List<AcreProjectItem> AcreProjects { get; set; } = [];
+        public List<HomeVideoItem> Videos { get; set; } = [];
+        public List<FarmGoodsItem> FarmGoods { get; set; } = [];
+        public List<HotDishItem> HotDishes { get; set; } = [];
+        public bool HasMore { get; set; }
     }
 }

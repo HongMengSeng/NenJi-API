@@ -32,6 +32,7 @@ public class UserController : ControllerBase
             Id = 0,
             Nickname = "游客",
             Avatar = string.Empty,
+            Gender = "保密",
             Phone = string.Empty,
             Email = string.Empty
         }));
@@ -53,6 +54,7 @@ public class UserController : ControllerBase
                 Id = user.UserId,
                 Nickname = user.WxName,
                 Avatar = user.WxImage,
+                Gender = user.Gender,
                 Phone = user.PhoneNumber,
                 Email = string.Empty
             }));
@@ -89,6 +91,16 @@ public class UserController : ControllerBase
                 user.WxImage = request.Avatar.Trim();
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Gender))
+            {
+                user.Gender = request.Gender.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Phone))
+            {
+                user.PhoneNumber = request.Phone.Trim();
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Ok(ApiResult.Success());
         }
@@ -119,7 +131,7 @@ public class UserController : ControllerBase
                 {
                     Id = x.AddressId,
                     Name = x.ContactName,
-                    Phone = user.PhoneNumber ?? string.Empty,
+                    Phone = x.ContactPhone,
                     Province = x.Province,
                     City = x.City,
                     District = x.MunicipalDistrict,
@@ -159,7 +171,7 @@ public class UserController : ControllerBase
                 {
                     Id = x.AddressId,
                     Name = x.ContactName,
-                    Phone = user.PhoneNumber ?? string.Empty,
+                    Phone = x.ContactPhone,
                     Province = x.Province,
                     City = x.City,
                     District = x.MunicipalDistrict,
@@ -213,6 +225,7 @@ public class UserController : ControllerBase
             {
                 UserId = user.UserId,
                 ContactName = request.Name.Trim(),
+                ContactPhone = request.Phone.Trim(),
                 Province = request.Province.Trim(),
                 City = request.City.Trim(),
                 MunicipalDistrict = request.District.Trim(),
@@ -290,6 +303,7 @@ public class UserController : ControllerBase
 
             var (town, houseNumber) = SplitAddress(updateRequest.Address);
             address.ContactName = updateRequest.Name.Trim();
+            address.ContactPhone = updateRequest.Phone.Trim();
             address.Province = updateRequest.Province.Trim();
             address.City = updateRequest.City.Trim();
             address.MunicipalDistrict = updateRequest.District.Trim();
@@ -349,39 +363,21 @@ public class UserController : ControllerBase
     private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
         var userGuid = GetCurrentUserGuid();
-        if (!string.IsNullOrWhiteSpace(userGuid))
-        {
-            var userByGuid = await _dbContext.Users
-                .FirstOrDefaultAsync(x => x.UserNo == userGuid, cancellationToken);
-            if (userByGuid is not null)
-            {
-                return userByGuid;
-            }
-        }
-
-        var userId = GetCurrentUserIdOrNull();
-        if (userId is null)
+        if (string.IsNullOrWhiteSpace(userGuid))
         {
             return null;
         }
 
         return await _dbContext.Users
-            .FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserNo == userGuid, cancellationToken);
     }
 
     private string GetCurrentUserGuid()
     {
-        return (User.FindFirstValue("userNo")
-            ?? User.FindFirstValue("user_guid")
+        return (User.FindFirstValue("user_guid")
+            ?? User.FindFirstValue("userNo")
             ?? User.FindFirstValue("userGuid")
             ?? string.Empty).Trim();
-    }
-
-    private int? GetCurrentUserIdOrNull()
-    {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("userId");
-        return int.TryParse(userIdValue, out var userId) ? userId : null;
     }
 
     private static bool IsValidAddressRequest(SaveAddressRequest? request, bool requireId)
@@ -468,6 +464,8 @@ public class UserController : ControllerBase
     {
         public string Nickname { get; set; } = string.Empty;
         public string Avatar { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }
 
@@ -493,6 +491,7 @@ public class UserController : ControllerBase
         public int Id { get; set; }
         public string Nickname { get; set; } = string.Empty;
         public string Avatar { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }

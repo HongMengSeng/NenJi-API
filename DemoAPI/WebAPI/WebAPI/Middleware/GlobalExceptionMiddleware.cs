@@ -16,6 +16,13 @@ public class GlobalExceptionMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // 对于Swagger相关的请求，直接传递给下一个中间件，不捕获异常
+        if (context.Request.Path.StartsWithSegments("/swagger"))
+        {
+            await _next(context);
+            return;
+        }
+
         try
         {
             await _next(context);

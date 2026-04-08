@@ -1,7 +1,5 @@
-using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
-using System.Threading;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
 using WebAPI.Data;
+using WebAPI.Entities;
 
 namespace WebAPI.Controllers;
 
@@ -18,9 +17,6 @@ namespace WebAPI.Controllers;
 public class CartController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
-    private static int _nextCartId = 1000;
-
-    public static readonly ConcurrentDictionary<int, List<RuntimeCartItem>> CartStore = new();
 
     public CartController(AppDbContext dbContext)
     {
@@ -39,8 +35,13 @@ public class CartController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var cartItems = GetCartSnapshot(userId);
-            var commodityIds = cartItems.Select(x => x.GoodsId).Distinct().ToList();
+            var cartItems = await _dbContext.ShippingCarts
+                .AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.JoinTime)
+                .ToListAsync(cancellationToken);
+
+            var commodityIds = cartItems.Select(x => x.CommodityId).Distinct().ToList();
             var commodityMap = await _dbContext.Commodities
                 .AsNoTracking()
                 .Where(x => commodityIds.Contains(x.CommodityId))
@@ -51,23 +52,23 @@ public class CartController : ControllerBase
             var data = new CartListResponse
             {
                 CartList = cartItems
-                    .Where(x => commodityMap.ContainsKey(x.GoodsId))
+                    .Where(x => commodityMap.ContainsKey(x.CommodityId))
                     .Select(x =>
                     {
-                        var commodity = commodityMap[x.GoodsId];
-                        var firstTag = tags.TryGetValue(x.GoodsId, out var itemTags)
+                        var commodity = commodityMap[x.CommodityId];
+                        var firstTag = tags.TryGetValue(x.CommodityId, out var itemTags)
                             ? itemTags.FirstOrDefault() ?? string.Empty
                             : string.Empty;
 
                         return new CartItemResponse
                         {
-                            Id = x.Id,
-                            GoodsId = x.GoodsId,
+                            Id = x.ShippingCartId,
+                            GoodsId = x.CommodityId,
                             Name = commodity.ProductName,
-                            Image = commodity.ImageUrl ?? string.Empty,
+                            Image = NormalizeImageUrl(commodity.ImageUrl) ?? string.Empty,
                             Tag = firstTag,
                             Price = ResolveCommodityPrice(commodity.ProductName),
-                            Count = x.Count,
+                            Count = x.CartQuantity,
                             Checked = true
                         };
                     })
@@ -83,9 +84,58 @@ public class CartController : ControllerBase
     }
 
     [HttpPost("items")]
-    public Task<IActionResult> AddItem([FromBody] CartAddRequest? request, CancellationToken cancellationToken)
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] CartSyncRequest? request, CancellationToken cancellationToken)
     {
-        return Add(request, cancellationToken);
+        try
+        {
+            if (request?.CartList is null)
+            {
+                return Ok(ApiResult.Fail("购物车数据不能为空", 400));
+            }
+
+            var userId = GetCurrentUserId();
+
+            var existingCarts = await _dbContext.ShippingCarts
+                .Where(x => x.UserId == userId)
+                .ToListAsync(cancellationToken);
+
+            _dbContext.ShippingCarts.RemoveRange(existingCarts);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            var groupedItems = request.CartList
+                .Select(item => new
+                {
+                    CommodityId = item.GoodsId > 0
+                        ? item.GoodsId
+                        : item.GoodsIdAlias > 0
+                            ? item.GoodsIdAlias
+                            : item.Id,
+                    Count = item.Count > 0 ? item.Count : 1
+                })
+                .Where(x => x.CommodityId > 0)
+                .GroupBy(x => x.CommodityId)
+                .Select(g => new { CommodityId = g.Key, Count = g.Sum(x => x.Count) });
+
+            foreach (var item in groupedItems)
+            {
+                _dbContext.ShippingCarts.Add(new ShippingCart
+                {
+                    UserId = userId,
+                    CommodityId = item.CommodityId,
+                    CartQuantity = item.Count,
+                    JoinTime = DateTime.Now
+                });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return await List(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"同步购物车失败：{ex.Message}"));
+        }
     }
 
     [HttpPost("add")]
@@ -111,14 +161,33 @@ public class CartController : ControllerBase
             }
 
             var userId = GetCurrentUserId();
-            var currentItem = FindCartItem(userId, normalizedRequest.GoodsId);
-            var targetCount = (currentItem?.Count ?? 0) + normalizedRequest.Count;
+
+            var existingCart = await _dbContext.ShippingCarts
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.CommodityId == normalizedRequest.GoodsId, cancellationToken);
+
+            var targetCount = (existingCart?.CartQuantity ?? 0) + normalizedRequest.Count;
             if ((goods.InStock ?? 0) < targetCount)
             {
                 return Ok(ApiResult.Fail("商品库存不足", 1002));
             }
 
-            UpsertCartItem(userId, normalizedRequest.GoodsId, targetCount);
+            if (existingCart is null)
+            {
+                _dbContext.ShippingCarts.Add(new ShippingCart
+                {
+                    UserId = userId,
+                    CommodityId = normalizedRequest.GoodsId,
+                    CartQuantity = targetCount,
+                    JoinTime = DateTime.Now
+                });
+            }
+            else
+            {
+                existingCart.CartQuantity = targetCount;
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             return Ok(ApiResult.Success(new
             {
                 goodsId = normalizedRequest.GoodsId,
@@ -152,7 +221,9 @@ public class CartController : ControllerBase
             }
 
             var userId = GetCurrentUserId();
-            var cartItem = FindCartItemById(userId, request.CartId);
+            var cartItem = await _dbContext.ShippingCarts
+                .FirstOrDefaultAsync(x => x.ShippingCartId == request.CartId && x.UserId == userId, cancellationToken);
+
             if (cartItem is null)
             {
                 return Ok(ApiResult.Fail("购物车商品不存在", 1003));
@@ -160,7 +231,7 @@ public class CartController : ControllerBase
 
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CommodityId == cartItem.GoodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+                .FirstOrDefaultAsync(x => x.CommodityId == cartItem.CommodityId && (x.ProductStatus ?? 0) == 1, cancellationToken);
 
             if (goods is null)
             {
@@ -172,7 +243,9 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail("商品库存不足", 1002));
             }
 
-            UpdateCartItemCount(userId, request.CartId, request.Count);
+            cartItem.CartQuantity = request.Count;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             return Ok(ApiResult.Success());
         }
         catch (Exception ex)
@@ -182,13 +255,13 @@ public class CartController : ControllerBase
     }
 
     [HttpDelete("items/{id:int}")]
-    public IActionResult DeleteItem(int id)
+    public Task<IActionResult> DeleteItem(int id, CancellationToken cancellationToken)
     {
-        return Delete(new CartDeleteRequest { CartId = id });
+        return Delete(new CartDeleteRequest { CartId = id }, cancellationToken);
     }
 
     [HttpDelete("delete")]
-    public IActionResult Delete([FromBody] CartDeleteRequest? request)
+    public async Task<IActionResult> Delete([FromBody] CartDeleteRequest? request, CancellationToken cancellationToken)
     {
         try
         {
@@ -197,8 +270,19 @@ public class CartController : ControllerBase
                 return Ok(ApiResult.Fail("请求参数不正确", 400));
             }
 
-            var success = RemoveCartItem(GetCurrentUserId(), request.CartId);
-            return Ok(success ? ApiResult.Success() : ApiResult.Fail("购物车商品不存在", 1003));
+            var userId = GetCurrentUserId();
+            var cartItem = await _dbContext.ShippingCarts
+                .FirstOrDefaultAsync(x => x.ShippingCartId == request.CartId && x.UserId == userId, cancellationToken);
+
+            if (cartItem is null)
+            {
+                return Ok(ApiResult.Fail("购物车商品不存在", 1003));
+            }
+
+            _dbContext.ShippingCarts.Remove(cartItem);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResult.Success());
         }
         catch (Exception ex)
         {
@@ -207,17 +291,24 @@ public class CartController : ControllerBase
     }
 
     [HttpDelete]
-    public IActionResult ClearRoot()
+    public Task<IActionResult> ClearRoot(CancellationToken cancellationToken)
     {
-        return Clear();
+        return Clear(cancellationToken);
     }
 
     [HttpDelete("clear")]
-    public IActionResult Clear()
+    public async Task<IActionResult> Clear(CancellationToken cancellationToken)
     {
         try
         {
-            ClearCart(GetCurrentUserId());
+            var userId = GetCurrentUserId();
+            var cartItems = await _dbContext.ShippingCarts
+                .Where(x => x.UserId == userId)
+                .ToListAsync(cancellationToken);
+
+            _dbContext.ShippingCarts.RemoveRange(cartItems);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             return Ok(ApiResult.Success());
         }
         catch (Exception ex)
@@ -226,101 +317,14 @@ public class CartController : ControllerBase
         }
     }
 
-    public static List<RuntimeCartItem> GetCartSnapshot(int userId)
+    public static List<ShippingCart> GetCartItemsByIds(int userId, IEnumerable<int> cartIds)
     {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        lock (cart)
-        {
-            return cart
-                .Select(x => new RuntimeCartItem
-                {
-                    Id = x.Id,
-                    GoodsId = x.GoodsId,
-                    Count = x.Count,
-                    CreatedAt = x.CreatedAt
-                })
-                .OrderByDescending(x => x.CreatedAt)
-                .ToList();
-        }
-    }
-
-    public static List<RuntimeCartItem> GetCartItemsByIds(int userId, IEnumerable<int> cartIds)
-    {
-        var cartIdSet = cartIds.ToHashSet();
-        return GetCartSnapshot(userId)
-            .Where(x => cartIdSet.Contains(x.Id))
-            .ToList();
+        throw new NotImplementedException("Use database query instead.");
     }
 
     public static void RemoveCartItems(int userId, IEnumerable<int> cartIds)
     {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        var cartIdSet = cartIds.ToHashSet();
-        lock (cart)
-        {
-            cart.RemoveAll(x => cartIdSet.Contains(x.Id));
-        }
-    }
-
-    private static RuntimeCartItem? FindCartItem(int userId, int goodsId)
-    {
-        return GetCartSnapshot(userId).FirstOrDefault(x => x.GoodsId == goodsId);
-    }
-
-    private static RuntimeCartItem? FindCartItemById(int userId, int cartId)
-    {
-        return GetCartSnapshot(userId).FirstOrDefault(x => x.Id == cartId);
-    }
-
-    private static void UpsertCartItem(int userId, int goodsId, int count)
-    {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        lock (cart)
-        {
-            var item = cart.FirstOrDefault(x => x.GoodsId == goodsId);
-            if (item is null)
-            {
-                cart.Add(new RuntimeCartItem
-                {
-                    Id = Interlocked.Increment(ref _nextCartId),
-                    GoodsId = goodsId,
-                    Count = count,
-                    CreatedAt = DateTime.Now
-                });
-            }
-            else
-            {
-                item.Count = count;
-            }
-        }
-    }
-
-    private static void UpdateCartItemCount(int userId, int cartId, int count)
-    {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        lock (cart)
-        {
-            var item = cart.First(x => x.Id == cartId);
-            item.Count = count;
-        }
-    }
-
-    private static bool RemoveCartItem(int userId, int cartId)
-    {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        lock (cart)
-        {
-            return cart.RemoveAll(x => x.Id == cartId) > 0;
-        }
-    }
-
-    private static void ClearCart(int userId)
-    {
-        var cart = CartStore.GetOrAdd(userId, _ => new List<RuntimeCartItem>());
-        lock (cart)
-        {
-            cart.Clear();
-        }
+        throw new NotImplementedException("Use database query instead.");
     }
 
     private async Task<Dictionary<int, List<string>>> LoadCommodityTagsAsync(
@@ -406,16 +410,71 @@ public class CartController : ControllerBase
         return productName switch
         {
             "有机生菜" => 12.8m,
+            "散养土鸡蛋" => 16.8m,
+            "黑猪梅花肉" => 38.0m,
+            "黄金甜玉米" => 8.8m,
+            "农家番茄" => 9.9m,
+            "农家花生油" => 9.9m,
+            "农家橘子" => 9.9m,
             "甜脆玉米" => 8.8m,
             "农家西红柿" => 9.9m,
             "红富士苹果" => 19.9m,
             "香甜橙子" => 15.9m,
-            "散养土鸡蛋" => 16.8m,
             "土猪肉" => 38m,
             "鲜牛奶" => 19.9m,
             "农家大米" => 49.9m,
             _ => 19.9m
         };
+    }
+
+    private string? NormalizeImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        var trimmed = imageUrl.Trim();
+
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var duplicateMarkerIndex = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
+
+            duplicateMarkerIndex = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+            if (duplicateMarkerIndex > 0) trimmed = trimmed[..duplicateMarkerIndex];
+
+            return trimmed.Trim();
+        }
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
+        {
+            return $"{baseUrl}/api/file/video/{trimmed}";
+        }
+
+        return $"{baseUrl}/api/file/image/{trimmed}";
+    }
+
+    public sealed class CartSyncRequest
+    {
+        [JsonPropertyName("cartList")]
+        public List<CartSyncItem>? CartList { get; set; }
+    }
+
+    public sealed class CartSyncItem
+    {
+        public int Id { get; set; }
+
+        [JsonPropertyName("goodsId")]
+        public int GoodsId { get; set; }
+
+        [JsonPropertyName("goods_id")]
+        public int GoodsIdAlias { get; set; }
+
+        public int Count { get; set; }
     }
 
     public sealed class CartAddRequest
@@ -450,14 +509,6 @@ public class CartController : ControllerBase
     public sealed class CartItemUpdateBody
     {
         public int Count { get; set; }
-    }
-
-    public sealed class RuntimeCartItem
-    {
-        public int Id { get; set; }
-        public int GoodsId { get; set; }
-        public int Count { get; set; }
-        public DateTime CreatedAt { get; set; }
     }
 
     private sealed class CartListResponse

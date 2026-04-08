@@ -241,6 +241,11 @@ public class FarmGoodsController : ControllerBase
             return categories.First(x => x.Id.Equals(value, StringComparison.OrdinalIgnoreCase)).Id;
         }
 
+        if (categories.Any(x => x.Name.Equals(value, StringComparison.OrdinalIgnoreCase)))
+        {
+            return categories.First(x => x.Name.Equals(value, StringComparison.OrdinalIgnoreCase)).Id;
+        }
+
         var aliasCategoryId = ResolveAliasCategoryId(value, categories);
         if (!string.IsNullOrWhiteSpace(aliasCategoryId))
         {
@@ -286,7 +291,7 @@ public class FarmGoodsController : ControllerBase
 
     private static bool IsGrainsAlias(string category)
     {
-        return category.Trim().ToLowerInvariant() is "grains" or "grain" or "cereal" or "staple" or "oil" or "liangyou";
+        return category.Trim().ToLowerInvariant() is "grains" or "grain" or "cereal" or "staple" or "oil" or "liangyou" or "粮油";
     }
 
     private IQueryable<Commodity> BuildCategoryQuery(string category)
@@ -324,7 +329,7 @@ public class FarmGoodsController : ControllerBase
         {
             Id = x.CommodityId,
             Name = x.ProductName,
-            Image = x.ImageUrl ?? string.Empty,
+            Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
             Price = x.UnitPrice ?? ResolveCommodityPrice(x.ProductName),
             OriginalPrice = x.OriginalPrice ?? ((x.UnitPrice ?? ResolveCommodityPrice(x.ProductName)) + 3m),
             Stock = x.InStock ?? 0,
@@ -334,19 +339,60 @@ public class FarmGoodsController : ControllerBase
         }).ToList();
     }
 
+    private string? NormalizeMediaUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var trimmed = url.Trim();
+
+        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttps > 0) trimmed = trimmed[..duplicateHttps];
+
+            var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttp > 0) trimmed = trimmed[..duplicateHttp];
+
+            return trimmed.Trim();
+        }
+
+        // 处理本地文件名，拼接完整的 API 访问路径
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        // 视频文件
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
+        {
+            return $"{baseUrl}/api/file/video/{trimmed}";
+        }
+
+        // 默认作为图片处理
+        return $"{baseUrl}/api/file/image/{trimmed}";
+    }
+
     private async Task<List<SwiperItem>> LoadGoodsSwiperAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Carousels
+        var rows = await _dbContext.Carousels
             .AsNoTracking()
             .Where(x => x.Status == 1 && x.Position == "goods")
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.CarouselId)
-            .Select(x => new SwiperItem
+            .Select(x => new
             {
-                Id = (int)x.CarouselId,
-                Image = x.ImageUrl
+                x.CarouselId,
+                x.ImageUrl
             })
             .ToListAsync(cancellationToken);
+
+        return rows.Select(x => new SwiperItem
+        {
+            Id = (int)x.CarouselId,
+            Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty
+        }).ToList();
     }
 
     private static decimal ResolveCommodityPrice(string? productName)

@@ -49,17 +49,6 @@ public class ActivityController : ControllerBase
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Where(x => x.Status == 1 && x.ActivityId == id)
-            .Select(x => new ActivityDetailSummary
-            {
-                Id = (int)x.ActivityId,
-                Title = x.Title,
-                Price = $"¥{x.PriceText}",
-                Date = x.DateText,
-                Image = x.ImageUrl,
-                CategoryName = ResolveCategoryName(x.Title),
-                Participants = x.Participants,
-                RemainingSlots = x.RemainingSlots
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (activity is null)
@@ -67,10 +56,29 @@ public class ActivityController : ControllerBase
             return Ok(ApiResult.Fail("活动不存在", 404));
         }
 
+        var activitySummary = new ActivityDetailSummary
+        {
+            Id = (int)activity.ActivityId,
+            Title = activity.Title,
+            Price = $"¥{activity.PriceText}",
+            Date = activity.DateText,
+            Image = activity.ImageUrl,
+            CategoryName = ResolveCategoryName(activity.Title),
+            Participants = activity.Participants,
+            RemainingSlots = activity.RemainingSlots
+        };
+
         var detail = await _contentService.GetActivityDetailAsync(id, cancellationToken);
         var data = detail is null
-            ? BuildDetailFallback(activity)
-            : MergeDetail(detail, activity);
+            ? BuildDetailFallback(activitySummary)
+            : MergeDetail(detail, activitySummary);
+
+        // 处理详情中的所有图片链接
+        if (data != null)
+        {
+            data.Image = NormalizeMediaUrl(data.Image) ?? string.Empty;
+            data.Images = data.Images?.Select(x => NormalizeMediaUrl(x) ?? string.Empty).ToList() ?? [];
+        }
 
         return Ok(ApiResult.Success(data));
     }
@@ -95,21 +103,65 @@ public class ActivityController : ControllerBase
 
     private async Task<List<ActivitySummaryDto>> LoadActivitySummariesAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Activities
+        var rows = await _dbContext.Activities
             .AsNoTracking()
             .Where(x => x.Status == 1)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.ActivityId)
-            .Select(x => new ActivitySummaryDto
+            .Select(x => new
             {
-                Id = (int)x.ActivityId,
-                Title = x.Title,
-                Price = $"¥{x.PriceText}",
-                Date = x.DateText,
-                Image = x.ImageUrl,
-                CategoryName = ResolveCategoryName(x.Title)
+                x.ActivityId,
+                x.Title,
+                x.PriceText,
+                x.DateText,
+                x.ImageUrl
             })
             .ToListAsync(cancellationToken);
+
+        return rows.Select(x => new ActivitySummaryDto
+        {
+            Id = (int)x.ActivityId,
+            Title = x.Title,
+            Price = $"¥{x.PriceText}",
+            Date = x.DateText,
+            Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
+            CategoryName = ResolveCategoryName(x.Title)
+        }).ToList();
+    }
+
+    private string? NormalizeMediaUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var trimmed = url.Trim();
+
+        // 如果已经是完整的 URL，直接处理可能的重复前缀并返回
+        if (trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var duplicateHttps = trimmed.IndexOf("https://", 8, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttps > 0) trimmed = trimmed[..duplicateHttps];
+
+            var duplicateHttp = trimmed.IndexOf("http://", 7, StringComparison.OrdinalIgnoreCase);
+            if (duplicateHttp > 0) trimmed = trimmed[..duplicateHttp];
+
+            return trimmed.Trim();
+        }
+
+        // 处理本地文件名，拼接完整的 API 访问路径
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var ext = Path.GetExtension(trimmed).ToLowerInvariant();
+
+        // 视频文件
+        if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".wmv")
+        {
+            return $"{baseUrl}/api/file/video/{trimmed}";
+        }
+
+        // 默认作为图片处理
+        return $"{baseUrl}/api/file/image/{trimmed}";
     }
 
     private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)

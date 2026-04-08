@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Middleware;
@@ -45,8 +46,25 @@ public class Program
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Farm Mini Program API",
-                Version = "v1"
+                Version = "v1",
+                Description = "能记农场小程序后端接口文档"
             });
+            options.CustomSchemaIds(type => (type.FullName ?? type.Name).Replace("+", ".", StringComparison.Ordinal));
+
+            // 集成 XML 注释文档
+            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath);
+            }
+
+            // 配置Swagger生成选项，忽略JsonIgnore属性
+            options.SchemaGeneratorOptions = new SchemaGeneratorOptions
+            {
+                IgnoreObsoleteProperties = true,
+                SchemaIdSelector = type => type.FullName?.Replace(".", "_")
+            };
 
             var jwtScheme = new OpenApiSecurityScheme
             {
@@ -130,7 +148,7 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-        app.UseStaticFiles(); // ���þ�̬�ļ�����
+        app.UseStaticFiles(); // ���þ�̬�ļ�����
 
         app.Run();
     }
