@@ -480,7 +480,7 @@
 				<div class="modal-body">
 					<div style="text-align: center;">
 						<p style="margin-bottom: 10px;">确定要删除用户吗？</p>
-						<p class="modal-warning">{{ selectedUser ? selectedUser.nickname : '' }}</p>
+						<p class="modal-warning">{{ deleteTargetSummary }}</p>
 						<p style="margin-top: 15px; font-size: 14px; color: #718096;">此操作不可撤销，请谨慎操作。</p>
 					</div>
 				</div>
@@ -518,6 +518,7 @@
 					totalUsers: 0,
 					// 显示删除弹窗
 					showDeleteModal: false,
+					pendingDeleteUsers: [],
 					// 搜索关键字
 					searchKeyword: '',
 					// 身份筛选，仅保留普通用户和空
@@ -551,6 +552,24 @@
 				// 删除确认只从当前勾选行取 id，避免误删未选中的数据。
 				selectedUsers() {
 					return this.users.filter(user => user.selected);
+				},
+
+				deleteTargetSummary() {
+					if (!this.pendingDeleteUsers.length) {
+						return '';
+					}
+
+					if (this.pendingDeleteUsers.length === 1) {
+						const [user] = this.pendingDeleteUsers;
+						return user.nickname || user.id || '';
+					}
+
+					const names = this.pendingDeleteUsers
+						.map(user => user.nickname || user.id)
+						.filter(Boolean)
+						.slice(0, 3);
+					const suffix = this.pendingDeleteUsers.length > 3 ? ` 等 ${this.pendingDeleteUsers.length} 个用户` : '';
+					return `已选择 ${this.pendingDeleteUsers.length} 个用户` + (names.length ? `：${names.join('、')}${suffix}` : '');
 				}
 			},
 			
@@ -786,7 +805,6 @@
 					if (!this.ensureAdminAccess(false)) {
 						return [];
 					}
-
 					try {
 						const session = window.Auth.requireAuth();
 						if (!session) {
@@ -1004,29 +1022,36 @@
 				},
 				
 				// 删除用户
+				collectDeleteTargets(user) {
+					if (user && user.id) {
+						return [user];
+					}
+
+					return this.selectedUsers
+						.filter(item => item && item.id)
+						.map(item => ({ ...item }));
+				},
+
 				deleteUser(user = this.selectedUser) {
 					if (!this.ensureAdminAccess()) {
 						return;
 					}
 
-					if (user) {
-						this.selectedUser = user;
-						this.showDeleteModal = true;
+					const deleteTargets = this.collectDeleteTargets(user);
+					if (!deleteTargets.length) {
 						return;
 					}
-					const selectedUsers = this.users.filter(item => item.selected);
-					if (selectedUsers.length === 1) {
-						this.selectedUser = selectedUsers[0];
-						this.showDeleteModal = true;
-					} else {
-						return;
-					}
+
+					this.pendingDeleteUsers = deleteTargets;
+					this.selectedUser = deleteTargets.length === 1 ? deleteTargets[0] : null;
+					this.showDeleteModal = true;
 				},
 				
 				// 取消删除
 				cancelDelete() {
 					this.showDeleteModal = false;
 					this.selectedUser = null;
+					this.pendingDeleteUsers = [];
 				},
 				
 				// 确认删除
@@ -1035,35 +1060,55 @@
 						return;
 					}
 
-					const selectedIds = this.selectedUsers
+					const pendingDeleteUsers = this.pendingDeleteUsers.length
+						? this.pendingDeleteUsers.slice()
+						: this.collectDeleteTargets(this.selectedUser);
+					const targetIds = pendingDeleteUsers
 						.map(user => user.id)
 						.filter(Boolean);
-					const targetId = selectedIds.length === 1 ? selectedIds[0] : '';
-					if (!targetId) {
-						this.showDeleteModal = false;
+					if (!targetIds.length) {
+						this.cancelDelete();
 						console.log('缺少要删除的用户 ID，请重新选择');
 						return;
 					}
 
+					const failedTargets = [];
+
 					try {
-						const res = await fetch('https://localhost:7138/api/user/delete', {
-							method: 'POST',
-							headers: window.Auth.getAuthHeaders({
-							'Content-Type': 'application/json'
-							}),
-							body: JSON.stringify({
-								id: targetId
-							})
-						});
-						
-						const data = await res.json();
-						
-						if (data.code === 200) {
-							this.selectedUser = null;
-							this.showDeleteModal = false;
-							await this.loadUsersFromAPI(this.currentPage);
-						} else {
-							console.log(data.message);
+						for (const targetId of targetIds) {
+							try {
+								const res = await fetch('https://localhost:7138/api/user/delete', {
+									method: 'POST',
+									headers: window.Auth.getAuthHeaders({
+										'Content-Type': 'application/json'
+									}),
+									body: JSON.stringify({
+										id: targetId
+									})
+								});
+								
+								const data = await res.json();
+
+								if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+									window.Auth.clearAuth();
+									window.Auth.redirectToLogin();
+									return;
+								}
+
+								if (data.code !== 200) {
+									failedTargets.push(data.message || `用户 ${targetId} 删除失败`);
+								}
+							} catch (error) {
+								console.error(`删除用户 ${targetId} 失败:`, error);
+								failedTargets.push(`用户 ${targetId} 删除失败`);
+							}
+						}
+
+						this.cancelDelete();
+						await this.loadUsersFromAPI(this.currentPage);
+
+						if (failedTargets.length) {
+							alert(`已完成删除操作，但有 ${failedTargets.length} 个用户删除失败，请刷新后重试。`);
 						}
 					}
 					catch (error) {
