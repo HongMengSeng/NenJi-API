@@ -424,7 +424,7 @@
 								<tr v-for="user in users" :key="user.id">
 									<td><input type="checkbox" v-model="user.selected" @change="updateSelectedUser" /></td>
 									<td>{{ user.id || '-' }}</td>
-									<td></td>
+									<td>{{ user.wxOpenid }}</td>
 									<td>{{ user.phone }}</td>
 									<td>{{ user.nickname }}</td>
 									<td>{{ user.loginTime }}</td>
