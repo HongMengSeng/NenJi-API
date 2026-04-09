@@ -14,12 +14,6 @@
       <input class="form-input" value="{{userInfo.nickname}}" bindinput="onNicknameChange" placeholder="请输入昵称" />
     </view>
     
-    <!-- 用户姓名 -->
-    <view class="form-item">
-      <view class="form-label">*用户姓名</view>
-      <input class="form-input" value="{{userInfo.realName}}" bindinput="onRealNameChange" placeholder="请输入名字" />
-    </view>
-    
     <!-- 性别 -->
     <view class="form-item" bindtap="chooseGender">
       <view class="form-label">性别</view>

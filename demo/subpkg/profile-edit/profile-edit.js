@@ -4,7 +4,6 @@ Page({
   data: {
     userInfo: {
       nickname: '',
-      realName: '',
       avatar: '',
       gender: '',
       phone: ''
@@ -28,7 +27,6 @@ Page({
       this.setData({
         userInfo: {
           nickname: data.nickname || '',
-          realName: data.realName || '',
           avatar: data.avatar || '',
           gender: data.gender || '保密',
           phone: data.phone || ''
@@ -52,65 +50,11 @@ Page({
       sourceType: ['album', 'camera'],
       success: (res) => {
         const tempFilePaths = res.tempFilePaths;
-        // 上传图片到服务器
-        this.uploadImage(tempFilePaths[0]);
-      }
-    });
-  },
-
-  // 上传图片到服务器
-  uploadImage: function (tempFilePath) {
-    wx.showLoading({ title: '上传中...' });
-    
-    wx.uploadFile({
-      url: 'http://192.168.203.56/api/file/upload',
-      filePath: tempFilePath,
-      name: 'file',
-      success: (res) => {
-        console.log('上传响应:', res);
-        try {
-          // 检查响应数据是否存在
-          if (!res.data || res.data.trim() === '') {
-            console.error('服务器返回空响应');
-            wx.showToast({ title: '上传失败', icon: 'none' });
-            return;
-          }
-          
-          const result = JSON.parse(res.data);
-          console.log('解析结果:', result);
-          
-          if (result.code === 0 && result.data) {
-            // 上传成功，获取服务器返回的图片URL
-            const imageUrl = result.data.url;
-            console.log('获取到的图片URL:', imageUrl);
-            this.setData({
-              'userInfo.avatar': imageUrl
-            });
-            wx.showToast({ title: '上传成功', icon: 'success' });
-          } else {
-            console.error('上传失败，服务器返回:', result);
-            wx.showToast({ title: '上传失败', icon: 'none' });
-          }
-        } catch (e) {
-          console.error('解析上传结果失败:', e);
-          console.error('原始响应数据:', res.data);
-          // 尝试使用本地路径作为临时解决方案
-          this.setData({
-            'userInfo.avatar': tempFilePath
-          });
-          wx.showToast({ title: '上传成功', icon: 'success' });
-        }
-      },
-      fail: (err) => {
-        console.error('上传图片失败:', err);
-        // 失败时也使用本地路径作为临时解决方案
+        // 这里可以上传图片到服务器，获取图片URL
+        // 暂时使用本地路径
         this.setData({
-          'userInfo.avatar': tempFilePath
+          'userInfo.avatar': tempFilePaths[0]
         });
-        wx.showToast({ title: '上传成功', icon: 'success' });
-      },
-      complete: () => {
-        wx.hideLoading();
       }
     });
   },
@@ -135,13 +79,6 @@ Page({
     });
   },
 
-  // 姓名变化
-  onRealNameChange: function (e) {
-    this.setData({
-      'userInfo.realName': e.detail.value
-    });
-  },
-
   // 手机号变化
   onPhoneChange: function (e) {
     this.setData({
@@ -156,11 +93,6 @@ Page({
     // 表单验证
     if (!userInfo.nickname) {
       wx.showToast({ title: '请输入用户昵称', icon: 'none' });
-      return;
-    }
-    
-    if (!userInfo.realName) {
-      wx.showToast({ title: '请输入用户姓名', icon: 'none' });
       return;
     }
     
@@ -183,18 +115,40 @@ Page({
       method: 'PUT',
       data: {
         nickname: userInfo.nickname,
-        realName: userInfo.realName,
         avatar: userInfo.avatar,
         gender: userInfo.gender,
         phone: userInfo.phone
       }
     })
-    .then(data => {
+    .then(() => {
+      const profileCache = {
+        nickname: userInfo.nickname || '',
+        avatar: userInfo.avatar || '',
+        email: '',
+        balance: 0,
+        reward: 0
+      };
+      wx.setStorageSync('user_profile_cache', profileCache);
+
+      const pages = getCurrentPages();
+      const prevPage = pages.length > 1 ? pages[pages.length - 2] : null;
+      if (prevPage && prevPage.route === 'pages/profile/profile') {
+        prevPage.setData({
+          userInfo: {
+            nickname: profileCache.nickname,
+            avatar: profileCache.avatar,
+            email: prevPage.data.userInfo.email || '',
+            balance: prevPage.data.userInfo.balance || 0,
+            reward: prevPage.data.userInfo.reward || 0
+          }
+        });
+      }
+
       wx.showToast({ title: '保存成功', icon: 'success' });
       // 保存成功后返回上一页
       setTimeout(() => {
         wx.navigateBack();
-      }, 1500);
+      }, 500);
     })
     .catch(err => {
       console.error('保存用户信息失败:', err);

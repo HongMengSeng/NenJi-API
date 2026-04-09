@@ -43,25 +43,50 @@ Page({
 
     api.order.getDetail(orderId)
       .then((data) => {
-        this.setData({
-          order: data || {
-            id: orderId,
-            status: '',
-            statusText: '',
-            createTime: '',
-            paymentTime: null,
-            shippingTime: null,
-            completeTime: null,
-            totalPrice: 0,
-            shippingAddress: {
-              name: '',
-              phone: '',
-              address: ''
-            },
-            items: [],
-            paymentMethod: null,
-            transactionId: null
+        // 处理订单数据，添加活动订单标识和二维码
+        const orderData = data || {
+          id: orderId,
+          status: '',
+          statusText: '',
+          createTime: '',
+          paymentTime: null,
+          shippingTime: null,
+          completeTime: null,
+          totalPrice: 0,
+          shippingAddress: {
+            name: '',
+            phone: '',
+            address: ''
           },
+          items: [],
+          paymentMethod: null,
+          transactionId: null
+        };
+        
+        // 检查是否为活动订单（这里假设活动商品名称包含'活动'或'亲子'等关键词）
+        const isActivityOrder = orderData.items.some(item => 
+          item.name.includes('活动') || item.name.includes('亲子')
+        );
+        
+        // 检查是否为认购一亩订单（这里假设认购一亩商品名称包含'认购'或'一亩'等关键词）
+        const isAcreOrder = orderData.items.some(item => 
+          item.name.includes('认购') || item.name.includes('一亩')
+        );
+        
+        // 为活动订单添加二维码（实际项目中应该从服务器获取）
+        if (isActivityOrder) {
+          orderData.isActivityOrder = true;
+          // 使用临时二维码图片，实际项目中应该从服务器获取
+          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg';
+        } else {
+          orderData.isActivityOrder = false;
+        }
+        
+        // 为认购一亩订单添加标识
+        orderData.isAcreOrder = isAcreOrder;
+        
+        this.setData({
+          order: orderData,
           loading: false
         });
       })

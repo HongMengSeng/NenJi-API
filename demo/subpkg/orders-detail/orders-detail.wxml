@@ -3,8 +3,15 @@
 
   <!-- 订单状态 -->
   <view class="order-status-section">
-    <view class="status-icon">{{order.status === 'pending' ? '⏳' : order.status === 'paid' ? '📦' : order.status === 'shipping' ? '🚚' : order.status === 'completed' ? '✅' : '❌'}}</view>
-    <view class="status-text">{{order.statusText}}</view>
+    <view class="status-text">{{order.isActivityOrder || order.isAcreOrder ? (order.status === 'pending' ? '待支付' : order.status === 'cancelled' ? '已取消' : '已支付') : order.statusText}}</view>
+    <!-- 活动订单二维码 -->
+    <view wx:if="{{order.isActivityOrder && order.status !== 'pending' && order.status !== 'cancelled'}}">
+      <view class="qrcode-section">
+        <view class="qrcode-title">活动二维码</view>
+        <image class="qrcode-image" src="{{order.qrcode}}" mode="aspectFit" />
+        <view class="qrcode-hint">请保存二维码，活动现场出示</view>
+      </view>
+    </view>
   </view>
 
   <!-- 加载中 -->
@@ -15,8 +22,8 @@
 
   <!-- 订单详情 -->
   <view wx:else class="order-detail">
-    <!-- 收货地址 -->
-    <view class="address-section">
+    <!-- 收货地址（非活动订单和非认购一亩订单显示） -->
+    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder}}" class="address-section">
       <view class="section-title">收货地址</view>
       <view class="address-info">
         <view class="address-name">{{order.shippingAddress.name}}</view>
@@ -88,9 +95,10 @@
   <view class="action-section">
     <button wx:if="{{order.status === 'pending'}}" class="action-btn primary-btn" bindtap="payOrder">去支付</button>
     <button wx:if="{{order.status === 'pending'}}" class="action-btn secondary-btn" bindtap="cancelOrder">取消订单</button>
-    <button wx:if="{{order.status === 'paid'}}" class="action-btn secondary-btn" bindtap="markShipping">模拟发货</button>
+    <!-- 非活动订单和非认购一亩订单显示发货相关按钮 -->
+    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="action-btn secondary-btn" bindtap="markShipping">模拟发货</button>
     <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="action-btn primary-btn" bindtap="applyRefund">申请退款</button>
-    <button wx:if="{{order.status === 'shipping'}}" class="action-btn secondary-btn" bindtap="confirmReceipt">确认收货</button>
+    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="action-btn secondary-btn" bindtap="confirmReceipt">确认收货</button>
   </view>
   </view>
 </view>

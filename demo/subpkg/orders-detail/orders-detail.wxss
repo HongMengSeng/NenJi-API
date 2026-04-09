@@ -58,6 +58,51 @@
   font-size: 32rpx;
   font-weight: 600;
   color: #d4a76a;
+  margin-bottom: 20rpx;
+}
+
+/* 二维码区域 */
+.qrcode-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30rpx;
+  padding: 30rpx 0;
+  width: 100%;
+}
+
+.qrcode-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.qrcode-image {
+  width: 240rpx;
+  height: 240rpx;
+  margin-bottom: 20rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.qrcode-hint {
+  font-size: 24rpx;
+  color: #666;
+  text-align: center;
+  line-height: 1.4;
+  padding: 0 40rpx;
+}
+
+/* 深色模式适配 - 二维码 */
+@media (prefers-color-scheme: dark) {
+  .qrcode-title {
+    color: #eee;
+  }
+  
+  .qrcode-hint {
+    color: #ccc;
+  }
 }
 
 /* 加载中 */
