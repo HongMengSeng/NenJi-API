@@ -2,6 +2,20 @@ const api = require('../../utils/api');
 
 Page({
   data: {
+    userInfo: {
+      nickname: '',
+      avatar: '',
+      email: '',
+      balance: 0,
+      reward: 0
+    },
+    orderCounts: {
+      pending: 0,
+      paid: 0,
+      shipping: 0,
+      completed: 0,
+      cancelled: 0
+    },
     recommendImage: ''
   },
 
@@ -9,14 +23,36 @@ Page({
     console.log('个人中心加载')
     this.getUserProfilePreview();
     this.getRecommendImage();
+    this.getOrderCounts();
+  },
+
+  onShow: function () {
+    this.syncUserProfileFromCache();
+    this.getUserProfilePreview();
+    this.getOrderCounts();
+  },
+
+  syncUserProfileFromCache() {
+    const cache = wx.getStorageSync('user_profile_cache') || null;
+    if (!cache) {
+      return;
+    }
+
+    this.setData({
+      userInfo: {
+        nickname: cache.nickname || this.data.userInfo.nickname || '',
+        avatar: cache.avatar || this.data.userInfo.avatar || '',
+        email: cache.email || this.data.userInfo.email || '',
+        balance: this.data.userInfo.balance || 0,
+        reward: this.data.userInfo.reward || 0
+      }
+    });
   },
   
   // 获取推荐图片
   getRecommendImage: function() {
     // 使用新的图片路径获取图片
-    const BASE_URL = 'http://192.168.203.56';
-    const imagePath = '/api/file/image/farm_0000000000007.jpg';
-    const recommendImageUrl = BASE_URL + imagePath;
+    const recommendImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg';
     this.setData({
       recommendImage: recommendImageUrl
     });
@@ -25,25 +61,20 @@ Page({
   getUserProfilePreview() {
     wx.showLoading({ title: '加载中...' });
 
-    api.request({
-      url: '/api/user/profile-preview',
-      method: 'GET'
-    })
+    api.api.user.getInfo()
       .then(data => {
+        const nextProfile = {
+          nickname: data.nickname || '',
+          avatar: data.avatar || '',
+          email: data.email || '',
+          balance: Number(data.balance || 0),
+          reward: Number(data.reward || 0)
+        };
+
+        wx.setStorageSync('user_profile_cache', nextProfile);
+
         this.setData({
-          userInfo: {
-            nickname: data.nickname,
-            avatar: data.avatar ,
-            email: data.email ,
-            balance: data.balance ,
-            reward: data.reward 
-          },
-          orderCounts: data.orderCounts || {
-            pending: 0,
-            paid: 0,
-            shipping: 0,
-            refund: 0
-          },
+          userInfo: nextProfile,
           loading: false
         });
       })
@@ -60,53 +91,31 @@ Page({
       });
   },
 
-  getUserProfile() {
-    wx.showLoading({ title: '加载中...' });
-
-    api.request({
-      url: '/api/user/profile',
-      method: 'GET'
-    })
+  getOrderCounts() {
+    api.api.order.getCounts()
       .then(data => {
         this.setData({
-          userInfo: {
-            nickname: data.nickname,
-            avatar: data.avatar ,
-            email: data.email,
-            balance: data.balance ,
-            reward: data.reward 
-          },
-          orderCounts: data.orderCounts || {
+          orderCounts: data || {
             pending: 0,
             paid: 0,
             shipping: 0,
-            refund: 0
+            completed: 0,
+            cancelled: 0
           }
         });
       })
       .catch(err => {
-        console.error('获取个人资料失败:', err);
-        wx.showToast({
-          title: '加载失败',
-          icon: 'none'
-        });
-      })
-      .finally(() => {
-        wx.hideLoading();
+        console.error('获取订单统计失败:', err);
       });
   },
 
   updateProfile(nickname, avatar, email) {
     wx.showLoading({ title: '保存中...' });
 
-    api.request({
-      url: '/api/user/profile',
-      method: 'PUT',
-      data: {
-        nickname: nickname,
-        avatar: avatar,
-        email: email
-      }
+    api.api.user.updateInfo({
+      nickname: nickname,
+      avatar: avatar,
+      email: email
     })
       .then(data => {
         this.setData({

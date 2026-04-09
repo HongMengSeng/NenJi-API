@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+const api = require('../../utils/api');
 
 Page({
   data: {
@@ -10,8 +10,8 @@ Page({
       { key: 'acre', name: '认购' },
       { key: 'activity', name: '活动' },
       { key: 'cart', name: '购物车' },
-      { key: 'pending', name: '待支付' },
-      { key: 'paid', name: '已支付' },
+      { key: 'pending', name: '待付款' },
+      { key: 'paid', name: '待发货' },
       { key: 'shipping', name: '待收货' },
     ],
     orders: [],
@@ -46,7 +46,7 @@ Page({
       status = this.data.activeTab;
     }
 
-    api.order.getList({
+    api.api.order.getList({
       type: orderType,
       status: status,
       page: 1,

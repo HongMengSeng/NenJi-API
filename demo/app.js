@@ -104,7 +104,7 @@ App({
                         console.log('当前页面路径:', currentPagePath);
                         
                         // TabBar页面路径列表
-                        const tabBarPages = ['pages/index/index', 'pages/activity/activity', 'pages/cart/cart', 'pages/user/user'];
+                        const tabBarPages = ['pages/index/index', 'pages/activity/activity', 'pages/cart/cart', 'pages/profile/profile'];
                         
                         // 只有在TabBar页面时才设置TabBar图标
                         if (tabBarPages.includes(currentPagePath)) {

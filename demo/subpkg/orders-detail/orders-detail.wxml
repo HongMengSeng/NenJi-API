@@ -88,6 +88,7 @@
   <view class="action-section">
     <button wx:if="{{order.status === 'pending'}}" class="action-btn primary-btn" bindtap="payOrder">去支付</button>
     <button wx:if="{{order.status === 'pending'}}" class="action-btn secondary-btn" bindtap="cancelOrder">取消订单</button>
+    <button wx:if="{{order.status === 'paid'}}" class="action-btn secondary-btn" bindtap="markShipping">模拟发货</button>
     <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="action-btn primary-btn" bindtap="applyRefund">申请退款</button>
     <button wx:if="{{order.status === 'shipping'}}" class="action-btn secondary-btn" bindtap="confirmReceipt">确认收货</button>
   </view>

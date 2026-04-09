@@ -5,19 +5,21 @@ Page({
     activity: {},
     loading: true,
     showQRCode: false,
-    qrCodeUrl: ''
+    qrCodeUrl: '',
+    orderId: ''
   },
 
-  onLoad: function(options) {
+  onLoad: function (options) {
     const activityId = options.id;
     const paid = options.paid === 'true';
-    
+    const orderId = options.orderId || '';
+
     if (activityId) {
-      this.getActivityDetail(activityId, paid);
+      this.getActivityDetail(activityId, paid, orderId);
     }
   },
 
-  getActivityDetail: function(activityId, paid) {
+  getActivityDetail: function (activityId, paid, orderId = '') {
     wx.showLoading({ title: '加载中...', mask: true });
 
     api.request({
@@ -25,17 +27,19 @@ Page({
       method: 'GET',
       data: {
         id: activityId
-      }
+      },
+      showLoading: false
     })
       .then(data => {
         this.setData({
           activity: data || {},
-          loading: false
+          loading: false,
+          orderId: orderId || this.data.orderId
         });
-        
+
         // 如果支付成功，显示二维码
         if (paid) {
-          this.showQRCode();
+          this.showQRCode(orderId);
         }
       })
       .catch(err => {
@@ -51,12 +55,18 @@ Page({
   },
 
   // 显示二维码
-  showQRCode: function() {
-    const activityId = this.data.activity.id;
-    
-    // 调用API获取二维码
+  showQRCode: function (orderId = '') {
+    const targetOrderId = orderId || this.data.orderId;
+    if (!targetOrderId) {
+      wx.showToast({
+        title: '缺少订单ID',
+        icon: 'none'
+      });
+      return;
+    }
+
     api.request({
-      url: `/api/activity/${activityId}/qrcode`,
+      url: `/api/orders/${targetOrderId}/qrcode`,
       method: 'GET'
     })
       .then(data => {
@@ -74,7 +84,7 @@ Page({
       });
   },
 
-  contactService: function() {
+  contactService: function () {
     wx.showModal({
       title: '能记家庭农场客服',
       content: '手机号：15876534944\n     微信号：njjtnc15876534944',
@@ -82,10 +92,8 @@ Page({
     });
   },
 
-  registerActivity: function() {
+  registerActivity: function () {
     const remainingSlots = this.data.activity.remainingSlots || 0;
-    
-    // 检查是否已报满
     if (remainingSlots <= 0) {
       wx.showToast({
         title: '已报满',
@@ -93,50 +101,102 @@ Page({
       });
       return;
     }
-    
-    const price = this.data.activity.price || '¥0';
+
+    const priceText = this.data.activity.price || '¥0';
     wx.showModal({
-      title: `当前剩余 ${remainingSlots} 个名额，${price}一张`,
+      title: `当前剩余 ${remainingSlots} 个名额，${priceText}一张`,
       editable: true,
       placeholderText: '请输入票数',
-      success: function(res) {
-        if (res.confirm) {
-          if (!res.content || res.content.trim() === '') {
-            wx.showToast({
-              title: '请输入购买票数',
-              icon: 'none'
-            });
-            return;
-          }
-          const tickets = parseInt(res.content);
-          if (tickets > 0) {
-            if (tickets > remainingSlots) {
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+
+        if (!res.content || res.content.trim() === '') {
+          wx.showToast({
+            title: '请输入购买票数',
+            icon: 'none'
+          });
+          return;
+        }
+
+        const tickets = parseInt(res.content, 10);
+        if (!(tickets > 0)) {
+          wx.showToast({
+            title: '请输入有效的票数',
+            icon: 'none'
+          });
+          return;
+        }
+
+        if (tickets > remainingSlots) {
+          wx.showToast({
+            title: `购买数量不能超过剩余的 ${remainingSlots} 个名额`,
+            icon: 'none'
+          });
+          return;
+        }
+
+        const unitPrice = parseFloat(String(this.data.activity.price || 0).replace(/[^0-9.]/g, '')) || 0;
+        const totalPrice = Number((unitPrice * tickets).toFixed(2));
+        if (totalPrice <= 0) {
+          wx.showToast({
+            title: '活动价格异常',
+            icon: 'none'
+          });
+          return;
+        }
+
+        wx.showLoading({ title: '下单中...' });
+        api.request({
+          url: '/api/OrderDetails/create',
+          method: 'POST',
+          data: {
+            sourceType: 'activity',
+            sourceName: this.data.activity.title || '活动',
+            quantity: tickets,
+            totalPrice,
+            items: [
+              {
+                id: String(this.data.activity.id || ''),
+                name: this.data.activity.title || '活动',
+                price: Number(unitPrice.toFixed(2)),
+                quantity: tickets,
+                image: this.data.activity.image || ''
+              }
+            ]
+          },
+          showLoading: false
+        })
+          .then((orderData) => {
+            const orderId = orderData.orderId || orderData.id;
+            if (!orderId) {
               wx.showToast({
-                title: `购买数量不能超过剩余的 ${remainingSlots} 个名额`,
+                title: '创建订单失败',
                 icon: 'none'
               });
               return;
             }
-            // 计算总价格
-            const price = parseFloat(this.data.activity.price.replace('¥', ''));
-            const totalPrice = price * tickets;
-            
-            // 跳转到支付页面
+
             wx.navigateTo({
-              url: '/subpkg/pay/pay?totalPrice=' + totalPrice + '&activityId=' + this.data.activity.id + '&source=activity'
+              url: `/subpkg/pay/pay?orderId=${orderId}&totalPrice=${totalPrice.toFixed(2)}&activityId=${this.data.activity.id}&source=activity`
             });
-          } else {
+          })
+          .catch((err) => {
+            console.error('创建活动订单失败:', err);
             wx.showToast({
-              title: '请输入有效的票数',
+              title: '创建订单失败',
               icon: 'none'
             });
-          }
-        }
+          })
+          .finally(() => {
+            wx.hideLoading();
+          });
       }.bind(this)
     });
   },
 
-  previewImage: function(e) {
+  previewImage: function (e) {
     const index = e.currentTarget.dataset.index;
     const images = this.data.activity.images || [];
     if (images.length === 0) {
@@ -150,7 +210,7 @@ Page({
   },
 
   // 返回活动详情
-  backToDetail: function() {
+  backToDetail: function () {
     this.setData({ showQRCode: false });
   }
 });

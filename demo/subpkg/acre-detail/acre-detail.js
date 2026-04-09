@@ -1,3 +1,5 @@
+const api = require('../../utils/api');
+
 Page({
   data: {
     acreDetail: {},
@@ -9,17 +11,12 @@ Page({
   },
   
   loadAcreDetail: function(id) {
-    const api = require('../../utils/api');
-    
     wx.showLoading({
       title: '加载中...',
     });
     
     // 获取认购详情
-    api.request({
-      url: '/api/acres/' + id,
-      method: 'GET'
-    })
+    api.api.acre.getDetail(id)
     .then(acreData => {
       wx.hideLoading();
       
@@ -38,8 +35,7 @@ Page({
       };
       
       // 模仿首页获取视频的方法
-      const BASE_URL = 'http://192.168.203.56';
-      const videoUrl = BASE_URL + '/api/file/video/farm_intro.mp4';
+      const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
       
       // 确保数据结构完整
       const acreDetail = {
@@ -111,13 +107,49 @@ Page({
               return;
             }
             // 计算总价格
-            const price = parseFloat(this.data.acreDetail.price.replace(/[^0-9.]/g, ''));
+            const price = parseFloat(String(this.data.acreDetail.price || 0).replace(/[^0-9.]/g, '')) || 0;
             const totalPrice = price * acres;
-            
-            // 跳转到支付页面
-            wx.navigateTo({
-              url: '/subpkg/pay/pay?totalPrice=' + totalPrice
-            });
+
+            wx.showLoading({ title: '下单中...' });
+            api.api.order.create({
+              sourceType: 'acre',
+              sourceName: this.data.acreDetail.title || '认购',
+              quantity: acres,
+              totalPrice: Number(totalPrice.toFixed(2)),
+              items: [
+                {
+                  id: String(this.data.acreDetail.id || ''),
+                  name: this.data.acreDetail.title || '认购',
+                  price: Number((price || 0).toFixed(2)),
+                  quantity: acres,
+                  image: this.data.acreDetail.image || ''
+                }
+              ]
+            })
+              .then((orderData) => {
+                const orderId = orderData.orderId || orderData.id;
+                if (!orderId) {
+                  wx.showToast({
+                    title: '创建订单失败',
+                    icon: 'none'
+                  });
+                  return;
+                }
+
+                wx.navigateTo({
+                  url: `/subpkg/pay/pay?orderId=${orderId}&totalPrice=${totalPrice.toFixed(2)}`
+                });
+              })
+              .catch((err) => {
+                console.error('创建认购订单失败:', err);
+                wx.showToast({
+                  title: '创建订单失败',
+                  icon: 'none'
+                });
+              })
+              .finally(() => {
+                wx.hideLoading();
+              });
           } else {
             wx.showToast({
               title: '请输入有效的亩数',

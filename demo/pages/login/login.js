@@ -12,9 +12,7 @@ Page({
   // 获取背景图片
   getBackgroundImage: function() {
     // 使用API返回的图片URL，拼接基础URL
-    const BASE_URL = 'http://192.168.203.56';
-    const imagePath = '/api/file/image/farm_0000000000012.jpg';
-    const bgImageUrl = BASE_URL + imagePath;
+    const bgImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000012.jpg';
     this.setData({
       bgImage: bgImageUrl
     });

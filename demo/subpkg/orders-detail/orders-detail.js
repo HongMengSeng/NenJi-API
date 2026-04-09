@@ -103,15 +103,8 @@ Page({
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '取消中...' });
-          
-          api.request({
-            url: `/api/orders/${this.data.order.id}/status`,
-            method: 'PUT',
-            data: {
-              status: 'cancelled'
-            }
-          })
-          .then((data) => {
+          api.order.updateStatus(this.data.order.id, 'cancelled')
+          .then(() => {
             wx.hideLoading();
             wx.showToast({ title: '订单已取消', icon: 'success' });
             this.getOrderDetail(this.data.order.id);
@@ -134,15 +127,8 @@ Page({
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '确认中...' });
-          
-          api.request({
-            url: `/api/orders/${this.data.order.id}/status`,
-            method: 'PUT',
-            data: {
-              status: 'completed'
-            }
-          })
-          .then((data) => {
+          api.order.updateStatus(this.data.order.id, 'completed')
+          .then(() => {
             wx.hideLoading();
             wx.showToast({ title: '收货成功', icon: 'success' });
             this.getOrderDetail(this.data.order.id);
@@ -153,6 +139,33 @@ Page({
             wx.showToast({ title: '确认收货失败', icon: 'none' });
           });
         }
+      }
+    });
+  },
+
+  // 模拟发货（联调用）
+  markShipping() {
+    wx.showModal({
+      title: '确认发货',
+      content: '确认将订单更新为待收货吗？',
+      success: (res) => {
+        if (!res.confirm) {
+          return;
+        }
+
+        wx.showLoading({ title: '处理中...' });
+        api.order.updateStatus(this.data.order.id, 'shipping')
+          .then(() => {
+            wx.showToast({ title: '已更新为待收货', icon: 'success' });
+            this.getOrderDetail(this.data.order.id);
+          })
+          .catch((err) => {
+            console.error('更新发货状态失败:', err);
+            wx.showToast({ title: '更新失败', icon: 'none' });
+          })
+          .finally(() => {
+            wx.hideLoading();
+          });
       }
     });
   },

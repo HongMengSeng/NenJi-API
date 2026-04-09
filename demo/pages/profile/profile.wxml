@@ -2,7 +2,7 @@
   <!-- 会员中心头部 -->
   <view class="member-header" bindtap="editProfile">
     <view class="member-info">
-      <image class="member-avatar" src="{{userInfo.avatar}}" />
+      <image class="member-avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/ffffff/user.png'}}" />
       <view class="member-details">
         <view class="member-name">{{userInfo.nickname}}</view>
         <view class="member-email" wx:if="{{userInfo.email}}">{{userInfo.email}}</view>
