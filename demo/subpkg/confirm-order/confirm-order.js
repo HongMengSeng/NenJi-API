@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+const { request } = require('../../utils/api');
 
 Page({
   data: {
@@ -18,49 +18,113 @@ Page({
     loading: false
   },
 
-  onLoad: function (options) {
+  onLoad: function () {
     // 从本地存储获取购物车数据
     const cart = wx.getStorageSync('orderCart') || {};
     const cartItems = Object.values(cart);
-    
+
     // 计算总价格和总数量
     let totalPrice = 0;
     let totalCount = 0;
     cartItems.forEach(item => {
-      totalPrice += item.price * item.quantity;
-      totalCount += item.quantity;
+      totalPrice += Number(item.price || 0) * Number(item.quantity || 0);
+      totalCount += Number(item.quantity || 0);
     });
-    // 保留两位小数
-    totalPrice = parseFloat(totalPrice.toFixed(2));
-    
+    totalPrice = Number(totalPrice.toFixed(2));
+
     // 更新订单信息
     this.setData({
       orderInfo: {
         items: cartItems,
-        totalPrice: totalPrice,
-        totalCount: totalCount
+        totalPrice,
+        totalCount
       }
     });
   },
 
+  selectPayment: function (e) {
+    const paymentId = e.currentTarget.dataset.id;
+    if (!paymentId) {
+      return;
+    }
 
+    this.setData({
+      selectedPayment: paymentId
+    });
+  },
 
   // 确认订单
-  confirmOrder: function() {
-    this.setData({ loading: true });
-    
-    // 模拟创建订单
-    setTimeout(() => {
-      this.setData({ loading: false });
-      // 跳转到支付页面
-      wx.navigateTo({
-        url: '/subpkg/pay/pay?totalPrice=' + this.data.orderInfo.totalPrice
+  confirmOrder: function () {
+    const items = this.data.orderInfo.items || [];
+    if (!items.length) {
+      wx.showToast({
+        title: '购物车为空',
+        icon: 'none'
       });
-    }, 500);
+      return;
+    }
+
+    const totalPrice = Number(this.data.orderInfo.totalPrice || 0);
+    if (totalPrice <= 0) {
+      wx.showToast({
+        title: '金额异常',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({ loading: true });
+
+    const tableNumber = Number(wx.getStorageSync('tableNumber') || 0);
+    const payload = {
+      sourceType: 'food',
+      sourceName: '点餐',
+      quantity: this.data.orderInfo.totalCount || 1,
+      tableNumber: tableNumber > 0 ? tableNumber : 0,
+      totalPrice,
+      items: items.map(item => ({
+        id: String(item.id || ''),
+        name: item.name || '餐品',
+        price: Number(item.price || 0),
+        quantity: Number(item.quantity || 1),
+        image: item.image || ''
+      }))
+    };
+
+    request({
+      url: '/api/OrderDetails/create',
+      method: 'POST',
+      data: payload,
+      showLoading: false
+    })
+      .then((data) => {
+        const orderId = data.orderId || data.id;
+        if (!orderId) {
+          wx.showToast({
+            title: '创建订单失败',
+            icon: 'none'
+          });
+          return;
+        }
+
+        wx.navigateTo({
+          url: '/subpkg/orders/orders?tab=pending'
+        });
+      })
+      .catch((err) => {
+        console.error('创建点餐订单失败:', err);
+        wx.showToast({
+          title: '下单失败',
+          icon: 'none'
+        });
+      })
+      .finally(() => {
+        this.setData({ loading: false });
+      });
   },
 
   // 返回购物车
-  goBack: function() {
+  goBack: function () {
     wx.navigateBack();
   }
 });
