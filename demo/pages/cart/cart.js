@@ -32,10 +32,10 @@ Page({
 
   getUserAddressList() {
     api.api.user.getAddressList()
-      .then((addresses) => {
+      .then((data) => {
+        const addresses = Array.isArray(data) ? data : [];
         console.log('用户地址列表:', addresses);
         if (addresses && addresses.length > 0) {
-          // 查找默认地址或选中第一个地址
           const defaultAddress = addresses.find(item => item.isDefault) || addresses[0];
           this.setData({
             addressList: addresses,
@@ -122,33 +122,9 @@ Page({
     this.calcTotal(); 
     wx.setStorageSync('cartList', normalizedCartList); 
 
-    api.request({ 
-      url: '/api/cart/items', 
-      method: 'POST', 
-      data: { 
-        cartList: normalizedCartList 
-      } 
-    }) 
-      .then((data) => { 
-        const nextCartList = (data.cartList || []).map(item => ({ 
-          ...item, 
-          checked: !!item.checked, 
-          count: Number(item.count || 0),
-          type: item.type || 'goods' 
-        })); 
-
-        this.setData({ cartList: nextCartList }); 
-        this.groupItemsByRegion();
-        this.calcTotal(); 
-        wx.setStorageSync('cartList', nextCartList); 
-      }) 
-      .catch((err) => { 
-        console.error('sync cart failed:', err); 
-        wx.showToast({ 
-          title: '购物车同步失败', 
-          icon: 'none' 
-        }); 
-      }); 
+    // 购物车同步暂时使用本地存储，后端API暂未实现
+    console.log('购物车已同步到本地存储');
+    wx.setStorageSync('cartList', normalizedCartList); 
   }, 
 
   handleMinus(e) { 
@@ -226,6 +202,117 @@ Page({
  
   }, 
 
+  getCheckedItemsByType(type) {
+    return (this.data.cartList || []).filter(item => {
+      if (!item.checked) {
+        return false;
+      }
+
+      if (!type) {
+        return true;
+      }
+
+      return (item.type || 'goods') === type;
+    });
+  },
+
+  buildAddressPayload() {
+    const selected = (this.data.addressList || []).find(
+      item => String(item.id) === String(this.data.selectedAddress)
+    );
+
+    if (!selected) {
+      return null;
+    }
+
+    return {
+      addressId: selected.id,
+      name: selected.name || '',
+      phone: selected.phone || '',
+      address: selected.address || ''
+    };
+  },
+
+  createOrderByType(type) {
+    const items = this.getCheckedItemsByType(type);
+    if (!items.length) {
+      wx.showToast({
+        title: '请选择商品',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const needAddress = type === 'goods' || (type === 'food' && !this.data.isTakeAway);
+    const address = this.buildAddressPayload();
+    if (needAddress && !address) {
+      wx.showToast({
+        title: '请选择收货地址',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const quantity = items.reduce((sum, item) => sum + Number(item.count || 0), 0);
+    const totalPrice = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.count || 0),
+      0
+    );
+
+    const payload = {
+      sourceType: type,
+      sourceName: type === 'food' ? '点餐' : '商品',
+      quantity: quantity > 0 ? quantity : 1,
+      totalPrice: Number(totalPrice.toFixed(2)),
+      items: items.map(item => ({
+        id: String(item.id || ''),
+        name: item.name || (type === 'food' ? '点餐' : '商品'),
+        price: Number(item.price || 0),
+        quantity: Number(item.count || 1),
+        image: item.image || ''
+      }))
+    };
+
+    if (address) {
+      payload.address = address;
+    }
+
+    wx.showLoading({ title: '下单中...' });
+    api.api.order.create(payload)
+      .then((orderData) => {
+        const orderId = orderData.orderId || orderData.id;
+        if (!orderId) {
+          wx.showToast({
+            title: '创建订单失败',
+            icon: 'none'
+          });
+          return;
+        }
+
+        const checkoutMap = new Set(
+          items.map(item => `${item.type || 'goods'}:${String(item.id)}`)
+        );
+        const remain = (this.data.cartList || []).filter(
+          item => !checkoutMap.has(`${item.type || 'goods'}:${String(item.id)}`)
+        );
+        this.syncCart(remain);
+
+        wx.navigateTo({
+          url: '/subpkg/orders/orders?tab=pending'
+        });
+      })
+      .catch((err) => {
+        console.error('创建购物车订单失败:', err);
+        wx.showToast({
+          title: '下单失败',
+          icon: 'none'
+        });
+      })
+      .finally(() => {
+        wx.hideLoading();
+      });
+  },
+
   handleSettle() { 
     if (this.data.selectedCount === 0) { 
       wx.showToast({ 
@@ -276,44 +363,21 @@ Page({
     const hasFood = this.data.regions.food.selected;
     const hasGoods = this.data.regions.goods.selected;
 
-    this.setData({ showModal: false }, () => { 
-      // 如果只选中了点餐区域
-      if (hasFood && !hasGoods) {
-        if (this.data.isTakeAway) {
-          // 到店吃订单
-          wx.navigateTo({ 
-            url: '/subpkg/buy/buy?orderId=1' 
-          });
-        } else {
-          // 外卖订单
-          wx.navigateTo({ 
-            url: '/subpkg/order-foods/order-foods' 
-          });
-        }
+    this.setData({ showModal: false }, () => {
+      if (hasFood && hasGoods) {
+        this.setData({ showSeparateSettleModal: true });
+        return;
       }
-      // 如果只选中了商品区域
-      else if (!hasFood && hasGoods) {
-        wx.navigateTo({ 
-          url: '/subpkg/buy/buy?orderId=1' 
-        });
+
+      if (hasFood) {
+        this.createOrderByType('food');
+        return;
       }
-      // 如果同时选中了点餐和商品区域
-      else if (hasFood && hasGoods) {
-        // 这里可以添加分别结算的逻辑
-        // 先结算点餐
-        if (this.data.isTakeAway) {
-          // 到店吃订单
-          wx.navigateTo({ 
-            url: '/subpkg/buy/buy?orderId=1' 
-          });
-        } else {
-          // 外卖订单
-          wx.navigateTo({ 
-            url: '/subpkg/order-foods/order-foods' 
-          });
-        }
+
+      if (hasGoods) {
+        this.createOrderByType('goods');
       }
-    }); 
+    });
   }, 
 
   handleCancelModal() { 
@@ -419,26 +483,14 @@ Page({
     }
 
     this.setData({ showSeparateSettleModal: false }, () => {
-      if (this.data.isTakeAway) {
-        // 到店吃订单
-        wx.navigateTo({ 
-          url: '/subpkg/buy/buy?orderId=1' 
-        });
-      } else {
-        // 外卖订单
-        wx.navigateTo({ 
-          url: '/subpkg/order-foods/order-foods' 
-        });
-      }
+      this.createOrderByType('food');
     });
   },
 
   // 结算商品区域
   settleGoods() {
     this.setData({ showSeparateSettleModal: false }, () => {
-      wx.navigateTo({ 
-        url: '/subpkg/buy/buy?orderId=1' 
-      });
+      this.createOrderByType('goods');
     });
   }
 });
