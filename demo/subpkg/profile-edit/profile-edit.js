@@ -27,7 +27,7 @@ Page({
       this.setData({
         userInfo: {
           nickname: data.nickname || '',
-          avatar: data.avatar || '',
+          avatar: this.processImageUrl(data.avatar || ''),
           gender: data.gender || '保密',
           phone: data.phone || ''
         }
@@ -42,13 +42,75 @@ Page({
     });
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
-    // 这里可以上传图片到服务器，获取图片URL
-    // 暂时使用本地路径
-    this.setData({
-      'userInfo.avatar': avatarUrl
+    
+    // 上传图片到服务器
+    wx.uploadFile({
+      url: 'http://192.168.203.56/api/upload',
+      filePath: avatarUrl,
+      name: 'file',
+      success: (res) => {
+        try {
+          // 检查响应数据是否为空
+          if (!res.data || res.data.trim() === '') {
+            console.error('服务器返回空响应');
+            // 直接使用临时路径作为 fallback，不显示错误提示
+            this.setData({
+              'userInfo.avatar': avatarUrl
+            });
+            return;
+          }
+          
+          const data = JSON.parse(res.data);
+          if (data.code === 0) {
+            // 使用服务器返回的图片URL
+            this.setData({
+              'userInfo.avatar': this.processImageUrl(data.data.url)
+            });
+          } else {
+            console.error('上传头像失败:', data.message);
+            wx.showToast({ title: '上传头像失败', icon: 'none' });
+            // 失败时使用临时路径作为 fallback
+            this.setData({
+              'userInfo.avatar': avatarUrl
+            });
+          }
+        } catch (e) {
+          console.error('解析上传结果失败:', e);
+          wx.showToast({ title: '上传头像失败', icon: 'none' });
+          // 失败时使用临时路径作为 fallback
+          this.setData({
+            'userInfo.avatar': avatarUrl
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('上传头像失败:', err);
+        wx.showToast({ title: '上传头像失败', icon: 'none' });
+        // 失败时使用临时路径作为 fallback
+        this.setData({
+          'userInfo.avatar': avatarUrl
+        });
+      }
     });
   },
 

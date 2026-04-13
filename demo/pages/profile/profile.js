@@ -32,7 +32,7 @@ Page({
     this.setData({
       userInfo: {
         nickname: cache.nickname || this.data.userInfo.nickname || '',
-        avatar: cache.avatar || this.data.userInfo.avatar || '',
+        avatar: this.processImageUrl(cache.avatar || this.data.userInfo.avatar || ''),
         email: cache.email || this.data.userInfo.email || '',
         balance: this.data.userInfo.balance || 0,
         reward: this.data.userInfo.reward || 0
@@ -49,6 +49,23 @@ Page({
     });
   },
 
+  // 处理图片路径，确保使用正确的基础 URL
+  processImageUrl: function (imageUrl) {
+    if (!imageUrl) return '';
+    
+    // 去除反引号和空格
+    imageUrl = imageUrl.replace(/[`\s]/g, '');
+    
+    // 如果是完整的 URL，替换基础 URL
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      // 替换 127.0.0.1:5000 为 192.168.203.56
+      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+    }
+    
+    // 如果是相对路径，添加基础 URL
+    return 'http://192.168.203.56' + imageUrl;
+  },
+
   getUserProfilePreview() {
     wx.showLoading({ title: '加载中...' });
 
@@ -56,7 +73,7 @@ Page({
       .then(data => {
         const nextProfile = {
           nickname: data.nickname || '',
-          avatar: data.avatar || '',
+          avatar: this.processImageUrl(data.avatar || ''),
           email: data.email || '',
           balance: Number(data.balance || 0),
           reward: Number(data.reward || 0)
@@ -152,6 +169,87 @@ Page({
   navigateToFarmIntro() {
     wx.navigateTo({
       url: '/subpkg/farm-intro/farm-intro'
+    });
+  },
+
+  // 选择头像（使用微信官方组件）
+  onChooseAvatar: function (e) {
+    const avatarUrl = e.detail.avatarUrl;
+    
+    // 上传图片到服务器
+    wx.uploadFile({
+      url: 'http://192.168.203.56/api/upload',
+      filePath: avatarUrl,
+      name: 'file',
+      success: (res) => {
+        try {
+          // 检查响应数据是否为空
+          if (!res.data || res.data.trim() === '') {
+            console.error('服务器返回空响应');
+            // 直接使用临时路径作为 fallback
+            this.setData({
+              'userInfo.avatar': avatarUrl
+            });
+            return;
+          }
+          
+          const data = JSON.parse(res.data);
+          if (data.code === 0) {
+            // 使用服务器返回的图片URL
+            this.setData({
+              'userInfo.avatar': this.processImageUrl(data.data.url)
+            });
+            // 更新到服务器
+            this.updateProfile(this.data.userInfo.nickname, this.processImageUrl(data.data.url), this.data.userInfo.email);
+          } else {
+            console.error('上传头像失败:', data.message);
+            wx.showToast({ title: '上传头像失败', icon: 'none' });
+            // 失败时使用临时路径作为 fallback
+            this.setData({
+              'userInfo.avatar': avatarUrl
+            });
+          }
+        } catch (e) {
+          console.error('解析上传结果失败:', e);
+          wx.showToast({ title: '上传头像失败', icon: 'none' });
+          // 失败时使用临时路径作为 fallback
+          this.setData({
+            'userInfo.avatar': avatarUrl
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('上传头像失败:', err);
+        wx.showToast({ title: '上传头像失败', icon: 'none' });
+        // 失败时使用临时路径作为 fallback
+        this.setData({
+          'userInfo.avatar': avatarUrl
+        });
+      }
+    });
+  },
+
+  // 退出登录
+  logout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除所有与登录相关的本地存储
+          wx.removeStorageSync('user_profile_cache');
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('hasLogin');
+          wx.removeStorageSync('user_id');
+          wx.removeStorageSync('user_guid');
+          wx.removeStorageSync('openid');
+          wx.removeStorageSync('register_time');
+          // 跳转到登录页面
+          wx.redirectTo({
+            url: '/pages/login/login'
+          });
+        }
+      }
     });
   }
 })
