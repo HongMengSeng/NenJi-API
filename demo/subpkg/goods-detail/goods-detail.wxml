@@ -69,15 +69,16 @@
           <view class="buy-address-list">
             <view class="buy-address-item {{selectedAddress === item.id ? 'active' : ''}}" 
                   wx:for="{{addressList}}" 
-                  wx:key="id" 
-                  bindtap="selectAddress" 
-                  data-id="{{item.id}}">
-              <view class="address-info">
+                  wx:key="id">
+              <view class="address-info" bindtap="selectAddress" data-id="{{item.id}}">
                 <view class="address-name">{{item.name}}</view>
                 <view class="address-phone">{{item.phone}}</view>
                 <view class="address-detail">{{item.address}}</view>
               </view>
-              <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
+              <view class="address-actions">
+                <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
+                <view class="address-edit" bindtap="editAddress" data-id="{{item.id}}">编辑</view>
+              </view>
             </view>
           </view>
           <button class="add-address-btn" bindtap="addAddress">添加新地址</button>

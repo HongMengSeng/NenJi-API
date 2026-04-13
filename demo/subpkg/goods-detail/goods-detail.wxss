@@ -435,6 +435,13 @@ page {
   color: #999;
 }
 
+.address-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+}
+
 .address-check {
   width: 40rpx;
   height: 40rpx;
@@ -445,6 +452,15 @@ page {
   align-items: center;
   justify-content: center;
   font-size: 24rpx;
+}
+
+.address-edit {
+  font-size: 24rpx;
+  color: #D4A76A;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  background-color: #fff9e6;
+  border: 1rpx solid #D4A76A;
 }
 
 .add-address-btn {

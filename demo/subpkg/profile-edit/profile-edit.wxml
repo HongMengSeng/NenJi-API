@@ -3,9 +3,11 @@
   <!-- 内容区域 -->
   <view class="content">
     <!-- 用户头像 -->
-    <view class="form-item" bindtap="chooseAvatar">
+    <view class="form-item">
       <view class="form-label">用户头像</view>
-      <image class="avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/999999/user.png'}}" />
+      <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+        <image class="avatar" src="{{userInfo.avatar || 'https://img.icons8.com/ios-glyphs/64/999999/user.png'}}" />
+      </button>
     </view>
     
     <!-- 用户昵称 -->

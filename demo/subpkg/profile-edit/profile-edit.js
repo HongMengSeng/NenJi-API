@@ -42,20 +42,13 @@ Page({
     });
   },
 
-  // 选择头像
-  chooseAvatar: function () {
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-      success: (res) => {
-        const tempFilePaths = res.tempFilePaths;
-        // 这里可以上传图片到服务器，获取图片URL
-        // 暂时使用本地路径
-        this.setData({
-          'userInfo.avatar': tempFilePaths[0]
-        });
-      }
+  // 选择头像（使用微信官方组件）
+  onChooseAvatar: function (e) {
+    const avatarUrl = e.detail.avatarUrl;
+    // 这里可以上传图片到服务器，获取图片URL
+    // 暂时使用本地路径
+    this.setData({
+      'userInfo.avatar': avatarUrl
     });
   },
 

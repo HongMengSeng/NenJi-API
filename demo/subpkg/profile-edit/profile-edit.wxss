@@ -73,6 +73,20 @@
   padding-right: 20rpx;
 }
 
+/* 头像按钮 */
+.avatar-button {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* 头像 */
 .avatar {
   width: 80rpx;

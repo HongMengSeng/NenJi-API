@@ -183,6 +183,13 @@ Page({
     });
   },
 
+  editAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/subpkg/address-edit/address-edit?id=${addressId}`
+    });
+  },
+
   confirmBuy() {
     if (!this.data.selectedAddress) {
       wx.showToast({
@@ -214,7 +221,7 @@ Page({
         goodsName: this.data.goods.name,
         price: this.data.goods.price,
         quantity: 1,
-        address: selectedAddressInfo
+        addressId: this.data.selectedAddress
       }
     }).then((data) => {
       wx.hideLoading();
