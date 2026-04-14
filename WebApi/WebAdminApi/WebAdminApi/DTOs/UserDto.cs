@@ -1,34 +1,34 @@
 namespace WebAdminApi.DTOs
 {
     /// <summary>
-    /// 用户列表响应DTO（符合API文档）
+    /// 用户列表项对应DTO，用于API的数据返回
     /// </summary>
     public class UserListItemDto
     {
         /// <summary>
-        /// 用户唯一ID（格式：U + yyyyMMdd + 序号，例：U20260101120019）
+        /// 用户唯一ID，格式为：U + yyyyMMdd + 序号，例如：U20260101120019
         /// </summary>
         public string id { get; set; } = null!;
 
         public string phone { get; set; } = null!;
         public string nickname { get; set; } = null!;
-        public string? gender { get; set; } 
+        public string? gender { get; set; }
         public string? address { get; set; }
-        
+
         public string? WxOpenid { get; set; }
 
         /// <summary>
-        /// 角色：管理员/普通用户
+        /// 角色，可以是：管理员/普通用户
         /// </summary>
         public string role { get; set; } = null!;
 
         /// <summary>
-        /// 状态：启用/禁用
+        /// 状态，可以是：启用/禁用
         /// </summary>
         public string? status { get; set; } = null!;
 
         /// <summary>
-        /// 最后登录时间（格式：yyyy/M/d H:mm）
+        /// 最后登录时间（格式为：yyyy-MM-dd HH:mm）
         /// </summary>
         public string loginTime { get; set; } = "未登录";
 
@@ -38,13 +38,13 @@ namespace WebAdminApi.DTOs
         public bool selected { get; set; } = false;
 
         /// <summary>
-        /// 用户类型 如后台的管理员与员工和微信用户的区分
+        /// 用户类型 - 区分平台的工作人员(staff)或者平台外的微信用户(user)
         /// </summary>
         public string userType { get; set; } = null!;
     }
 
     /// <summary>
-    /// 用户列表分页响应DTO
+    /// 用户列表分页对应DTO
     /// </summary>
     public class UserListPageDto
     {
@@ -64,6 +64,11 @@ namespace WebAdminApi.DTOs
         public int total { get; set; }
 
         /// <summary>
+        /// 总页数
+        /// </summary>
+        public int pages { get; set; }
+
+        /// <summary>
         /// 用户列表数据
         /// </summary>
         public List<UserListItemDto> records { get; set; } = new();
@@ -79,42 +84,42 @@ namespace WebAdminApi.DTOs
         public string Gender { get; set; } = null!;
         public string? Address { get; set; }
         public string Role { get; set; } = null!;
-        public string Status { get; set; } = "禁用";
+        public string Status { get; set; } = "启用";
     }
 
     /// <summary>
     /// 编辑用户请求DTO
-    /// 用户在前端选中用户后，修改字段并发送此对象
+    /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
     /// </summary>
     public class EditUserDto
     {
         /// <summary>
-        /// 用户ID（必须提供，用来识别要编辑哪个用户）
+        /// 用户ID，必须提供，以此识别要编辑的个用户
         /// </summary>
         public string id { get; set; } = null!;
 
         /// <summary>
-        /// 昵称（可选，不修改可以不发）
+        /// 昵称，可选，仅修改时才发送
         /// </summary>
         public string? nickname { get; set; }
 
         /// <summary>
-        /// 性别（可选，不修改可以不发）
+        /// 性别，可选，仅修改时才发送
         /// </summary>
         public string? gender { get; set; }
 
         /// <summary>
-        /// 地址（可选，不修改可以不发）
+        /// 地址，可选，仅修改时才发送
         /// </summary>
         public string? address { get; set; }
 
         /// <summary>
-        /// 角色：管理员/普通用户（可选，不修改可以不发）
+        /// 角色，可以是：管理员/普通用户，可选，仅修改时才发送
         /// </summary>
         public string? role { get; set; }
 
         /// <summary>
-        /// 状态：启用/禁用（可选，不修改可以不发）
+        /// 状态，可以是：启用/禁用，可选，仅修改时才发送
         /// </summary>
         public string? status { get; set; }
     }
@@ -130,7 +135,7 @@ namespace WebAdminApi.DTOs
         public string id { get; set; } = null!;
 
         /// <summary>
-        /// 目标状态：启用/禁用
+        /// 目标状态，可以是：启用/禁用
         /// </summary>
         public string status { get; set; } = null!;
     }
@@ -164,6 +169,5 @@ namespace WebAdminApi.DTOs
         public string role { get; set; } = null!;
         public string status { get; set; } = null!;
         public string token { get; set; } = null!;
-
-    }    
+    }
 }

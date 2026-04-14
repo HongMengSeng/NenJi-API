@@ -46,7 +46,8 @@ namespace WebAdminApi.Services
                 pageNum = pageNum,
                 pageSize = pageSize,
                 total = total,
-                records = data
+                records = data,
+                pages = (int)Math.Ceiling((double)total / pageSize) // 计算总页数
             };
         }
 
@@ -123,7 +124,7 @@ namespace WebAdminApi.Services
                 role = u.role ?? "普通用户",
                 status = u.status,
                 loginTime = u.loginTime != null
-        ? u.loginTime.Value.ToString("yyyy/M/d H:mm")
+        ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm")
         : "未登录",
                 selected = u.selected,
                 userType = u.userType
