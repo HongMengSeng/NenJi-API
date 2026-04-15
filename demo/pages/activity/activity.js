@@ -49,6 +49,10 @@ Page({
         // 提取所有唯一的分类名称
         const categorySet = new Set();
         allActivities.forEach(activity => {
+          // 清理价格中的符号
+          if (typeof activity.price === 'string') {
+            activity.price = activity.price.replace(/[¥￥]/g, '');
+          }
           if (activity.categoryName) {
             categorySet.add(activity.categoryName);
             // 按分类名称分组

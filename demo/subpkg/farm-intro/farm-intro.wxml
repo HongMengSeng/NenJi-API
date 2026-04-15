@@ -9,7 +9,7 @@
   <view wx:else>
     <!-- 农场主图 -->
     <view class="main-image-container">
-      <image class="main-image" src="http://192.168.203.56/api/file/image/{{farmInfo.mainImage}}" mode="aspectFill" />
+      <image class="main-image" src="{{farmInfo && farmInfo.mainImage ? farmInfo.mainImage : defaultMainImage}}" mode="aspectFill" />
     </view>
     
     <!-- 农场简介 -->

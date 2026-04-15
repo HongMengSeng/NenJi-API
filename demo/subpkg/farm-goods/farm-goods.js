@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 const FALLBACK_CATEGORIES = [
   { id: 'all', name: '全部商品', color: '#4CAF50', icon: '全' },
@@ -124,7 +124,9 @@ Page({
       
       return {
         ...item,
-        image: imageUrl
+        image: imageUrl,
+        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
+        originalPrice: item.originalPrice ? item.originalPrice.toString().replace(/[¥￥]/g, '') : item.originalPrice
       };
     });
   },

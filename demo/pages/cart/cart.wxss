@@ -188,11 +188,6 @@
     color: #D4A76A;
   }
   
-  .item-price::before {
-    content: '¥';
-    font-size: 24rpx;
-  }
-  
   .item-stock {
     font-size: 22rpx;
     color: #999;

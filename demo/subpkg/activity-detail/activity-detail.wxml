@@ -6,7 +6,7 @@
   <view class="activity-info">
     <view class="activity-title">{{activity.title}}</view>
     <view class="activity-meta">
-      <view class="activity-price">{{activity.price}}</view>
+      <view class="activity-price">￥{{activity.price}}</view>
       <view class="activity-date">{{activity.date}}</view>
     </view>
     <view class="activity-description">{{activity.description}}</view>
@@ -25,7 +25,7 @@
     </view>
     <view class="detail-item">
       <view class="detail-label">活动费用</view>
-      <view class="detail-value">{{activity.price}}</view>
+      <view class="detail-value">￥{{activity.price}}</view>
     </view>
     <view class="detail-item">
       <view class="detail-label">已参加人数</view>

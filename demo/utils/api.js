@@ -34,7 +34,16 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
     const finalHeader = { ...defaultHeader, ...header };
 
     // 处理请求地址
-    const requestUrl = /^https?:\/\//i.test(url) ? url : BASE_URL + url;
+    let requestUrl;
+    if (/^https?:\/\//i.test(url)) {
+      requestUrl = url;
+    } else {
+      // 确保基础 URL 后面有斜杠
+      const baseUrl = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
+      // 确保路径不以斜杠开头
+      const path = url.startsWith('/') ? url.substring(1) : url;
+      requestUrl = baseUrl + path;
+    }
 
     // 发起请求
     wx.request({
@@ -115,6 +124,89 @@ function del(url, data = {}, options = {}) {
   return request({ ...options, url, method: 'DELETE', data });
 }
 
+/**
+ * 上传文件
+ * @param {string} url - 上传地址
+ * @param {string} filePath - 文件路径
+ * @param {string} name - 文件字段名
+ * @param {Object} formData - 其他表单数据
+ * @param {Object} options - 其他选项
+ * @returns {Promise} - 上传结果
+ */
+function upload(url, filePath, name, formData = {}, options = {}) {
+  return new Promise((resolve, reject) => {
+    // 显示加载提示
+    if (options.showLoading !== false) {
+      wx.showLoading({ title: options.loadingText || '上传中...', mask: true });
+    }
+
+    // 获取 token
+    const token = wx.getStorageSync('token');
+    const header = {
+      ...options.header
+    };
+    
+    // 添加 token 到请求头
+    if (token) {
+      header.Authorization = 'Bearer ' + token;
+    }
+
+    // 处理请求地址
+    let requestUrl;
+    if (/^https?:\/\//i.test(url)) {
+      requestUrl = url;
+    } else {
+      // 确保基础 URL 后面有斜杠
+      const baseUrl = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
+      // 确保路径不以斜杠开头
+      const path = url.startsWith('/') ? url.substring(1) : url;
+      requestUrl = baseUrl + path;
+    }
+
+    // 发起上传请求
+    wx.uploadFile({
+      url: requestUrl,
+      filePath,
+      name,
+      formData,
+      header,
+      success(res) {
+        // 隐藏加载提示
+        if (options.showLoading !== false) {
+          wx.hideLoading();
+        }
+
+        // 处理响应
+        try {
+          const data = JSON.parse(res.data);
+          if (data.code === 0) {
+            resolve(data.data);
+          } else {
+            const msg = data.message || '上传失败';
+            wx.showToast({ title: msg, icon: 'none' });
+            reject(data);
+          }
+        } catch (e) {
+          console.error('解析上传结果失败:', e);
+          wx.showToast({ title: '上传失败', icon: 'none' });
+          reject({ code: -1, message: '解析响应失败' });
+        }
+      },
+      fail(err) {
+        // 隐藏加载提示
+        if (options.showLoading !== false) {
+          wx.hideLoading();
+        }
+
+        // 处理上传错误
+        console.error('上传失败:', err);
+        wx.showToast({ title: '上传失败', icon: 'none' });
+        reject(err);
+      }
+    });
+  });
+}
+
 // API 接口封装
 const api = {
   // 首页相关
@@ -128,7 +220,9 @@ const api = {
     // 获取图片列表
     getImages: () => get('/api/file/images'),
     // 获取图片
-    getImage: (name) => get(`/api/file/image/${name}`)
+    getImage: (name) => get(`/api/file/image/${name}`),
+    // 上传文件
+    upload: (filePath, formData = {}, options = {}) => upload('/api/upload', filePath, 'file', formData, options)
   },
   
   // 活动相关
@@ -218,5 +312,6 @@ module.exports = {
   post,
   put,
   del,
+  upload,
   api
 };

@@ -1,4 +1,4 @@
-<view class="container" bindscrolltolower="onReachBottom">
+﻿<view class="container" bindscrolltolower="onReachBottom">
   <!-- 顶部搜索栏 -->
   <view class="search-bar">
     <view class="search-input-container">
@@ -58,8 +58,8 @@
             <view class="tag" wx:for="{{item.tags}}" wx:key="index" wx:for-item="tag">{{tag}}</view>
           </view>
           <view class="goods-price-container">
-            <view class="goods-price">¥{{item.price}}</view>
-            <view class="goods-original-price">¥{{item.originalPrice}}</view>
+            <view class="goods-price">￥{{item.price}}</view>
+            <view class="goods-original-price">￥{{item.originalPrice}}</view>
           </view>
           <view class="goods-stock">还剩{{item.stock}}份</view>
           <view class="goods-actions">

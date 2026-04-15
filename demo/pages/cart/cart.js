@@ -1,4 +1,4 @@
-const api = require('../../utils/api'); 
+﻿const api = require('../../utils/api'); 
 
 Page({ 
   data: { 
@@ -62,6 +62,7 @@ Page({
       ...item, 
       checked: !!item.checked, 
       count: Number(item.count || 0),
+      price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
       // 添加默认值
       type: item.type || 'goods' // food: 点餐, goods: 商品
     })); 
@@ -110,7 +111,7 @@ Page({
       .map(item => ({ 
         id: String(item.id), 
         name: item.name || '', 
-        price: Number(item.price || 0), 
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')), 
         image: item.image || '', 
         count: Number(item.count || 0), 
         checked: !!item.checked,

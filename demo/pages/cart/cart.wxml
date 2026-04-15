@@ -1,4 +1,4 @@
-<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}}">
+﻿<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}}">
   <view class="cart-list">
     <!-- 空购物车提示 -->
     <view class="empty-cart" wx:if="{{cartList.length === 0}}">
@@ -43,7 +43,7 @@
           <view class="item-info">
             <view class="item-name">{{item.name}}</view>
             <view class="item-tag">{{item.tag}}</view>
-            <view class="item-price">¥{{item.price}}</view>
+            <view class="item-price">￥{{item.price}}</view>
             <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
           </view>
 
@@ -76,7 +76,7 @@
           <view class="item-info">
             <view class="item-name">{{item.name}}</view>
             <view class="item-tag">{{item.tag}}</view>
-            <view class="item-price">¥{{item.price}}</view>
+            <view class="item-price">￥{{item.price}}</view>
             <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
           </view>
 
@@ -97,7 +97,7 @@
       <view class="cart-badge" bindtap="handleCartIconClick">
         <text class="cart-icon">🛒</text>
       </view>
-      <view class="total-price">合计: ¥{{totalPrice}}</view>
+      <view class="total-price">合计: ￥{{totalPrice}}</view>
     </view>
     <view class="settle-btn" bindtap="handleSettle">
       {{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}
@@ -152,7 +152,7 @@
             <view class="detail-item-info">
               <view class="detail-item-name">{{item.name}}</view>
               <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">¥{{item.price}}</view>
+              <view class="detail-item-price">￥{{item.price}}</view>
             </view>
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>
@@ -167,7 +167,7 @@
             <view class="detail-item-info">
               <view class="detail-item-name">{{item.name}}</view>
               <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">¥{{item.price}}</view>
+              <view class="detail-item-price">￥{{item.price}}</view>
             </view>
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>
@@ -187,7 +187,7 @@
         </view>
         <view class="info-item">
           <text class="info-label">合计金额：</text>
-          <text class="info-value price">¥{{totalPrice}}</text>
+          <text class="info-value price">￥{{totalPrice}}</text>
         </view>
       </view>
       <view class="confirm-text">确认购买以上商品吗？</view>
@@ -215,7 +215,7 @@
           <view class="detail-item-info">
             <view class="detail-item-name">{{item.name}}</view>
             <view class="detail-item-tag">{{item.tag}}</view>
-            <view class="detail-item-price">¥{{item.price}}</view>
+            <view class="detail-item-price">￥{{item.price}}</view>
             <view class="detail-item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
           </view>
           <view class="detail-item-quantity">×{{item.count}}</view>
@@ -225,7 +225,7 @@
       <!-- 合计信息 -->
       <view class="cart-detail-total">
         <text class="total-label">合计：</text>
-        <text class="total-price">¥{{totalPrice}}</text>
+        <text class="total-price">￥{{totalPrice}}</text>
       </view>
     </view>
     <view class="modal-footer">
@@ -252,7 +252,7 @@
             <view class="detail-item-info">
               <view class="detail-item-name">{{item.name}}</view>
               <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">¥{{item.price}}</view>
+              <view class="detail-item-price">￥{{item.price}}</view>
             </view>
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>
@@ -270,7 +270,7 @@
             <view class="detail-item-info">
               <view class="detail-item-name">{{item.name}}</view>
               <view class="detail-item-tag">{{item.tag}}</view>
-              <view class="detail-item-price">¥{{item.price}}</view>
+              <view class="detail-item-price">￥{{item.price}}</view>
             </view>
             <view class="detail-item-quantity">×{{item.count}}</view>
           </view>

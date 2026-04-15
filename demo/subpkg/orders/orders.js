@@ -1,8 +1,9 @@
-const { api } = require('../../utils/api');
+﻿const { api } = require('../../utils/api');
 
 Page({
   data: {
     activeTab: 'all', // 当前选中的标签：all, pending, paid, shipping, review, refund, food, acre, activity, cart
+    currentOrderType: '', // 当前订单类型
     scrollToView: '', // 用于滚动到指定标签
     tabs: [
       { key: 'all', name: '全部' },
@@ -43,25 +44,44 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 只替换 127.0.0.1:5000 为 192.168.203.56，不影响其他URL
+      if (imageUrl.includes('127.0.0.1:5000')) {
+        imageUrl = imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
+      }
+      // 如果已经是正确的URL格式，直接返回
+      return imageUrl;
     }
     
     // 如果是相对路径，添加基础 URL
-    return 'http://192.168.203.56' + imageUrl;
+    // 确保基础 URL 后面有斜杠
+    const baseUrl = 'http://192.168.203.56';
+    // 确保图片路径以斜杠开头
+    if (!imageUrl.startsWith('/')) {
+      imageUrl = '/' + imageUrl;
+    }
+    return baseUrl + imageUrl;
   },
 
   getOrders() {
     wx.showLoading({ title: '加载中...' });
 
-    let orderType = '';
+    let orderType = this.data.currentOrderType;
     let status = '';
     
+    // 如果当前标签是订单类型标签，更新currentOrderType
     if (['food', 'acre', 'activity', 'cart'].includes(this.data.activeTab)) {
       orderType = this.data.activeTab;
+      this.setData({ currentOrderType: orderType });
     } else if (this.data.activeTab !== 'all') {
       status = this.data.activeTab;
     }
+
+    console.log('获取订单列表参数:', {
+      type: orderType,
+      status: status,
+      activeTab: this.data.activeTab,
+      currentOrderType: this.data.currentOrderType
+    });
 
     api.order.getList({
       type: orderType,
@@ -72,12 +92,15 @@ Page({
       sortOrder: 'desc'
     })
       .then((data) => {
+        console.log('获取订单列表成功，数据:', data);
         // 处理订单商品图片路径
         const orders = (data.orders || []).map(order => ({
           ...order,
+          totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
           items: (order.items || []).map(item => ({
             ...item,
-            image: this.processImageUrl(item.image)
+            image: this.processImageUrl(item.image),
+            price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
           }))
         }));
         
@@ -100,11 +123,21 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.activeTab) return;
     
-    this.setData({ 
-      activeTab: tab, 
-      loading: true,
-      scrollToView: 'tab-' + tab
-    });
+    // 如果切换到全部标签，重置currentOrderType
+    if (tab === 'all') {
+      this.setData({ 
+        activeTab: tab, 
+        currentOrderType: '',
+        loading: true,
+        scrollToView: 'tab-' + tab
+      });
+    } else {
+      this.setData({ 
+        activeTab: tab, 
+        loading: true,
+        scrollToView: 'tab-' + tab
+      });
+    }
     this.getOrders();
   },
 

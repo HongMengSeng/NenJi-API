@@ -1,4 +1,4 @@
-const { api, request } = require('../../utils/api');
+﻿const { api, request } = require('../../utils/api');
 
 Page({
   data: {
@@ -57,7 +57,7 @@ Page({
           goods: {
             id: data.id || goodsId,
             name: data.name || '',
-            price: Number(data.price || 0),
+            price: Number((data.price || 0).toString().replace(/[¥￥]/g, '')),
             image: data.image || '',
             detailImage: data.detailImage || data.image || '',
             description: data.description || '',

@@ -1,4 +1,4 @@
-const { api } = require('../../utils/api');
+﻿const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -85,8 +85,12 @@ Page({
         // 处理订单商品图片路径
         orderData.items = (orderData.items || []).map(item => ({
           ...item,
-          image: this.processImageUrl(item.image)
+          image: this.processImageUrl(item.image),
+          price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
         }));
+        
+        // 处理订单总价
+        orderData.totalPrice = orderData.totalPrice ? orderData.totalPrice.toString().replace(/[¥￥]/g, '') : orderData.totalPrice;
         
         // 根据后端返回的 type 字段判断订单类型
         orderData.isActivityOrder = orderData.type === 'activity';

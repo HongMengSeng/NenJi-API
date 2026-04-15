@@ -1,4 +1,4 @@
-// pages/buy/buy.js
+﻿// pages/buy/buy.js
 const api = require('../../utils/api');
 
 Page({
@@ -91,7 +91,8 @@ Page({
         const products = this.data.products;
         let total = 0;
         products.forEach(product => {
-            total += product.price * product.quantity;
+            const price = Number((product.price || 0).toString().replace(/[¥￥]/g, ''));
+            total += price * product.quantity;
         });
         this.setData({
             totalAmount: total.toFixed(2)

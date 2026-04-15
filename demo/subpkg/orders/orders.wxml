@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <!-- 标签栏 -->
   <view class="tab-bar">
     <scroll-view scroll-x enable-flex scroll-into-view="{{scrollToView}}" scroll-with-animation>
@@ -49,7 +49,7 @@
                 <image class="item-image" src="{{item.image}}" />
                 <view class="item-info">
                   <view class="item-name">{{item.name}}</view>
-                  <view class="item-price">¥{{item.price}} × {{item.quantity}}</view>
+                  <view class="item-price">￥{{item.price}} × {{item.quantity}}</view>
                 </view>
               </view>
             </view>
@@ -57,7 +57,7 @@
             <view class="order-footer">
               <view class="order-total">
                 <text>共{{item.items.length}}件商品</text>
-                <text class="total-price">合计：¥{{item.totalPrice}}</text>
+                <text class="total-price">合计：￥{{item.totalPrice}}</text>
               </view>
               
               <view class="order-actions">

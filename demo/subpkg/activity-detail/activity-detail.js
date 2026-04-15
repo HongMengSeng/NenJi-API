@@ -52,7 +52,8 @@ Page({
         const processedActivity = {
           ...data,
           image: this.processImageUrl(data.image),
-          images: (data.images || []).map(image => this.processImageUrl(image))
+          images: (data.images || []).map(image => this.processImageUrl(image)),
+          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price // 清理价格符号
         };
         
         this.setData({
@@ -126,7 +127,7 @@ Page({
       return;
     }
 
-    const priceText = this.data.activity.price || '¥0';
+    const priceText = this.data.activity.price || '￥0';
     wx.showModal({
       title: `当前剩余 ${remainingSlots} 个名额，${priceText}一张`,
       editable: true,

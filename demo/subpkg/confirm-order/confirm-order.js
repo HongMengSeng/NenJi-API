@@ -1,4 +1,4 @@
-const { request } = require('../../utils/api');
+﻿const { request } = require('../../utils/api');
 
 Page({
   data: {
@@ -27,7 +27,8 @@ Page({
     let totalPrice = 0;
     let totalCount = 0;
     cartItems.forEach(item => {
-      totalPrice += Number(item.price || 0) * Number(item.quantity || 0);
+      const price = Number((item.price || 0).toString().replace(/[¥￥]/g, ''));
+      totalPrice += price * Number(item.quantity || 0);
       totalCount += Number(item.quantity || 0);
     });
     totalPrice = Number(totalPrice.toFixed(2));
@@ -85,7 +86,7 @@ Page({
       items: items.map(item => ({
         id: String(item.id || ''),
         name: item.name || '餐品',
-        price: Number(item.price || 0),
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
         quantity: Number(item.quantity || 1),
         image: item.image || ''
       }))
