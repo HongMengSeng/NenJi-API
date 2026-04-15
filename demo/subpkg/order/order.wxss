@@ -11,6 +11,7 @@ page {
   background-color: #fff;
   padding: 15px;
   margin-bottom: 10px;
+  margin-top: 0;
 }
 
 .shop-header {

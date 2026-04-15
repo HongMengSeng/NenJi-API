@@ -1,4 +1,4 @@
-﻿<!-- 商店信息 -->
+﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -14,7 +14,7 @@
     </view>
     <view class="contact-buttons">
       <text class="contact-btn" bindtap="testScanCode">测试扫码</text>
-      <text class="contact-btn">联系商家</text>
+      <text class="contact-btn" bindtap="navigateToService">联系客服</text>
     </view>
   </view>
 </view>

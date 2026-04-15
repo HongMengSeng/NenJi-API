@@ -1,5 +1,9 @@
 ﻿<!-- 确认订单页面 -->
 <view class="container">
+  <!-- 桌号显示 -->
+  <view class="table-number-display">
+    桌号：{{tableNumber}}
+  </view>
   <!-- 订单商品列表 -->
   <view class="order-items">
     <view class="section-title">商品信息</view>
