@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 	<head>
 		<meta charset="utf-8" />
@@ -187,10 +187,51 @@
 			border: 1px dashed #e2e8f0;
 			border-radius: 4px;
 			display: flex;
+			flex-direction: column;
 			justify-content: center;
 			align-items: center;
 			cursor: pointer;
 			color: #a0aec0;
+			transition: all 0.3s ease;
+		}
+		
+		.add-image-btn:hover{
+			border-color: #3182ce;
+			color: #3182ce;
+			background: #f7fafc;
+		}
+		
+		.add-icon{
+			font-size: 24px;
+			line-height: 1;
+		}
+		
+		.add-text{
+			font-size: 10px;
+			margin-top: 4px;
+		}
+		
+		.remove-image-btn{
+			position: absolute;
+			top: -8px;
+			right: -8px;
+			width: 20px;
+			height: 20px;
+			background: #718096;
+			color: white;
+			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			font-size: 14px;
+			line-height: 1;
+			transition: all 0.3s ease;
+		}
+		
+		.remove-image-btn:hover{
+			background: #4a5568;
+			transform: scale(1.1);
 		}
 		
 		/* 提交按钮 */
@@ -201,23 +242,42 @@
 		}
 		
 		.btn{
-			padding: 8px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			margin-right: 10px;
-			font-size: 14px;
-		}
-		
-		.btn-success{
-			background: #38a169;
-			color: white;
-		}
-		
-		.btn-default{
-			background: #e2e8f0;
-			color: #333;
-		}
+				padding: 8px 16px;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				margin-right: 10px;
+				font-size: 14px;
+				transition: all 0.3s ease;
+			}
+			
+			.btn:hover{
+				transform: translateY(-1px);
+				box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+			}
+			
+			.btn:active{
+				transform: translateY(0);
+				box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+			}
+			
+			.btn-success{
+				background: #38a169;
+				color: white;
+			}
+			
+			.btn-success:hover{
+				background: #2f855a;
+			}
+			
+			.btn-default{
+				background: #e2e8f0;
+				color: #333;
+			}
+			
+			.btn-default:hover{
+				background: #cbd5e0;
+			}
 	</style>
 	
 	<body>
@@ -272,19 +332,29 @@
 								<div class="form-group">
 									<label>产品封面</label>
 									<div class="image-upload">
+										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 										<div class="image-item" v-if="productForm.coverImage">
 											<img :src="productForm.coverImage" alt="产品封面" />
+											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
-										<div class="add-image-btn" @click="selectCoverImage">+</div>
+										<div class="add-image-btn" @click="selectCoverImage">
+											<span class="add-icon">+</span>
+											<span class="add-text">添加封面</span>
+										</div>
 									</div>
 								</div>
 								<div class="form-group">
 									<label>轮播图(最多添加5张)</label>
 									<div class="image-upload">
+										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*" @change="handleCarouselImageUpload" style="display: none;" />
 										<div class="image-item" v-for="(image, index) in productForm.carouselImages" :key="index">
 											<img :src="image" alt="轮播图" />
+											<div class="remove-image-btn" @click="removeCarouselImage(index)">×</div>
 										</div>
-										<div class="add-image-btn" @click="addCarouselImage" v-if="productForm.carouselImages.length < 5">+</div>
+										<div class="add-image-btn" @click="selectCarouselImage" v-if="productForm.carouselImages.length < 5">
+											<span class="add-icon">+</span>
+											<span class="add-text">添加轮播图</span>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -311,10 +381,15 @@
 								<div class="form-group">
 									<label>规格图片(最多添加5张)</label>
 									<div class="image-upload">
+										<input type="file" ref="specFileInput" class="file-input" accept="image/*" @change="handleSpecImageUpload" style="display: none;" />
 										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="index">
 											<img :src="image" alt="规格图片" />
+											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
-										<div class="add-image-btn" @click="addSpecImage" v-if="productForm.specImages.length < 5">+</div>
+										<div class="add-image-btn" @click="selectSpecImage" v-if="productForm.specImages.length < 5">
+											<span class="add-icon">+</span>
+											<span class="add-text">添加规格图</span>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -394,36 +469,78 @@
 					
 					// 选择封面图片
 					selectCoverImage() {
-						// 模拟选择图片
-						this.productForm.coverImage = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20vegetables%2C%20high%20quality%20photograph&image_size=square';
+						this.$refs.coverFileInput.click();
 					},
 					
-					// 添加轮播图
-					addCarouselImage() {
-						// 模拟添加轮播图
-						const images = [
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20peppers%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers%2C%20high%20quality%20photograph&image_size=square'
-						];
-						const randomImage = images[Math.floor(Math.random() * images.length)];
-						this.productForm.carouselImages.push(randomImage);
+					// 处理封面图片上传
+					handleCoverImageUpload(event) {
+						const file = event.target.files[0];
+						if (file) {
+							const reader = new FileReader();
+							reader.onload = (e) => {
+								this.productForm.coverImage = e.target.result;
+							};
+							reader.readAsDataURL(file);
+						}
+						// 重置文件输入，以便可以选择同一个文件
+						event.target.value = '';
 					},
 					
-					// 添加规格图片
-					addSpecImage() {
-						// 模拟添加规格图片
-						const images = [
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20green%20vegetables%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20carrots%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20tomatoes%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20peppers%2C%20high%20quality%20photograph&image_size=square',
-							'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20cucumbers%2C%20high%20quality%20photograph&image_size=square'
-						];
-						const randomImage = images[Math.floor(Math.random() * images.length)];
-						this.productForm.specImages.push(randomImage);
+					// 移除封面图片
+					removeCoverImage() {
+						this.productForm.coverImage = '';
+					},
+					
+					// 选择轮播图
+					selectCarouselImage() {
+						this.$refs.carouselFileInput.click();
+					},
+					
+					// 处理轮播图上传
+					handleCarouselImageUpload(event) {
+						const file = event.target.files[0];
+						if (file) {
+							const reader = new FileReader();
+							reader.onload = (e) => {
+								if (this.productForm.carouselImages.length < 5) {
+									this.productForm.carouselImages.push(e.target.result);
+								}
+							};
+							reader.readAsDataURL(file);
+						}
+						// 重置文件输入
+						event.target.value = '';
+					},
+					
+					// 移除轮播图
+					removeCarouselImage(index) {
+						this.productForm.carouselImages.splice(index, 1);
+					},
+					
+					// 选择规格图片
+					selectSpecImage() {
+						this.$refs.specFileInput.click();
+					},
+					
+					// 处理规格图片上传
+					handleSpecImageUpload(event) {
+						const file = event.target.files[0];
+						if (file) {
+							const reader = new FileReader();
+							reader.onload = (e) => {
+								if (this.productForm.specImages.length < 5) {
+									this.productForm.specImages.push(e.target.result);
+								}
+							};
+							reader.readAsDataURL(file);
+						}
+						// 重置文件输入
+						event.target.value = '';
+					},
+					
+					// 移除规格图片
+					removeSpecImage(index) {
+						this.productForm.specImages.splice(index, 1);
 					},
 					
 					// 保存产品

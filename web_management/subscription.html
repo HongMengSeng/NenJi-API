@@ -739,7 +739,7 @@
 								<option value="已上架">已上架</option>
 								<option value="已下架">已下架</option>
 							</select>
-							<button class="btn btn-primary" @click="resetSearch">重置筛选</button>
+							<button class="btn btn-default" @click="resetSearch">重置筛选</button>
 						</div>
 					</div>
 
@@ -802,7 +802,7 @@
 										<td>
 											<div class="operation-group">
 												<button class="btn btn-outline btn-inline" @click="openDetailModal(subscription)">查看明细</button>
-												<button class="btn btn-primary btn-inline" @click="editSubscription(subscription)">编辑</button>
+												<button class="btn btn-success btn-inline" @click="editSubscription(subscription)">编辑</button>
 												<button
 													class="btn btn-default btn-inline"
 													@click="toggleStatus(subscription)"
@@ -923,7 +923,7 @@
 				</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeDetailModal">关闭</button>
-					<button class="btn btn-primary" @click="editSubscription(currentDetail)">去编辑</button>
+					<button class="btn btn-success" @click="editSubscription(currentDetail)">去编辑</button>
 				</div>
 			</div>
 		</div>

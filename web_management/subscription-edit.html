@@ -3,8 +3,24 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>农场管理后台-认购一亩田管理-编辑页面</title>
+	<title>农场管理后台-认购一亩田管理-编辑田间档案</title>
 	<style>
+		:root {
+			--soil-950: #3f2b20;
+			--soil-700: #7a5b3c;
+			--soil-500: #a27b54;
+			--soil-200: #e7d7c0;
+			--field-700: #5d7f35;
+			--field-500: #7faa52;
+			--field-200: #e5efd2;
+			--grain-50: #fdf9f2;
+			--grain-100: #f7f0e2;
+			--grain-200: #efe4ce;
+			--ink: #273021;
+			--muted: #6c735f;
+			--white: #ffffff;
+		}
+
 		* {
 			margin: 0;
 			padding: 0;
@@ -14,8 +30,8 @@
 		body {
 			height: 100vh;
 			font-family: "Microsoft YaHei";
-			background: #f5f7fa;
-			color: #1f2937;
+			background: var(--grain-100);
+			color: var(--ink);
 		}
 
 		.main-container {
@@ -25,15 +41,15 @@
 
 		.sidebar {
 			width: 200px;
-			background: #1a202c;
-			color: white;
+			background: var(--soil-950);
+			color: var(--white);
 			padding: 20px 0;
 			flex-shrink: 0;
 		}
 
 		.sidebar-header {
 			padding: 0 20px 20px;
-			border-bottom: 1px solid #2d3748;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 			font-size: 18px;
 			font-weight: bold;
 		}
@@ -46,14 +62,15 @@
 		.sidebar-menu li {
 			padding: 12px 20px;
 			cursor: pointer;
+			transition: background 0.2s ease;
 		}
 
 		.sidebar-menu li:hover {
-			background: #2d3748;
+			background: rgba(127, 170, 82, 0.18);
 		}
 
 		.sidebar-menu li.active {
-			background: #3182ce;
+			background: var(--field-700);
 		}
 
 		.content {
@@ -62,6 +79,7 @@
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
+			background: var(--grain-100);
 		}
 
 		.form-page {
@@ -89,7 +107,8 @@
 			align-items: center;
 			margin-bottom: 20px;
 			padding-bottom: 12px;
-			border-bottom: 1px solid #e2e8f0;
+			border-bottom: 1px solid var(--soil-200);
+			color: var(--soil-700);
 		}
 
 		.user-info {
@@ -102,8 +121,8 @@
 			width: 40px;
 			height: 40px;
 			border-radius: 50%;
-			background: #3182ce;
-			color: white;
+			background: var(--field-700);
+			color: var(--white);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -111,59 +130,78 @@
 		}
 
 		.page-intro {
-			background: linear-gradient(135deg, #effcf3 0%, #f0f9ff 100%);
-			border: 1px solid #d4f1dd;
-			border-radius: 18px;
-			padding: 22px 24px;
+			background: var(--grain-50);
+			border: 1px solid var(--soil-200);
+			border-radius: 22px;
+			padding: 24px 26px;
 			margin-bottom: 20px;
-			box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+			box-shadow: 0 14px 30px rgba(91, 71, 40, 0.08);
 		}
 
 		.page-intro h2 {
-			font-size: 24px;
-			margin-bottom: 8px;
-			color: #0f172a;
+			font-size: 26px;
+			margin-bottom: 10px;
+			color: var(--ink);
 		}
 
-		.page-intro p {
-			font-size: 13px;
-			color: #475569;
-			line-height: 1.7;
+		.page-intro p,
+		.intro-lead {
+			font-size: 14px;
+			color: var(--muted);
+			line-height: 1.8;
 			max-width: 860px;
+		}
+
+		.intro-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 16px;
+		}
+
+		.intro-tag {
+			padding: 8px 12px;
+			border-radius: 999px;
+			border: 1px solid var(--soil-200);
+			background: #f4ecdc;
+			color: var(--soil-700);
+			font-size: 12px;
+			font-weight: 600;
 		}
 
 		.meta-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 12px;
-			margin-top: 16px;
+			margin-top: 18px;
 		}
 
 		.meta-item {
-			background: rgba(255, 255, 255, 0.72);
-			border: 1px solid rgba(255, 255, 255, 0.68);
-			border-radius: 14px;
+			background: #fffaf1;
+			border: 1px solid var(--soil-200);
+			border-radius: 16px;
 			padding: 14px 16px;
 		}
 
 		.meta-label {
 			font-size: 12px;
-			color: #64748b;
+			color: #8a7458;
 			margin-bottom: 6px;
 		}
 
 		.meta-value {
 			font-size: 15px;
 			font-weight: 700;
-			color: #0f172a;
+			color: var(--ink);
 			word-break: break-all;
 		}
 
 		.form-card {
-			background: white;
-			border-radius: 18px;
-			padding: 24px;
-			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+			background: var(--white);
+			border: 1px solid var(--soil-200);
+			border-radius: 22px;
+			padding: 26px;
+			box-shadow: 0 10px 28px rgba(91, 71, 40, 0.08);
 		}
 
 		.form-grid {
@@ -173,10 +211,10 @@
 		}
 
 		.form-section {
-			background: #f8fafc;
-			border: 1px solid #e2e8f0;
-			border-radius: 16px;
-			padding: 20px;
+			background: #fffaf2;
+			border: 1px solid var(--soil-200);
+			border-radius: 18px;
+			padding: 22px;
 		}
 
 		.form-section.full-width {
@@ -184,10 +222,23 @@
 		}
 
 		.section-title {
+			position: relative;
 			font-size: 17px;
 			font-weight: 700;
-			color: #0f172a;
-			margin-bottom: 16px;
+			color: var(--soil-700);
+			margin-bottom: 18px;
+			padding-left: 14px;
+		}
+
+		.section-title::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 4px;
+			bottom: 4px;
+			width: 4px;
+			border-radius: 999px;
+			background: var(--field-500);
 		}
 
 		.field-grid {
@@ -208,7 +259,7 @@
 			display: block;
 			font-size: 14px;
 			font-weight: 700;
-			color: #334155;
+			color: #4b5a36;
 			margin-bottom: 8px;
 		}
 
@@ -216,12 +267,21 @@
 		.form-group select,
 		.form-group textarea {
 			width: 100%;
-			border: 1px solid #dbe2ea;
+			border: 1px solid #d8ccb7;
 			border-radius: 12px;
-			padding: 10px 12px;
+			padding: 11px 12px;
 			font-size: 14px;
-			color: #1f2937;
-			background: white;
+			color: var(--ink);
+			background: #fffdf8;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.form-group input:focus,
+		.form-group select:focus,
+		.form-group textarea:focus {
+			outline: none;
+			border-color: var(--field-500);
+			box-shadow: 0 0 0 3px rgba(127, 170, 82, 0.16);
 		}
 
 		.form-group textarea {
@@ -233,8 +293,8 @@
 		.input-tips {
 			margin-top: 6px;
 			font-size: 12px;
-			color: #64748b;
-			line-height: 1.6;
+			color: #7d755d;
+			line-height: 1.7;
 		}
 
 		.upload-toolbar {
@@ -246,10 +306,10 @@
 		}
 
 		.btn {
-			height: 38px;
-			padding: 0 16px;
+			height: 40px;
+			padding: 0 18px;
 			border: none;
-			border-radius: 10px;
+			border-radius: 999px;
 			cursor: pointer;
 			font-size: 14px;
 			font-weight: 600;
@@ -258,22 +318,28 @@
 
 		.btn:hover {
 			transform: translateY(-1px);
-			box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+			box-shadow: 0 10px 18px rgba(91, 71, 40, 0.12);
 		}
 
 		.btn-success {
-			background: #22c55e;
-			color: white;
+			background: var(--field-700);
+			color: var(--white);
 		}
 
 		.btn-primary {
-			background: #3182ce;
-			color: white;
+			background: var(--soil-700);
+			color: var(--white);
 		}
 
 		.btn-default {
-			background: #e2e8f0;
-			color: #334155;
+			background: #efe5d3;
+			color: var(--soil-700);
+		}
+
+		.btn-outline {
+			background: transparent;
+			border: 1px solid #ccb798;
+			color: var(--soil-700);
 		}
 
 		.hidden-input {
@@ -284,9 +350,9 @@
 		.empty-upload {
 			width: 100%;
 			height: 220px;
-			border-radius: 16px;
-			border: 1px dashed #cbd5e1;
-			background: white;
+			border-radius: 18px;
+			border: 1px dashed #d5c2a4;
+			background: #f8f1e3;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -300,8 +366,19 @@
 		}
 
 		.empty-upload {
-			color: #94a3b8;
+			flex-direction: column;
+			gap: 8px;
+			padding: 0 24px;
+			text-align: center;
+			color: var(--soil-700);
 			font-size: 14px;
+		}
+
+		.empty-upload::before {
+			content: '田间留白';
+			font-size: 12px;
+			letter-spacing: 2px;
+			color: #a18a69;
 		}
 
 		.image-grid {
@@ -311,9 +388,9 @@
 		}
 
 		.image-card {
-			background: white;
-			border: 1px solid #dbe2ea;
-			border-radius: 14px;
+			background: #fffdf8;
+			border: 1px solid var(--soil-200);
+			border-radius: 16px;
 			padding: 10px;
 		}
 
@@ -321,7 +398,7 @@
 			width: 100%;
 			height: 110px;
 			object-fit: cover;
-			border-radius: 10px;
+			border-radius: 12px;
 			display: block;
 			margin-bottom: 10px;
 		}
@@ -330,18 +407,18 @@
 			width: 100%;
 			height: 32px;
 			border: none;
-			border-radius: 8px;
-			background: #fee2e2;
-			color: #b91c1c;
+			border-radius: 999px;
+			background: #e6cf74;
+			color: #6d5521;
 			cursor: pointer;
 			font-size: 13px;
 			font-weight: 600;
 		}
 
 		.form-actions {
-			margin-top: 24px;
+			margin-top: 26px;
 			display: flex;
-			gap: 10px;
+			gap: 12px;
 		}
 
 		@media (max-width: 1100px) {
@@ -366,6 +443,12 @@
 				align-items: flex-start;
 				gap: 12px;
 			}
+
+			.page-intro,
+			.form-card {
+				padding-left: 18px;
+				padding-right: 18px;
+			}
 		}
 	</style>
 </head>
@@ -388,7 +471,7 @@
 				<div class="form-page">
 					<div class="page-fixed-panel">
 						<header class="top-nav">
-							<div>农场管理后台-认购一亩田管理-编辑页面</div>
+							<div>农场管理后台-认购一亩田管理-编辑田间档案</div>
 							<div class="user-info">
 								<div class="user-avatar">用</div>
 								<div>已登录用户</div>
@@ -396,15 +479,20 @@
 						</header>
 
 						<section class="page-intro">
-							<h2>编辑认购套餐</h2>
-							<p>本页与认购套餐列表保持同一套字段结构，适合维护上下架、库存份数、种植周期、收获明细和认购须知。保存后会直接同步回认购套餐列表页。</p>
+							<h2>编辑一亩田认购档案</h2>
+							<p class="intro-lead">根据作物生长和上架安排，随时更新地块状态、库存和认购说明，让前台展示与实际农事进度保持一致。</p>
+							<div class="intro-tags">
+								<span class="intro-tag">库存与状态同步</span>
+								<span class="intro-tag">地块资料随时补全</span>
+								<span class="intro-tag">认购说明保持新鲜</span>
+							</div>
 							<div class="meta-grid">
 								<div class="meta-item">
-									<div class="meta-label">套餐ID</div>
+									<div class="meta-label">档案编号</div>
 									<div class="meta-value">{{ subscriptionId || '--' }}</div>
 								</div>
 								<div class="meta-item">
-									<div class="meta-label">创建时间</div>
+									<div class="meta-label">建档时间</div>
 									<div class="meta-value">{{ createTime || '--' }}</div>
 								</div>
 							</div>
@@ -415,11 +503,11 @@
 						<section class="form-card">
 							<div class="form-grid">
 						<div class="form-section">
-							<div class="section-title">基础信息</div>
+							<div class="section-title">田间基础信息</div>
 							<div class="field-grid">
 								<div class="form-group">
-									<label for="name">套餐名称</label>
-									<input id="name" v-model.trim="form.name" type="text" placeholder="请输入认购套餐名称">
+									<label for="name">认购田块名称</label>
+									<input id="name" v-model.trim="form.name" type="text" placeholder="请输入认购田块或套餐名称">
 								</div>
 								<div class="form-group">
 									<label for="status">状态</label>
@@ -433,16 +521,16 @@
 									<input id="price" v-model.trim="form.price" type="number" min="0" placeholder="请输入认购价格">
 								</div>
 								<div class="form-group">
-									<label for="stock">库存份数</label>
-									<input id="stock" v-model.trim="form.stock" type="number" min="0" placeholder="请输入库存份数">
+									<label for="stock">可认购份数</label>
+									<input id="stock" v-model.trim="form.stock" type="number" min="0" placeholder="请输入可认购份数">
 								</div>
 								<div class="form-group">
-									<label for="square">平方数（㎡）</label>
+									<label for="square">地块面积（㎡）</label>
 									<input id="square" v-model.trim="form.square" type="number" min="0" step="0.1" placeholder="示例：666.7">
 								</div>
 								<div class="form-group">
-									<label for="cycle">种植周期</label>
-									<input id="cycle" v-model.trim="form.cycle" type="text" placeholder="示例：2026-04 至 2026-09">
+									<label for="cycle">农事周期</label>
+									<input id="cycle" v-model.trim="form.cycle" type="text" placeholder="示例：2026-04 播种，2026-09 采收">
 								</div>
 								<div class="form-group">
 									<label for="expectedYield">预计总产量</label>
@@ -452,80 +540,80 @@
 							<div class="form-group">
 								<label for="cropSummary">可收获农产品</label>
 								<input id="cropSummary" v-model.trim="form.cropSummary" type="text" placeholder="示例：番茄 / 黄瓜 / 玉米 / 青菜">
-								<div class="input-tips">建议使用“/”分隔作物，便于列表页摘要展示。</div>
+								<div class="input-tips">建议使用“/”分隔作物，便于列表页按田间清单摘要展示。</div>
 							</div>
 						</div>
 
 						<div class="form-section">
-							<div class="section-title">套餐封面</div>
+							<div class="section-title">田间封面</div>
 							<div class="upload-toolbar">
-								<button class="btn btn-primary" @click="triggerCoverUpload">更换封面图</button>
+								<button class="btn btn-success" @click="triggerCoverUpload">更换田间封面</button>
 								<button class="btn btn-default" v-if="form.cover" @click="clearCoverImage">清空封面</button>
-								<span class="input-tips">支持上传图片并保存为本地预览数据。</span>
+								<span class="input-tips">建议使用地块全景、作物近景或农事记录图。</span>
 								<input ref="coverInput" class="hidden-input" type="file" accept="image/*" @change="handleCoverChange">
 							</div>
 							<div v-if="form.cover" class="cover-preview">
-								<img :src="form.cover" alt="套餐封面预览">
+								<img :src="form.cover" alt="田间封面预览">
 							</div>
-							<div v-else class="empty-upload">暂未选择封面图</div>
+							<div v-else class="empty-upload">暂未上传田间封面</div>
 						</div>
 
 						<div class="form-section full-width">
-							<div class="section-title">轮播图</div>
+							<div class="section-title">田间轮播图</div>
 							<div class="upload-toolbar">
-								<button class="btn btn-primary" @click="triggerCarouselUpload">添加轮播图</button>
-								<span class="input-tips">最多上传 5 张，用于认购展示和明细查看。</span>
+								<button class="btn btn-success" @click="triggerCarouselUpload">继续添加轮播图</button>
+								<span class="input-tips">最多上传 5 张，用于展示地块环境、作物长势和农事过程。</span>
 								<input ref="carouselInput" class="hidden-input" type="file" accept="image/*" multiple @change="handleCarouselChange">
 							</div>
 							<div v-if="form.carouselImages.length" class="image-grid">
 								<div class="image-card" v-for="(image, index) in form.carouselImages" :key="'carousel-' + index">
 									<img :src="image" :alt="'轮播图' + (index + 1)">
-									<button @click="removeCarouselImage(index)">移除轮播图</button>
+									<button @click="removeCarouselImage(index)">移除图片</button>
 								</div>
 							</div>
-							<div v-else class="empty-upload">暂未添加轮播图</div>
+							<div v-else class="empty-upload">还没有轮播图，补几张田头实拍会更完整</div>
 						</div>
 
 						<div class="form-section full-width">
-							<div class="section-title">明细图片</div>
+							<div class="section-title">地块明细图</div>
 							<div class="upload-toolbar">
-								<button class="btn btn-primary" @click="triggerDetailUpload">添加明细图</button>
-								<span class="input-tips">最多上传 5 张，可用于展示搭配图片、地块图片、收获图等。</span>
+								<button class="btn btn-success" @click="triggerDetailUpload">继续添加明细图</button>
+								<span class="input-tips">最多上传 5 张，可补充播种、养护、采收或田块细节。</span>
 								<input ref="detailInput" class="hidden-input" type="file" accept="image/*" multiple @change="handleDetailChange">
 							</div>
 							<div v-if="form.detailImages.length" class="image-grid">
 								<div class="image-card" v-for="(image, index) in form.detailImages" :key="'detail-' + index">
 									<img :src="image" :alt="'明细图' + (index + 1)">
-									<button @click="removeDetailImage(index)">移除明细图</button>
+									<button @click="removeDetailImage(index)">移除图片</button>
 								</div>
 							</div>
-							<div v-else class="empty-upload">暂未添加明细图</div>
+							<div v-else class="empty-upload">还没有明细图，可继续补充农事细节</div>
 						</div>
 
 						<div class="form-section full-width">
-							<div class="section-title">套餐介绍</div>
+							<div class="section-title">田间介绍</div>
 							<div class="form-group">
-								<textarea v-model.trim="form.intro" placeholder="请输入认购套餐介绍，例如适合人群、认购玩法、权益说明等"></textarea>
+								<textarea v-model.trim="form.intro" placeholder="补充这块田适合谁认购、农场会如何种植维护，以及认购后的参与感。"></textarea>
 							</div>
 						</div>
 
 						<div class="form-section full-width">
-							<div class="section-title">收获明细</div>
+							<div class="section-title">预计收获</div>
 							<div class="form-group">
-								<textarea v-model.trim="form.harvestDetail" placeholder="请输入详细的收获明细，例如种植周期内可收获的农产品种类、预计产量等"></textarea>
+								<textarea v-model.trim="form.harvestDetail" placeholder="例如分阶段可收获哪些作物、成熟时间、采收频次与预计产量。"></textarea>
 							</div>
 						</div>
 
 						<div class="form-section full-width">
 							<div class="section-title">认购须知</div>
 							<div class="form-group">
-								<textarea v-model.trim="form.notes" placeholder="请输入认购须知，例如联系人填写要求、支付后订单说明、售后规则等"></textarea>
+								<textarea v-model.trim="form.notes" placeholder="例如看田预约方式、配送或自提说明、服务边界和售后规则。"></textarea>
 							</div>
 						</div>
 					</div>
 
 					<div class="form-actions">
-						<button class="btn btn-success" @click="updateSubscription">保存修改</button>
+						<button class="btn btn-success" @click="updateSubscription">保存田间调整</button>
 						<button class="btn btn-default" @click="cancel">取消</button>
 					</div>
 						</section>
@@ -785,7 +873,7 @@
 						cropSummary: this.form.cropSummary,
 						expectedYield: this.form.expectedYield,
 						status: this.form.status,
-						cover: this.form.cover || window.SubscriptionStore.createPlaceholderImage(this.form.name || '认购套餐', '认购套餐封面图', '#16a34a', '#4ade80'),
+						cover: this.form.cover || window.SubscriptionStore.createPlaceholderImage(this.form.name || '一亩田认购', '田间封面待补充', '#7faa52', '#c88e5a'),
 						carouselImages: this.form.carouselImages,
 						detailImages: this.form.detailImages,
 						intro: this.form.intro,

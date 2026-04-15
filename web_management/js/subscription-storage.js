@@ -32,26 +32,74 @@
 		].join(':');
 	}
 
+	function escapeSvgText(value) {
+		return String(value || '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
 	function createPlaceholderImage(title, subtitle, colorStart, colorEnd) {
+		var safeTitle = escapeSvgText(title || '一亩田认购');
+		var safeSubtitle = escapeSvgText(subtitle || '田间封面待补充');
+		var fieldColor = colorStart || '#7faa52';
+		var soilColor = colorEnd || '#c88e5a';
 		var svg = [
 			'<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480">',
-			'<defs>',
-			'<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
-			'<stop offset="0%" stop-color="' + colorStart + '"/>',
-			'<stop offset="100%" stop-color="' + colorEnd + '"/>',
-			'</linearGradient>',
-			'</defs>',
-			'<rect width="720" height="480" rx="32" fill="url(#bg)"/>',
-			'<circle cx="612" cy="108" r="68" fill="rgba(255,255,255,0.14)"/>',
-			'<circle cx="126" cy="390" r="82" fill="rgba(255,255,255,0.1)"/>',
-			'<path d="M0 360 C120 290 180 420 300 360 C420 300 520 420 720 310 L720 480 L0 480 Z" fill="rgba(255,255,255,0.18)"/>',
-			'<text x="64" y="190" fill="#ffffff" font-size="42" font-family="Microsoft YaHei, sans-serif" font-weight="700">' + title + '</text>',
-			'<text x="64" y="246" fill="rgba(255,255,255,0.92)" font-size="24" font-family="Microsoft YaHei, sans-serif">' + subtitle + '</text>',
-			'<text x="64" y="402" fill="rgba(255,255,255,0.88)" font-size="20" font-family="Microsoft YaHei, sans-serif">农场认购套餐展示图</text>',
+			'<rect width="720" height="480" rx="32" fill="#f7f1e6"/>',
+			'<rect x="40" y="40" width="640" height="400" rx="28" fill="#fffaf1" stroke="#e6d7bc" stroke-width="2"/>',
+			'<circle cx="592" cy="128" r="42" fill="#f2d89b"/>',
+			'<path d="M80 326 C180 274 258 288 352 328 C438 364 536 366 640 308 L640 400 L80 400 Z" fill="#dce6bf"/>',
+			'<path d="M80 354 C190 308 282 320 376 356 C470 392 560 392 640 340 L640 400 L80 400 Z" fill="' + fieldColor + '"/>',
+			'<path d="M80 384 C198 350 304 356 414 384 C514 408 580 402 640 374 L640 400 L80 400 Z" fill="' + soilColor + '"/>',
+			'<path d="M548 188 C548 160 566 136 592 124 C594 150 588 175 574 198 Z" fill="#7faa52"/>',
+			'<path d="M594 198 C578 172 578 142 592 124 C614 142 626 170 624 198 Z" fill="#93bb60"/>',
+			'<path d="M574 198 L600 198" stroke="#6b8f43" stroke-width="4" stroke-linecap="round"/>',
+			'<text x="78" y="158" fill="#547333" font-size="18" font-family="Microsoft YaHei, sans-serif" font-weight="700" letter-spacing="3">FARM NOTE</text>',
+			'<text x="78" y="222" fill="#31402a" font-size="40" font-family="Microsoft YaHei, sans-serif" font-weight="700">' + safeTitle + '</text>',
+			'<text x="78" y="274" fill="#7a5b3c" font-size="24" font-family="Microsoft YaHei, sans-serif">' + safeSubtitle + '</text>',
+			'<text x="78" y="336" fill="#9d7d58" font-size="20" font-family="Microsoft YaHei, sans-serif">农场风认购档案占位图</text>',
 			'</svg>'
 		].join('');
 
 		return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+	}
+
+	function decodeSvgContent(value) {
+		if (typeof value !== 'string' || value.indexOf('data:image/svg+xml') !== 0) {
+			return '';
+		}
+
+		try {
+			return decodeURIComponent(value.split(',')[1] || '');
+		} catch (error) {
+			return '';
+		}
+	}
+
+	function isLegacyPlaceholderImage(value) {
+		var svg = decodeSvgContent(value);
+
+		return Boolean(svg) && (
+			svg.indexOf('农场认购套餐展示图') !== -1 ||
+			(
+				svg.indexOf('<linearGradient id="bg"') !== -1 &&
+				svg.indexOf('fill="url(#bg)"') !== -1 &&
+				svg.indexOf('Microsoft YaHei, sans-serif') !== -1
+			)
+		);
+	}
+
+	function usePlaceholderIfNeeded(value, title, subtitle, colorStart, colorEnd) {
+		var text = value === null || value === undefined ? '' : String(value).trim();
+
+		if (!text || isLegacyPlaceholderImage(text)) {
+			return createPlaceholderImage(title, subtitle, colorStart, colorEnd);
+		}
+
+		return text;
 	}
 
 	function ensureArray(value) {
@@ -122,9 +170,12 @@
 		var name = normalizeText(raw.name || raw.packageName || raw.title, '认购套餐' + (index + 1));
 		var carouselImages = ensureArray(raw.carouselImages || raw.banners || raw.carousel || raw.slides);
 		var detailImages = ensureArray(raw.detailImages || raw.specImages || raw.detailPics || raw.images);
-		var cover = normalizeText(
+		var cover = usePlaceholderIfNeeded(
 			raw.cover || raw.coverImage || carouselImages[0] || detailImages[0],
-			createPlaceholderImage(name, '认购套餐封面图', '#16a34a', '#4ade80')
+			name,
+			'田间封面待补充',
+			'#7faa52',
+			'#c88e5a'
 		);
 		var cropSummary = normalizeText(
 			raw.cropSummary || raw.products || raw.harvestList || raw.minYield,
@@ -156,12 +207,28 @@
 		);
 		var normalizedCarouselImages = (carouselImages.length ? carouselImages : [
 			cover,
-			createPlaceholderImage(name, '种植周期展示图', '#0ea5e9', '#2563eb')
-		]).slice(0, 5);
+			createPlaceholderImage(name, '农事周期记录', '#93bb60', '#b57b4a')
+		]).map(function (image, imageIndex) {
+			return usePlaceholderIfNeeded(
+				image,
+				name,
+				imageIndex === 0 ? '田间封面待补充' : '农事周期记录',
+				imageIndex === 0 ? '#7faa52' : '#93bb60',
+				imageIndex === 0 ? '#c88e5a' : '#b57b4a'
+			);
+		}).slice(0, 5);
 		var normalizedDetailImages = (detailImages.length ? detailImages : [
-			createPlaceholderImage(name, '收获明细示意图', '#f59e0b', '#f97316'),
-			createPlaceholderImage(name, '搭配图片', '#14b8a6', '#22c55e')
-		]).slice(0, 5);
+			createPlaceholderImage(name, '收获记录待补充', '#cfb17a', '#b57b4a'),
+			createPlaceholderImage(name, '田间细节待补充', '#8ead63', '#d2a46c')
+		]).map(function (image, imageIndex) {
+			return usePlaceholderIfNeeded(
+				image,
+				name,
+				imageIndex === 0 ? '收获记录待补充' : '田间细节待补充',
+				imageIndex === 0 ? '#cfb17a' : '#8ead63',
+				imageIndex === 0 ? '#b57b4a' : '#d2a46c'
+			);
+		}).slice(0, 5);
 
 		return {
 			id: normalizeText(raw.id, 'SUB' + Date.now() + String(index || 0).padStart(3, '0')),
@@ -206,14 +273,14 @@
 				intro: '适合家庭长期认购，覆盖春夏一整个种植周期，搭配田间巡园和阶段采收提醒。',
 				harvestDetail: '1. 番茄预计收获约 220 斤\n2. 黄瓜预计收获约 180 斤\n3. 玉米预计收获约 200 斤\n4. 青菜预计收获约 200 斤',
 				notes: '在线认购需填写联系人信息和联系方式；支付成功后自动生成认购订单，可在订单中心查看认购详情。',
-				cover: createPlaceholderImage('春季时令一亩田认购', '番茄 黄瓜 玉米 青菜', '#16a34a', '#4ade80'),
+				cover: createPlaceholderImage('春季时令一亩田认购', '番茄 黄瓜 玉米 青菜', '#7faa52', '#c88e5a'),
 				carouselImages: [
-					createPlaceholderImage('春季时令一亩田认购', '地块航拍图', '#16a34a', '#4ade80'),
-					createPlaceholderImage('春季时令一亩田认购', '田间实拍图', '#0ea5e9', '#2563eb')
+					createPlaceholderImage('春季时令一亩田认购', '地块全景记录', '#7faa52', '#c88e5a'),
+					createPlaceholderImage('春季时令一亩田认购', '作物长势记录', '#93bb60', '#b57b4a')
 				],
 				detailImages: [
-					createPlaceholderImage('春季时令一亩田认购', '套餐明细图', '#f59e0b', '#f97316'),
-					createPlaceholderImage('春季时令一亩田认购', '收获示意图', '#14b8a6', '#22c55e')
+					createPlaceholderImage('春季时令一亩田认购', '田块作物清单', '#cfb17a', '#b57b4a'),
+					createPlaceholderImage('春季时令一亩田认购', '采收节奏示意', '#8ead63', '#d2a46c')
 				]
 			}, 0),
 			normalizeSubscription({
@@ -230,14 +297,14 @@
 				intro: '适合亲子家庭参与认购，包含亲子采摘体验、种植科普讲解和阶段性收获安排。',
 				harvestDetail: '1. 草莓预计收获约 120 斤\n2. 生菜预计收获约 140 斤\n3. 胡萝卜预计收获约 180 斤\n4. 南瓜预计收获约 240 斤',
 				notes: '支持线上认购与订单查询；如需到场体验，系统可在订单中心查看预约提醒。',
-				cover: createPlaceholderImage('亲子体验一亩田认购', '草莓 生菜 胡萝卜 南瓜', '#ec4899', '#f97316'),
+				cover: createPlaceholderImage('亲子体验一亩田认购', '草莓 生菜 胡萝卜 南瓜', '#8ead63', '#d2a46c'),
 				carouselImages: [
-					createPlaceholderImage('亲子体验一亩田认购', '亲子巡田图', '#ec4899', '#f97316'),
-					createPlaceholderImage('亲子体验一亩田认购', '采摘体验图', '#f59e0b', '#facc15')
+					createPlaceholderImage('亲子体验一亩田认购', '亲子巡田记录', '#8ead63', '#d2a46c'),
+					createPlaceholderImage('亲子体验一亩田认购', '采摘时光记录', '#cfb17a', '#b57b4a')
 				],
 				detailImages: [
-					createPlaceholderImage('亲子体验一亩田认购', '套餐明细图', '#8b5cf6', '#6366f1'),
-					createPlaceholderImage('亲子体验一亩田认购', '作物产出图', '#06b6d4', '#0ea5e9')
+					createPlaceholderImage('亲子体验一亩田认购', '认购体验清单', '#cfb17a', '#b57b4a'),
+					createPlaceholderImage('亲子体验一亩田认购', '作物成熟记录', '#7faa52', '#c88e5a')
 				]
 			}, 1),
 			normalizeSubscription({
@@ -254,14 +321,14 @@
 				intro: '适合企业团建和员工福利场景，套餐支持统一认购、采收分配和地块展示。',
 				harvestDetail: '1. 西红柿预计收获约 260 斤\n2. 茄子预计收获约 220 斤\n3. 玉米预计收获约 260 斤\n4. 秋葵预计收获约 180 斤\n5. 豆角预计收获约 280 斤',
 				notes: '后台支持上下架、编辑套餐信息；支付成功后可在订单中心查看联系人、联系方式和认购详情。',
-				cover: createPlaceholderImage('企业团建共享田认购', '西红柿 茄子 玉米 秋葵', '#0f766e', '#22c55e'),
+				cover: createPlaceholderImage('企业团建共享田认购', '西红柿 茄子 玉米 秋葵', '#7faa52', '#b57b4a'),
 				carouselImages: [
-					createPlaceholderImage('企业团建共享田认购', '共享田展示图', '#0f766e', '#22c55e'),
-					createPlaceholderImage('企业团建共享田认购', '采收安排图', '#2563eb', '#38bdf8')
+					createPlaceholderImage('企业团建共享田认购', '共享田全景记录', '#7faa52', '#b57b4a'),
+					createPlaceholderImage('企业团建共享田认购', '团建采收安排', '#93bb60', '#d2a46c')
 				],
 				detailImages: [
-					createPlaceholderImage('企业团建共享田认购', '认购内容图', '#7c3aed', '#a855f7'),
-					createPlaceholderImage('企业团建共享田认购', '作物结构图', '#f97316', '#fb923c')
+					createPlaceholderImage('企业团建共享田认购', '认购权益清单', '#cfb17a', '#b57b4a'),
+					createPlaceholderImage('企业团建共享田认购', '作物结构记录', '#8ead63', '#d2a46c')
 				]
 			}, 2)
 		];
