@@ -58,12 +58,22 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 只替换 127.0.0.1:5000 为 192.168.203.56，不影响其他URL
+      if (imageUrl.includes('127.0.0.1:5000')) {
+        imageUrl = imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
+      }
+      // 如果已经是正确的URL格式，直接返回
+      return imageUrl;
     }
     
     // 如果是相对路径，添加基础 URL
-    return 'http://192.168.203.56' + imageUrl;
+    // 确保基础 URL 后面有斜杠
+    const baseUrl = 'http://192.168.203.56';
+    // 确保图片路径以斜杠开头
+    if (!imageUrl.startsWith('/')) {
+      imageUrl = '/' + imageUrl;
+    }
+    return baseUrl + imageUrl;
   },
 
   getUserProfilePreview() {

@@ -17,7 +17,7 @@
       <view class="activity-info">
         <view class="activity-title">{{item.title}}</view>
         <view class="activity-meta">
-          <view class="activity-price">{{item.price}}</view>
+          <view class="activity-price">￥{{item.price}}</view>
           <view class="activity-date">{{item.date}}</view>
         </view>
       </view>

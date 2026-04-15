@@ -1,4 +1,4 @@
-<!--pages/buy/buy.wxml-->
+﻿<!--pages/buy/buy.wxml-->
 <view class="container">
   <!-- 头部导航 -->
   <view class="header">
@@ -112,7 +112,7 @@
     <view wx:for="{{products}}" wx:key="id" class="product-item">
       <view class="product-info">
         <text class="product-name">{{item.name}}</text>
-        <text class="product-price">¥{{item.price}}</text>
+        <text class="product-price">￥{{item.price}}</text>
       </view>
       <view class="product-quantity">x{{item.quantity}}</view>
     </view>
@@ -137,7 +137,7 @@
   <!-- 合计 -->
   <view class="total-section">
     <text class="total-label">合计：</text>
-    <text class="total-price">¥{{totalAmount}}</text>
+    <text class="total-price">￥{{totalAmount}}</text>
   </view>
 
   <!-- 提交订单按钮 -->

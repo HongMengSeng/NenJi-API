@@ -1,4 +1,4 @@
-Page({
+﻿Page({
   data: {
     keyword: '',
     searching: false,
@@ -132,7 +132,9 @@ Page({
       // 清理数据中的图片路径
       const searchResults = (data.goods || []).map(item => ({
         ...item,
-        image: this.processImageUrl(item.image)
+        image: this.processImageUrl(item.image),
+        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
+        originalPrice: item.originalPrice ? item.originalPrice.toString().replace(/[¥￥]/g, '') : item.originalPrice
       }));
 
       this.setData({

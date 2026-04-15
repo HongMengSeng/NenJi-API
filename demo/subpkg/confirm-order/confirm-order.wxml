@@ -1,4 +1,4 @@
-<!-- 确认订单页面 -->
+﻿<!-- 确认订单页面 -->
 <view class="container">
   <!-- 订单商品列表 -->
   <view class="order-items">
@@ -7,7 +7,7 @@
       <image class="item-image" src="{{item.image}}" />
       <view class="item-info">
         <view class="item-name">{{item.name}}</view>
-        <view class="item-price">¥{{item.price}}</view>
+        <view class="item-price">￥{{item.price}}</view>
       </view>
       <view class="item-quantity">x{{item.quantity}}</view>
     </view>
@@ -33,7 +33,7 @@
     </view>
     <view class="summary-item">
       <text>合计</text>
-      <text class="total-price">¥{{orderInfo.totalPrice}}</text>
+      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
     </view>
   </view>
 
@@ -41,7 +41,7 @@
   <view class="bottom-bar">
     <view class="total-info">
       <text>合计：</text>
-      <text class="total-price">¥{{orderInfo.totalPrice}}</text>
+      <text class="total-price">￥{{orderInfo.totalPrice}}</text>
     </view>
     <button class="confirm-btn" bindtap="confirmOrder" disabled="{{loading}}">
       确认订单

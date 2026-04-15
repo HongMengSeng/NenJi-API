@@ -17,8 +17,9 @@
         <view class="acre-name">{{item.name}}</view>
         <view class="acre-desc">{{item.description}}</view>
         <view class="price-container">
-          <view class="acre-price">{{item.price}}</view>
-          <button class="buy-button" bindtap="navigateToDetail" data-id="{{item.id}}">立即购买</button>
+          <view class="acre-price">￥{{item.price}}</view>
+          <button class="buy-button" wx:if="{{item.status !== 'soldOut'}}" bindtap="navigateToDetail" data-id="{{item.id}}">立即购买</button>
+          <view class="sold-out-text" wx:else>已售空</view>
         </view>
       </view>
     </view>

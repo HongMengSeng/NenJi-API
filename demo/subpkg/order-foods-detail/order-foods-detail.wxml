@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
 
   <!-- 商品图片 -->
   <view class="goods-image-container">
@@ -7,7 +7,7 @@
 
   <!-- 商品信息 -->
   <view class="goods-info">
-    <view class="price">¥{{goods.price}}</view>
+    <view class="price">￥{{goods.price}}</view>
     <view class="name">{{goods.name}}</view>
     <view class="desc">{{goods.desc || '新鲜食材，农场直供'}}</view>
     <view class="sales-info">

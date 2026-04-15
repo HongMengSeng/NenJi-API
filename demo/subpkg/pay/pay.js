@@ -1,4 +1,4 @@
-const { api, request } = require('../../utils/api');
+﻿const { api, request } = require('../../utils/api');
 
 Page({
   data: {
@@ -53,7 +53,7 @@ Page({
     wx.showLoading({ title: '加载订单中...' });
     api.order.getDetail(this.data.orderId)
       .then((orderData) => {
-        const amount = Number(orderData.totalPrice || 0);
+        const amount = Number((orderData.totalPrice || 0).toString().replace(/[¥￥]/g, ''));
         if (amount <= 0) {
           throw new Error('order amount invalid');
         }

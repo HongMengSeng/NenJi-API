@@ -130,13 +130,6 @@
   align-items: baseline;
 }
 
-.acre-price::before {
-  content: '¥';
-  font-size: 24rpx;
-  margin-right: 4rpx;
-  font-weight: 600;
-}
-
 /* 购买按钮 */
 .buy-button {
   background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
@@ -159,6 +152,23 @@
 .buy-button:active {
   transform: scale(0.95);
   box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.2);
+}
+
+/* 已售空文本 */
+.sold-out-text {
+  background: #e8e8e8;
+  color: #999;
+  border: none;
+  border-radius: 16rpx;
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  height: 64rpx;
+  line-height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 标签样式 */

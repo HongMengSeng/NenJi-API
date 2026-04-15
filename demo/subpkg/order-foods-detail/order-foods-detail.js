@@ -1,4 +1,4 @@
-const api = require('../../utils/api').api;
+﻿const api = require('../../utils/api').api;
 
 Page({
   data: {
@@ -44,7 +44,8 @@ Page({
         const goods = {
           ...data,
           sold: goodsData.sold !== undefined ? goodsData.sold : (data.sold || data.sales || 0),
-          stock: goodsData.stock !== undefined ? goodsData.stock : (data.stock || 0)
+          stock: goodsData.stock !== undefined ? goodsData.stock : (data.stock || 0),
+          price: data.price ? data.price.toString().replace(/[¥￥]/g, '') : data.price
         };
         this.setData({
           goods: goods,

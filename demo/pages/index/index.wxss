@@ -324,13 +324,6 @@
   align-items: baseline;
 }
 
-.project-price-small::before {
-  content: '¥';
-  font-size: 24rpx;
-  margin-right: 4rpx;
-  font-weight: 600;
-}
-
 .project-price-unit {
   font-size: 20rpx;
   color: #999;
@@ -433,12 +426,6 @@
   font-size: 32rpx;
   font-weight: 700;
   margin-top: auto;
-}
-
-.goods-price::before {
-  content: '¥';
-  font-size: 24rpx;
-  margin-right: 4rpx;
 }
 
 .goods-original-price {

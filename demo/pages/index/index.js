@@ -59,15 +59,19 @@ Page({
         })),
         farmGoods: (data.farmGoods || []).map(item => ({
           ...item,
-          image: this.processImageUrl(item.image)
+          image: this.processImageUrl(item.image),
+          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
+          originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice
         })),
         hotDishes: (data.hotDishes || []).map(item => ({
           ...item,
-          image: this.processImageUrl(item.image)
+          image: this.processImageUrl(item.image),
+          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price
         })),
         acreProjects: (data.acreProjects || []).map(item => ({
           ...item,
-          image: this.processImageUrl(item.image)
+          image: this.processImageUrl(item.image),
+          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price
         }))
       }
       

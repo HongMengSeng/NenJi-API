@@ -22,8 +22,13 @@ Page({
     })
       .then(res => {
         wx.hideLoading();
+        // 清理价格中的符号
+        const cleanedList = (res.list || []).map(item => ({
+          ...item,
+          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price
+        }));
         this.setData({
-          acreList: res.list,
+          acreList: cleanedList,
           swiperList: res.swiperList
         });
       })

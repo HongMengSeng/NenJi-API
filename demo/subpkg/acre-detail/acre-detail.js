@@ -63,7 +63,8 @@ Page({
         longExampleImage: cleanData.longExampleImage, // 农场示例图片
         bottomImages: cleanData.bottomImages, // 底部图片列表
         longExampleImages: cleanData.longExampleImages, // 长图示例
-        longExampleImageList: cleanData.longExampleImageList // 长图列表
+        longExampleImageList: cleanData.longExampleImageList, // 长图列表
+        price: typeof cleanData.price === 'string' ? cleanData.price.replace(/[¥￥]/g, '') : cleanData.price // 清理价格符号
       };
       
       this.setData({
@@ -90,7 +91,7 @@ Page({
   
   confirmPurchase: function() {
     const remainingAcres = this.data.acreDetail.remainingAcres || 0;
-    const price = this.data.acreDetail.price || '¥0';
+    const price = this.data.acreDetail.price || '￥0';
     
     // 检查是否已卖完
     if (remainingAcres <= 0) {

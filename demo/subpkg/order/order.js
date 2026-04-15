@@ -1,4 +1,4 @@
-const api = require('../../utils/api');
+﻿const api = require('../../utils/api');
 
 Page({
   data: {
@@ -140,7 +140,8 @@ Page({
       
       return {
         ...item,
-        image: imageUrl
+        image: imageUrl,
+        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
       }
     })
   },
