@@ -18,7 +18,8 @@ Page({
       },
       items: [],
       paymentMethod: null,
-      transactionId: null
+      transactionId: null,
+      logistics: [] // 物流信息
     },
     loading: true
   },
@@ -59,28 +60,32 @@ Page({
     wx.showLoading({ title: '加载中...' });
 
     api.order.getDetail(orderId)
-      .then((data) => {
-        // 处理订单数据，添加活动订单标识和二维码
-        const orderData = data || {
-          id: orderId,
-          type: '',
-          typeText: '',
-          status: '',
-          statusText: '',
-          createTime: '',
-          paymentTime: null,
-          shippingTime: null,
-          completeTime: null,
-          totalPrice: 0,
-          shippingAddress: {
-            name: '',
-            phone: '',
-            address: ''
-          },
-          items: [],
-          paymentMethod: null,
-          transactionId: null
-        };
+      .then((orderData) => {
+        console.log('获取订单详情成功，数据:', orderData);
+        // 处理新API返回的数据格式
+        if (!orderData) {
+          orderData = {
+            id: orderId,
+            type: '',
+            typeText: '',
+            status: '',
+            statusText: '',
+            createTime: '',
+            paymentTime: null,
+            shippingTime: null,
+            completeTime: null,
+            totalPrice: 0,
+            shippingAddress: {
+              name: '',
+              phone: '',
+              address: ''
+            },
+            items: [],
+            paymentMethod: null,
+            transactionId: null,
+            logistics: []
+          };
+        }
         
         // 处理订单商品图片路径
         orderData.items = (orderData.items || []).map(item => ({
@@ -244,6 +249,15 @@ Page({
   applyRefund() {
     wx.showModal({
       title: '请联系能记家庭农场客服进行退款',
+      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
+      showCancel: false
+    });
+  },
+
+  // 联系客服
+  contactService() {
+    wx.showModal({
+      title: '能记家庭农场客服',
       content: '手机号：15876534944\n     微信号：njjtnc15876534944',
       showCancel: false
     });

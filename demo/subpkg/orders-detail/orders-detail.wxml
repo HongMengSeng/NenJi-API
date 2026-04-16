@@ -1,4 +1,4 @@
-﻿<view class="container">
+<view class="container">
 
 
   <!-- 订单状态 -->
@@ -11,6 +11,24 @@
         <image class="qrcode-image" src="{{order.qrcode}}" mode="aspectFit" />
         <view class="qrcode-hint">请保存二维码，活动现场出示</view>
       </view>
+    </view>
+  </view>
+
+  <!-- 物流详情（非活动订单和非认购一亩订单，且已发货时显示） -->
+  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="logistics-section">
+    <view class="section-title">物流详情</view>
+    <view wx:if="{{order.logistics && order.logistics.length > 0}}" class="logistics-list">
+      <view wx:for="{{order.logistics}}" wx:key="index" class="logistics-item {{index === 0 ? 'current' : ''}}">
+        <view class="logistics-dot"></view>
+        <view class="logistics-line" wx:if="{{index !== order.logistics.length - 1}}"></view>
+        <view class="logistics-content">
+          <view class="logistics-time">{{item.time}}</view>
+          <view class="logistics-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="no-logistics">
+      <text>暂无物流信息</text>
     </view>
   </view>
 
@@ -37,7 +55,7 @@
       <view class="section-title">订单信息</view>
       <view class="info-item">
         <view class="info-label">订单号</view>
-        <view class="info-value">{{order.id}}</view>
+        <view class="info-value">{{order.orderNumber || order.id}}</view>
       </view>
       <view class="info-item">
         <view class="info-label">下单时间</view>
@@ -99,6 +117,8 @@
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="action-btn secondary-btn" bindtap="markShipping">模拟发货</button>
     <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="action-btn primary-btn" bindtap="applyRefund">申请退款</button>
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="action-btn secondary-btn" bindtap="confirmReceipt">确认收货</button>
+    <!-- 客服按钮 -->
+    <button class="action-btn secondary-btn" bindtap="contactService">联系客服</button>
   </view>
   </view>
 </view>

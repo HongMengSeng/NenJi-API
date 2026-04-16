@@ -1,13 +1,4 @@
 <view class="container">
-  <!-- 头部导航 -->
-  <view class="header">
-    <view class="header-left" bindtap="goBack">
-    </view>
-    <text class="header-title">返回活动页面</text>
-    <view class="header-right">
-    </view>
-  </view>
-
   <!-- 活动图片 -->
   <image class="activity-image" src="{{activity.image}}" />
   

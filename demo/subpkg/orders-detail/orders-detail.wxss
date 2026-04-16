@@ -105,6 +105,94 @@
   }
 }
 
+/* 物流详情 */
+.logistics-section {
+  background-color: #fff;
+  margin: 20rpx;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.logistics-list {
+  margin-top: 20rpx;
+}
+
+.logistics-item {
+  display: flex;
+  position: relative;
+  padding-bottom: 40rpx;
+}
+
+.logistics-item.current {
+  padding-bottom: 20rpx;
+}
+
+.logistics-dot {
+  width: 20rpx;
+  height: 20rpx;
+  background-color: #d4a76a;
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.logistics-item.current .logistics-dot {
+  width: 24rpx;
+  height: 24rpx;
+  margin-top: 2rpx;
+  box-shadow: 0 0 0 6rpx rgba(212, 167, 106, 0.2);
+}
+
+.logistics-line {
+  width: 2rpx;
+  background-color: #e0e0e0;
+  position: absolute;
+  left: 9rpx;
+  top: 28rpx;
+  bottom: 0;
+  z-index: 1;
+}
+
+.logistics-content {
+  margin-left: 20rpx;
+  flex: 1;
+}
+
+.logistics-time {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.logistics-item.current .logistics-time {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.logistics-desc {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+.logistics-item.current .logistics-desc {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.no-logistics {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx 0;
+  color: #999;
+  font-size: 26rpx;
+}
+
 /* 加载中 */
 .loading {
   display: flex;

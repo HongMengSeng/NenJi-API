@@ -12,11 +12,20 @@
       <video
         class="detail-swiper-video"
         src="{{acreDetail.videoUrl}}"
-        autoplay="{{true}}"
-        loop="{{true}}"
-        muted="{{true}}"
-        controls="{{false}}"
+        poster="{{acreDetail.coverImage && acreDetail.coverImage.startsWith('http') ? acreDetail.coverImage : ''}}"
+        controls="true"
+        autoplay="false"
+        loop="false"
+        muted="false"
         object-fit="cover"
+        show-center-play-btn="true"
+        enable-progress-gesture="true"
+        show-play-btn="true"
+        show-fullscreen-btn="true"
+        enable-playback-rate="true"
+        volume="1.0"
+        show-mute-btn="true"
+        show-volume-btn="true"
       />
     </swiper-item>
     <!-- 其他轮播项显示图片 -->

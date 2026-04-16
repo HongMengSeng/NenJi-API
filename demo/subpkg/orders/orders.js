@@ -7,19 +7,20 @@ Page({
     scrollToView: '', // 用于滚动到指定标签
     tabs: [
       { key: 'all', name: '全部' },
-      { key: 'food', name: '点餐' },
-      { key: 'acre', name: '认购' },
-      { key: 'activity', name: '活动' },
-      { key: 'cart', name: '购物车' },
       { key: 'pending', name: '待付款' },
       { key: 'paid', name: '待发货' },
       { key: 'shipping', name: '待收货' },
     ],
+    searchKeyword: '', // 搜索关键词
+    searching: false, // 搜索中状态
     orders: [],
     loading: true,
     isRequesting: false, // 防止重复请求
     isPageVisible: false // 页面是否可见
   },
+  
+  // 防抖计时器
+  searchTimer: null,
 
   onLoad(options) {
     console.log('Orders page onLoad, options:', options);
@@ -30,6 +31,7 @@ Page({
       tab = options.tab;
     }
     console.log('Current activeTab:', tab);
+    
     this.setData({
       activeTab: tab,
       scrollToView: 'tab-' + tab,
@@ -49,6 +51,35 @@ Page({
   onHide() {
     // 页面隐藏时标记为不可见
     this.setData({ isPageVisible: false });
+  },
+
+  // 搜索输入事件
+  onSearchInput(e) {
+    const keyword = e.detail.value;
+    this.setData({
+      searchKeyword: keyword
+    });
+    
+    // 清除之前的计时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    
+    // 防抖处理，300毫秒后执行搜索
+    this.searchTimer = setTimeout(() => {
+      if (keyword.trim()) {
+        // 自动搜索时不保存搜索历史
+        this.getOrders();
+      } else {
+        // 输入框为空时，重新加载订单
+        this.getOrders();
+      }
+    }, 300);
+  },
+
+  // 搜索订单
+  searchOrders() {
+    this.getOrders();
   },
 
   // 处理图片路径，确保使用正确的基础 URL
@@ -85,7 +116,7 @@ Page({
       return;
     }
     
-    this.setData({ isRequesting: true, loading: true });
+    this.setData({ isRequesting: true, loading: true, searching: true });
 
     let orderType = this.data.currentOrderType;
     let status = '';
@@ -108,6 +139,7 @@ Page({
     api.order.getList({
       type: orderType,
       status: status,
+      keyword: this.data.searchKeyword,
       page: 1,
       pageSize: 10,
       sortBy: 'createTime',
@@ -115,9 +147,9 @@ Page({
     })
       .then((data) => {
         console.log('获取订单列表成功，数据:', data);
-        // 处理订单商品图片路径，添加数据验证
+        // 处理新API返回的数据格式
         let ordersData = [];
-        if (data && Array.isArray(data.orders)) {
+        if (data && data.orders && Array.isArray(data.orders)) {
           ordersData = data.orders;
         } else if (data && Array.isArray(data)) {
           ordersData = data;
@@ -125,26 +157,37 @@ Page({
         
         const orders = ordersData.map(order => ({
           ...order,
+          // 使用新API的字段
+          type: order.type,
+          typeText: order.typeText,
+          statusText: order.statusText,
+          orderNumber: order.orderNumber,
           totalPrice: order.totalPrice ? order.totalPrice.toString().replace(/[¥￥]/g, '') : order.totalPrice,
-          items: ((order.items || []).map(item => ({
+          items: (order.items || []).map(item => ({
             ...item,
             image: this.processImageUrl(item.image),
             price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price
-          })))
+          }))
         }));
         
         this.setData({
           orders: orders,
-          loading: false
+          loading: false,
+          searching: false,
+          isRequesting: false
         });
       })
       .catch((err) => {
         console.error('获取订单列表失败:', err);
-        this.setData({ loading: false, orders: [] });
-      })
-      .finally(() => {
-        this.setData({ isRequesting: false });
-        wx.hideLoading();
+        this.setData({
+          loading: false,
+          searching: false,
+          isRequesting: false
+        });
+        wx.showToast({
+          title: '获取订单失败，请重试',
+          icon: 'none'
+        });
       });
   },
 
@@ -183,10 +226,6 @@ Page({
     });
   },
 
-  goBack() {
-    wx.navigateBack();
-  },
-
   // 删除订单
   deleteOrder(e) {
     const orderId = e.currentTarget.dataset.orderId;
@@ -222,6 +261,28 @@ Page({
             });
         }
       }
+    });
+  },
+
+  // 查看订单详情
+  viewOrderDetail(e) {
+    const orderId = e.currentTarget.dataset.orderId;
+    wx.navigateTo({
+      url: `/subpkg/orders-detail/orders-detail?id=${orderId}`
+    });
+  },
+
+  // 去逛逛
+  goToShop() {
+    wx.switchTab({
+      url: '/pages/index/index'
+    });
+  },
+
+  // 返回首页
+  goBack() {
+    wx.switchTab({
+      url: '/pages/index/index'
     });
   }
 });

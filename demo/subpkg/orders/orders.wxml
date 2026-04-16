@@ -1,4 +1,22 @@
 <view class="container">
+  <!-- 导航栏 - 微信风格 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <view class="nav-title">订单</view>
+    <view class="nav-placeholder"></view>
+  </view>
+  
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-box">
+      <text class="search-icon"></text>
+      <input class="search-input" placeholder="搜索订单号或商品名称" value="{{searchKeyword}}" bindinput="onSearchInput" />
+      <view class="search-btn" bindtap="searchOrders">搜索</view>
+    </view>
+  </view>
+
   <!-- 标签栏 -->
   <view class="tab-bar">
     <scroll-view scroll-x enable-flex scroll-into-view="{{scrollToView}}" scroll-with-animation>
@@ -30,21 +48,18 @@
       <!-- 有订单的情况 -->
       <block wx:if="{{orders.length > 0}}">
         <view class="order-card" wx:for="{{orders}}" wx:key="id">
-          <view class="order-header">
+          <view class="order-header" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
             <view class="order-top">
               <view class="order-type" wx:if="{{item.type}}">
-                <text class="type-tag" wx:if="{{item.type === 'food'}}">点餐</text>
-                <text class="type-tag" wx:elif="{{item.type === 'acre'}}">认购</text>
-                <text class="type-tag" wx:elif="{{item.type === 'activity'}}">活动</text>
-                <text class="type-tag" wx:elif="{{item.type === 'cart'}}">购物车</text>
+                <text class="type-tag">{{item.typeText}}</text>
               </view>
-              <view class="order-id">订单号：{{item.id}}</view>
+              <view class="order-id">订单号：{{item.orderNumber}}</view>
             </view>
             <view class="order-status">{{item.statusText}}</view>
           </view>
           
           <view class="order-content">
-            <view class="order-items">
+            <view class="order-items" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
               <view class="order-item-row" wx:for="{{item.items}}" wx:for-item="goods" wx:key="index">
                 <image class="item-image" src="{{goods.image}}" />
                 <view class="item-info">
@@ -55,7 +70,7 @@
             </view>
             
             <view class="order-footer">
-              <view class="order-total">
+              <view class="order-total" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
                 <text>共{{item.items.length}}件商品</text>
                 <text class="total-price">合计：￥{{item.totalPrice}}</text>
               </view>
@@ -64,7 +79,7 @@
                 <button 
                   wx:if="{{item.status === 'pending'}}"
                   class="action-btn primary-btn"
-                  bindtap="payOrder"
+                  catchtap="payOrder"
                   data-order-id="{{item.id}}"
                 >
                   去支付
@@ -72,7 +87,7 @@
                 <button 
                   wx:if="{{item.status === 'pending'}}"
                   class="action-btn delete-btn"
-                  bindtap="deleteOrder"
+                  catchtap="deleteOrder"
                   data-order-id="{{item.id}}"
                 >
                   删除
@@ -80,7 +95,7 @@
                 <button 
                   wx:else
                   class="action-btn secondary-btn"
-                  bindtap="viewOrderDetail"
+                  catchtap="viewOrderDetail"
                   data-order-id="{{item.id}}"
                 >
                   查看详情
@@ -93,12 +108,12 @@
 
       <!-- 无订单的情况 -->
       <block wx:else>
-        <view class="empty-order">
+        <view class="empty-order" bindtap="goToShop">
           <view class="empty-icon">
             <text class="icon">📋</text>
           </view>
           <view class="empty-text">您当前没有订单呢</view>
-          <view class="empty-hint">去逛逛农场美食吧</view>
+          <view class="empty-hint">去逛逛农场美食吧 →</view>
         </view>
       </block>
     </block>

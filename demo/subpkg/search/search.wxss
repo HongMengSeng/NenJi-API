@@ -236,11 +236,31 @@
 /* 无结果 */
 .no-results {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 100rpx 0;
+  padding: 150rpx 0;
   color: #999;
   font-size: 28rpx;
+}
+
+.no-results-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.4;
+}
+
+.no-results-text {
+  font-size: 30rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.no-results-hint {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
 }
 
 /* 响应式设计 */
