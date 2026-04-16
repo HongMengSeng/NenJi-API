@@ -13,7 +13,9 @@ Page({
     ],
     searchKeyword: '', // 搜索关键词
     searching: false, // 搜索中状态
-    orders: [],
+    allOrders: [], // 原始订单数据
+    orders: [], // 显示的订单数据
+    noSearchResult: false, // 是否无搜索结果
     loading: true,
     isRequesting: false, // 防止重复请求
     isPageVisible: false // 页面是否可见
@@ -60,26 +62,31 @@ Page({
       searchKeyword: keyword
     });
     
-    // 清除之前的计时器
-    if (this.searchTimer) {
-      clearTimeout(this.searchTimer);
-    }
+    // 使用本地搜索过滤
+    this.applyLocalSearchFilter(keyword);
+  },
+
+  // 应用本地搜索过滤
+  applyLocalSearchFilter: function (keyword) {
+    const filteredOrders = this.filterOrders(this.data.allOrders, keyword);
+    const hasSearchKeyword = keyword && keyword.trim();
+    const noSearchResult = hasSearchKeyword && filteredOrders.length === 0 && this.data.allOrders.length > 0;
     
-    // 防抖处理，300毫秒后执行搜索
-    this.searchTimer = setTimeout(() => {
-      if (keyword.trim()) {
-        // 自动搜索时不保存搜索历史
-        this.getOrders();
-      } else {
-        // 输入框为空时，重新加载订单
-        this.getOrders();
-      }
-    }, 300);
+    this.setData({
+      orders: filteredOrders,
+      noSearchResult: noSearchResult
+    });
   },
 
   // 搜索订单
   searchOrders() {
-    this.getOrders();
+    // 如果有原始数据，直接使用本地过滤
+    if (this.data.allOrders && this.data.allOrders.length > 0) {
+      this.applyLocalSearchFilter(this.data.searchKeyword);
+    } else {
+      // 如果没有原始数据，重新请求
+      this.getOrders();
+    }
   },
 
   // 处理图片路径，确保使用正确的基础 URL
@@ -107,6 +114,34 @@ Page({
       imageUrl = '/' + imageUrl;
     }
     return baseUrl + imageUrl;
+  },
+
+  // 本地搜索过滤订单
+  filterOrders: function (orders, keyword) {
+    if (!keyword || !keyword.trim()) {
+      return orders;
+    }
+    
+    const searchKey = keyword.trim().toLowerCase();
+    return orders.filter(order => {
+      // 搜索订单号（支持模糊匹配，包含任意部分都能匹配）
+      if (order.orderNumber && String(order.orderNumber).toLowerCase().includes(searchKey)) {
+        return true;
+      }
+      // 搜索订单类型
+      if (order.typeText && order.typeText.toLowerCase().includes(searchKey)) {
+        return true;
+      }
+      // 搜索商品名称
+      if (order.items && order.items.length > 0) {
+        for (let item of order.items) {
+          if (item.name && item.name.toLowerCase().includes(searchKey)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
   },
 
   getOrders() {
@@ -139,7 +174,6 @@ Page({
     api.order.getList({
       type: orderType,
       status: status,
-      keyword: this.data.searchKeyword,
       page: 1,
       pageSize: 10,
       sortBy: 'createTime',
@@ -155,7 +189,7 @@ Page({
           ordersData = data;
         }
         
-        const orders = ordersData.map(order => ({
+        const allOrders = ordersData.map(order => ({
           ...order,
           // 使用新API的字段
           type: order.type,
@@ -170,8 +204,15 @@ Page({
           }))
         }));
         
+        // 根据搜索关键词过滤订单
+        const filteredOrders = this.filterOrders(allOrders, this.data.searchKeyword);
+        const hasSearchKeyword = this.data.searchKeyword && this.data.searchKeyword.trim();
+        const noSearchResult = hasSearchKeyword && filteredOrders.length === 0 && allOrders.length > 0;
+        
         this.setData({
-          orders: orders,
+          allOrders: allOrders,
+          orders: filteredOrders,
+          noSearchResult: noSearchResult,
           loading: false,
           searching: false,
           isRequesting: false

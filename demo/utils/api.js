@@ -303,6 +303,30 @@ const api = {
     updateAddress: (id, data) => put(`/api/user/address/${id}`, data),
     // 删除地址
     deleteAddress: (id) => del(`/api/user/address/${id}`)
+  },
+
+  // 支付相关
+  pay: {
+    // 获取可用支付方式
+    getMethods: () => get('/api/pay/methods'),
+    // 创建微信 JSAPI 支付
+    createJsapi: (orderId, options = {}) => post('/api/pay/jsapi', { orderId, ...options }),
+    // 兼容发起支付接口
+    initiatePayment: (orderId, options = {}) => post('/api/pay/initiate-payment', { orderId, ...options }),
+    // 查询本地订单支付状态
+    getStatus: (orderId) => get('/api/pay/status', { orderId }),
+    // 微信查单并同步状态
+    queryStatus: (orderId) => post('/api/pay/query-payment-status', { orderId }),
+    // 获取支付页展示信息
+    getInfo: (orderId) => get('/api/pay/info', { orderId })
+  },
+
+  // 物流相关
+  logistics: {
+    // 获取物流详情
+    getDetail: (orderId) => get(`/api/logistics/${orderId}`),
+    // 获取物流轨迹
+    getTrace: (orderId) => get(`/api/logistics/${orderId}/trace`)
   }
 };
 

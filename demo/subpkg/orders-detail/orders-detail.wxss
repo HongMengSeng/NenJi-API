@@ -114,6 +114,26 @@
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
 }
 
+.logistics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.view-more {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.arrow {
+  font-size: 32rpx;
+  margin-left: 4rpx;
+  font-weight: 300;
+}
+
 .logistics-list {
   margin-top: 20rpx;
 }

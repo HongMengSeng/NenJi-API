@@ -23,6 +23,7 @@
                 "buy/buy",
                 "orders/orders",
                 "orders-detail/orders-detail",
+                "logistics-detail/logistics-detail",
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",

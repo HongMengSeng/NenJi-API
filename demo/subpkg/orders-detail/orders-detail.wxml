@@ -16,7 +16,13 @@
 
   <!-- 物流详情（非活动订单和非认购一亩订单，且已发货时显示） -->
   <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="logistics-section">
-    <view class="section-title">物流详情</view>
+    <view class="logistics-header" bindtap="goToLogisticsDetail">
+      <view class="section-title">物流详情</view>
+      <view class="view-more">
+        <text>查看全部</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
     <view wx:if="{{order.logistics && order.logistics.length > 0}}" class="logistics-list">
       <view wx:for="{{order.logistics}}" wx:key="index" class="logistics-item {{index === 0 ? 'current' : ''}}">
         <view class="logistics-dot"></view>

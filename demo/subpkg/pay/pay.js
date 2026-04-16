@@ -78,7 +78,7 @@ Page({
 
   // 开始支付
   startPayment: function () {
-    if (!this.data.orderId || this.data.totalPrice <= 0) {
+    if (!this.data.orderId) {
       this.setData({
         loading: false,
         payStatus: 'failed'
@@ -92,29 +92,86 @@ Page({
 
     this.setData({ loading: true });
 
-    // 构建支付请求参数
-    const requestData = {
-      paymentMethod: 'wechat',
-      amount: this.data.totalPrice
-    };
+    // 调用新的微信支付 API 创建 JSAPI 支付参数
+    api.pay.createJsapi(this.data.orderId, {
+      description: `能记农场订单 ${this.data.orderId}`
+    })
+      .then((data) => {
+        // 检查订单是否已经支付
+        if (data.paymentStatus === 1 && !data.payParams) {
+          this.setData({ loading: false });
+          this.setData({ payStatus: 'success' });
+          wx.showToast({
+            title: '订单已支付',
+            icon: 'success'
+          });
+          return;
+        }
 
-    // 调用支付API
-    api.order.pay(this.data.orderId, requestData)
+        // 检查是否有 payParams
+        if (!data.payParams) {
+          throw new Error('支付参数获取失败');
+        }
+
+        // 调起微信支付
+        return this.requestWeChatPayment(data.payParams);
+      })
       .then(() => {
-        this.setData({ loading: false });
-        this.setData({ payStatus: 'success' });
+        // 微信支付成功，查询支付状态
+        return api.pay.queryStatus(this.data.orderId);
+      })
+      .then((status) => {
+        if (status && status.paid) {
+          this.setData({ loading: false });
+          this.setData({ payStatus: 'success' });
+          wx.showToast({
+            title: '支付成功',
+            icon: 'success'
+          });
+        } else {
+          throw new Error('支付状态异常');
+        }
       })
       .catch((err) => {
-        console.error('发起支付失败:', err);
+        console.error('支付失败:', err);
         this.setData({
           loading: false,
           payStatus: 'failed'
         });
-        wx.showToast({
-          title: '发起支付失败',
-          icon: 'none'
-        });
+        if (err.errMsg && err.errMsg.indexOf('requestPayment:fail') !== -1) {
+          if (err.errMsg.indexOf('cancel') !== -1) {
+            wx.showToast({
+              title: '支付已取消',
+              icon: 'none'
+            });
+          } else {
+            wx.showToast({
+              title: '支付失败',
+              icon: 'none'
+            });
+          }
+        } else {
+          wx.showToast({
+            title: err.message || '支付失败',
+            icon: 'none'
+          });
+        }
       });
+  },
+
+  // 调起微信支付
+  requestWeChatPayment: function (payParams) {
+    return new Promise((resolve, reject) => {
+      wx.requestPayment({
+        timeStamp: String(payParams.timeStamp),
+        nonceStr: payParams.nonceStr,
+        package: payParams.package,
+        signType: payParams.signType,
+        paySign: payParams.paySign,
+        success: resolve,
+        fail: reject
+      });
+    });
   },
 
   // 重新支付

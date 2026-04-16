@@ -1,4 +1,4 @@
-﻿const { api } = require('../../utils/api');
+const { api } = require('../../utils/api');
 
 Page({
   data: {
@@ -260,6 +260,21 @@ Page({
       title: '能记家庭农场客服',
       content: '手机号：15876534944\n     微信号：njjtnc15876534944',
       showCancel: false
+    });
+  },
+
+  // 跳转到物流详情页
+  goToLogisticsDetail() {
+    const orderId = this.data.order.id;
+    if (!orderId) {
+      wx.showToast({
+        title: '订单ID获取失败',
+        icon: 'none'
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: `/subpkg/logistics-detail/logistics-detail?orderId=${orderId}`
     });
   }
 });

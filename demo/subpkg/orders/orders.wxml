@@ -12,7 +12,7 @@
   <view class="search-bar">
     <view class="search-box">
       <text class="search-icon"></text>
-      <input class="search-input" placeholder="搜索订单号或商品名称" value="{{searchKeyword}}" bindinput="onSearchInput" />
+      <input class="search-input" placeholder="搜索订单号或订单类型" value="{{searchKeyword}}" bindinput="onSearchInput" />
       <view class="search-btn" bindtap="searchOrders">搜索</view>
     </view>
   </view>
@@ -45,8 +45,19 @@
 
     <!-- 订单列表 -->
     <block wx:else>
+      <!-- 搜索无结果的情况 -->
+      <block wx:if="{{noSearchResult}}">
+        <view class="empty-order">
+          <view class="empty-icon">
+            <text class="icon">🔍</text>
+          </view>
+          <view class="empty-text">未找到相关订单</view>
+          <view class="empty-hint">试试其他关键词吧</view>
+        </view>
+      </block>
+
       <!-- 有订单的情况 -->
-      <block wx:if="{{orders.length > 0}}">
+      <block wx:elif="{{orders.length > 0}}">
         <view class="order-card" wx:for="{{orders}}" wx:key="id">
           <view class="order-header" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
             <view class="order-top">
