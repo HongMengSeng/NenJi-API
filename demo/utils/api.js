@@ -261,6 +261,8 @@ const api = {
     getDetail: (id) => get(`/api/orders/${id}`),
     // 取消订单
     cancel: (id) => put(`/api/orders/${id}/status`, { status: 'cancelled' }),
+    // 删除订单
+    delete: (id) => del(`/api/orders/${id}`),
     // 支付订单
     pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data),
     // 更新订单状态

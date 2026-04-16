@@ -27,12 +27,14 @@ Page({
     minPrice: '',
     maxPrice: '',
     cartCount: 0,
-    cart: {}
+    cart: {},
+    filterIconUrl: ''
   },
 
   onLoad() {
     this.getFarmGoodsData();
     this.updateCartCount();
+    this.getFilterIcon();
   },
 
   onShow() {
@@ -484,5 +486,51 @@ Page({
     if (!this.data.loadingMore && this.data.hasMore) {
       this.loadCategoryGoods(this.data.currentCategory, true);
     }
+  },
+
+  // 获取筛选图标
+  getFilterIcon() {
+    const iconName = 'PriceFilter.png';
+    const cacheKey = `filter_icon_${iconName}`;
+    
+    // 首先检查本地缓存
+    try {
+      const cachedIcon = wx.getStorageSync(cacheKey);
+      if (cachedIcon) {
+        this.setData({ filterIconUrl: cachedIcon });
+        return;
+      }
+    } catch (e) {
+      console.error('读取缓存失败:', e);
+    }
+    
+    // 如果没有缓存，从API获取
+    const iconUrl = `http://192.168.203.56/api/file/image/${iconName}`;
+    
+    // 下载图标到本地
+    wx.downloadFile({
+      url: iconUrl,
+      success: (res) => {
+        if (res.statusCode === 200) {
+          // 缓存到本地
+          try {
+            wx.setStorageSync(cacheKey, res.tempFilePath);
+            this.setData({ filterIconUrl: res.tempFilePath });
+          } catch (e) {
+            console.error('缓存图标失败:', e);
+            // 即使缓存失败，也使用临时路径
+            this.setData({ filterIconUrl: res.tempFilePath });
+          }
+        } else {
+          // 下载失败，使用默认URL
+          this.setData({ filterIconUrl: iconUrl });
+        }
+      },
+      fail: (err) => {
+        console.error('下载图标失败:', err);
+        // 失败时使用默认URL
+        this.setData({ filterIconUrl: iconUrl });
+      }
+    });
   }
 });
