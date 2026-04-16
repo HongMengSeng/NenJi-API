@@ -88,15 +88,27 @@
     <text class="more" bindtap="navigateToFarmGoods">查看更多</text>
   </view>
   <view class="goods-list">
-    <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
-      <view class="goods-info">
+    <view class="goods-item" wx:for="{{farmGoods}}" wx:key="id">
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
+      <view class="goods-info" bindtap="navigateToGoodsDetail" data-id="{{item.id}}">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">
           <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
         </view>
         <view class="goods-price">￥{{item.price}}<text class="goods-original-price">￥{{item.originalPrice}}</text></view>
         <view class="goods-stock {{item.stock === 0 ? 'stock-out' : item.stock < 10 ? 'stock-low' : ''}}">{{item.stock === 0 ? '已售罄' : '还剩' + item.stock + '份'}}</view>
+      </view>
+      <view 
+        class="add-cart-btn" 
+        bindtap="addToCart" 
+        data-id="{{item.id}}" 
+        data-name="{{item.name}}" 
+        data-price="{{item.price}}" 
+        data-image="{{item.image}}" 
+        data-type="goods"
+        data-stock="{{item.stock}}"
+      >
+        +
       </view>
     </view>
   </view>
@@ -107,14 +119,26 @@
     <text class="more" bindtap="navigateToOrder">查看更多</text>
   </view>
   <view class="goods-list">
-    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
-      <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
-      <view class="goods-info">
+    <view class="goods-item" wx:for="{{hotDishes}}" wx:key="id">
+      <image class="goods-image" src="{{item.image}}" mode="aspectFill" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}" />
+      <view class="goods-info" bindtap="navigateToOrderFoodsDetail" data-id="{{item.id}}">
         <view class="goods-name">{{item.name}}</view>
         <view class="goods-tags">
           <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
         </view>
         <view class="goods-price">￥{{item.price}}</view>
+      </view>
+      <view 
+        class="add-cart-btn" 
+        bindtap="addToCart" 
+        data-id="{{item.id}}" 
+        data-name="{{item.name}}" 
+        data-price="{{item.price}}" 
+        data-image="{{item.image}}" 
+        data-type="food"
+        data-stock="{{item.stock}}"
+      >
+        +
       </view>
     </view>
   </view>

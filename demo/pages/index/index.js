@@ -11,7 +11,11 @@ Page({
 
     videos:[],
     // 加载状态
-    loading: true
+    loading: true,
+    
+    // 购物车数据
+    cart: {},
+    cartCount: 0
   },
 
   onLoad: function () {
@@ -193,5 +197,59 @@ Page({
     const fullScreen = e.detail.fullScreen;
     console.log('视频全屏状态变化:', fullScreen);
     // 可以在这里添加全屏状态变化的逻辑
+  },
+
+  // 添加商品到购物车
+  addToCart(e) {
+    const { id, name, price, image, type, stock } = e.currentTarget.dataset;
+    
+    // 获取当前购物车数据
+    const cartList = wx.getStorageSync('cartList') || [];
+    
+    // 查找是否已存在该商品
+    const existingIndex = cartList.findIndex(item => String(item.id) === String(id));
+    
+    if (existingIndex >= 0) {
+      // 如果已存在，增加数量
+      const newQuantity = cartList[existingIndex].count + 1;
+      if (stock && newQuantity > stock) {
+        wx.showToast({ title: '库存不足', icon: 'none' });
+        return;
+      }
+      cartList[existingIndex].count = newQuantity;
+    } else {
+      // 如果不存在，添加新商品
+      cartList.push({
+        id: String(id),
+        name: name,
+        price: Number((price || 0).toString().replace(/[¥￥]/g, '')),
+        image: image,
+        count: 1,
+        type: type || 'goods', // goods: 商品, food: 点餐
+        checked: false,
+        stock: stock || 999
+      });
+    }
+    
+    // 保存到本地存储
+    wx.setStorageSync('cartList', cartList);
+    
+    // 更新购物车计数
+    this.updateCartCount();
+    
+    // 显示添加成功提示
+    wx.showToast({ title: '已添加到购物车', icon: 'success' });
+  },
+
+  // 更新购物车计数
+  updateCartCount() {
+    const cartList = wx.getStorageSync('cartList') || [];
+    const totalCount = cartList.reduce((sum, item) => sum + (item.count || 0), 0);
+    this.setData({ cartCount: totalCount });
+  },
+
+  // 页面显示时更新购物车计数
+  onShow() {
+    this.updateCartCount();
   }
 })

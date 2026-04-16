@@ -467,6 +467,34 @@
   border: 1rpx solid #F1B0B7;
 }
 
+/* 添加到购物车按钮 */
+.add-cart-btn {
+  position: absolute;
+  right: 20rpx;
+  bottom: 20rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D4A76A 0%, #C99A5A 100%);
+  color: #fff;
+  font-size: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.4);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.add-cart-btn:active {
+  transform: scale(0.9);
+  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.3);
+}
+
+.goods-item {
+  position: relative;
+}
+
 /* 响应式设计 */
 @media (max-width: 375px) {
   .swiper-item {
