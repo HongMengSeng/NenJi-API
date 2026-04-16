@@ -931,11 +931,10 @@
 												<tr v-for="order in productOrders" :key="order.orderId">
 													<td>
 														<div class="cell-main">{{ order.orderId }}</div>
-														<span class="cell-sub">共 {{ order.itemCount || 0 }} 件商品</span>
 													</td>
 													<td>
 														<div class="cell-main">{{ getProductLogisticsTypeDisplay(order) }}</div>
-														<span class="cell-sub">{{ getProductLogisticsTypeNote(order) }}</span>
+														<span v-if="getProductLogisticsTypeNote(order)" class="cell-sub">{{ getProductLogisticsTypeNote(order) }}</span>
 													</td>
 													<td>
 														<div class="status-stack">
@@ -1538,13 +1537,7 @@
 				},
 
 				getProductLogisticsTypeNote(order) {
-					if (!order) {
-						return '';
-					}
-
-					return this.isManagedProductOrder(order)
-						? '物流单号在明细中查看'
-						: '';
+					return '';
 				},
 
 				getProductStatusNote(order) {
