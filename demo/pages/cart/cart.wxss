@@ -93,30 +93,42 @@
   .region-header {
     display: flex;
     align-items: center;
-    padding: 16rpx 24rpx;
+    padding: 20rpx 24rpx;
     background-color: #FAF6F0;
     border-bottom: 1rpx solid #F0E6D2;
   }
 
+  .region-checkbox {
+    padding-right: 16rpx;
+  }
+
+  .region-title {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+
   .region-name {
-    font-size: 26rpx;
+    font-size: 28rpx;
     font-weight: 600;
     color: #333;
-    flex: 1;
+  }
+
+  .region-count {
+    font-size: 24rpx;
+    color: #999;
+    margin-left: 8rpx;
   }
 
   /* 到店吃选项 */
   .take-away-option {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding: 16rpx 24rpx;
-    background-color: #FAF6F0;
-    border-bottom: 1rpx solid #F0E6D2;
+    margin-left: auto;
   }
 
   .take-away-option text {
-    font-size: 22rpx;
+    font-size: 24rpx;
     color: #666;
     margin-right: 8rpx;
   }
@@ -560,78 +572,119 @@
   }
 
   .settle-section {
+    background-color: #FAF6F0;
+    border-radius: 16rpx;
+    padding: 0;
     margin-bottom: 24rpx;
-    padding-bottom: 16rpx;
-    border-bottom: 1rpx solid #F5F5F5;
+    overflow: hidden;
   }
 
-  .settle-section:last-child {
-    border-bottom: none;
+  .settle-section-header {
+    display: flex;
+    align-items: center;
+    padding: 20rpx 24rpx;
+    border-bottom: 1rpx solid #F0E6D2;
   }
 
-  .section-header {
+  .section-name {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+    margin-right: 12rpx;
+  }
+
+  .section-tag {
+    font-size: 20rpx;
+    color: #fff;
+    background-color: #D4A76A;
+    padding: 4rpx 12rpx;
+    border-radius: 4rpx;
+  }
+
+  .settle-content {
+    padding: 20rpx 24rpx;
+  }
+
+  .settle-goods-preview {
+    display: flex;
+    align-items: center;
     margin-bottom: 12rpx;
   }
 
-  .section-title {
-    font-size: 26rpx;
-    font-weight: 600;
-    color: #333;
+  .preview-img {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 8rpx;
+    margin-right: 8rpx;
+    background-color: #fff;
   }
 
-  .section-total {
+  .preview-more {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 8rpx;
+    background-color: #fff;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
-    margin-top: 12rpx;
-    margin-bottom: 16rpx;
-    padding-top: 12rpx;
-    border-top: 1rpx solid #F5F5F5;
+    justify-content: center;
   }
 
-  .section-total-label {
+  .preview-more text {
+    font-size: 24rpx;
+    color: #999;
+  }
+
+  .settle-section-desc {
+    font-size: 24rpx;
+    color: #666;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .settle-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16rpx 24rpx;
+    background-color: #fff;
+  }
+
+  .settle-total {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .settle-label {
     font-size: 24rpx;
     color: #666;
     margin-right: 8rpx;
   }
 
-  .section-total-price {
-    font-size: 26rpx;
+  .settle-price {
+    font-size: 32rpx;
     font-weight: 600;
     color: #D4A76A;
   }
 
-  .section-settle {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .section-settle-btn {
+  .settle-btn {
     background-color: #D4A76A;
     color: #fff;
     border: none;
-    border-radius: 8rpx;
-    padding: 12rpx 32rpx;
-    font-size: 24rpx;
+    border-radius: 40rpx;
+    padding: 12rpx 40rpx;
+    font-size: 26rpx;
     font-weight: 500;
+    box-shadow: 0 4rpx 12rpx rgba(212, 167, 106, 0.3);
   }
 
-  .section-settle-btn::after {
+  .settle-btn::after {
     border: none;
   }
 
-  /* 提示信息 */
-  .settle-tip {
-    background-color: #FFF9E6;
-    border-radius: 8rpx;
-    padding: 16rpx;
-    margin-top: 16rpx;
-    margin-bottom: 20rpx;
-  }
-
-  .settle-tip text {
-    font-size: 24rpx;
-    color: #D4A76A;
-    text-align: center;
-    display: block;
+  .settle-btn:active {
+    opacity: 0.9;
+    transform: scale(0.98);
   }

@@ -227,8 +227,10 @@ Page({
   restoreCart(cart) {
     let count = 0, total = 0
     Object.values(cart || {}).forEach(item => {
-      count += item.quantity || 0
-      total += (item.price || 0) * (item.quantity || 0)
+      const qty = parseInt(item.quantity) || parseInt(item.count) || 0
+      const price = parseFloat(item.price) || 0
+      count += qty
+      total += price * qty
     })
     this.setData({
       cart: cart || {},

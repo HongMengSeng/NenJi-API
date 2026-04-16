@@ -76,8 +76,26 @@ Page({
   groupItemsByRegion() {
     const cartList = this.data.cartList;
     const regions = {
-      food: { name: '点餐', selected: false, items: [], totalPrice: '0.00' },
-      goods: { name: '商品', selected: false, items: [], totalPrice: '0.00' }
+      food: { 
+        name: '点餐', 
+        selected: false, 
+        items: [], 
+        totalPrice: '0.00',
+        checkedItems: [],
+        checkedItemNames: [],
+        previewImages: [],
+        moreCount: 0
+      }, 
+      goods: { 
+        name: '商品', 
+        selected: false, 
+        items: [], 
+        totalPrice: '0.00',
+        checkedItems: [],
+        checkedItemNames: [],
+        previewImages: [],
+        moreCount: 0
+      }
     };
 
     // 按照商品类型分组
@@ -92,12 +110,19 @@ Page({
     // 检查每个区域是否有选中的商品，并计算每个区域的总价格
     Object.keys(regions).forEach(key => {
       const region = regions[key];
-      region.selected = region.items.some(item => item.checked);
+      // 获取选中的商品
+      const checkedItems = region.items.filter(item => item.checked);
+      region.checkedItems = checkedItems;
+      region.selected = checkedItems.length > 0;
       // 计算区域总价格
-      const totalPrice = region.items
-        .filter(item => item.checked)
-        .reduce((total, item) => total + (item.price * item.count), 0);
+      const totalPrice = checkedItems.reduce((total, item) => total + (item.price * item.count), 0);
       region.totalPrice = totalPrice.toFixed(2);
+      // 获取选中商品名称
+      region.checkedItemNames = checkedItems.map(item => item.name);
+      // 获取预览图片（最多3张）
+      region.previewImages = checkedItems.slice(0, 3).map(item => item.image);
+      // 计算超出数量
+      region.moreCount = checkedItems.length > 3 ? checkedItems.length - 3 : 0;
     });
 
     this.setData({ regions });
@@ -451,10 +476,11 @@ Page({
   // 切换区域选中状态
   toggleRegionSelect(e) {
     const region = e.currentTarget.dataset.region;
+    const currentRegionSelected = this.data.regions[region].selected;
     const cartList = this.data.cartList.map(item => ({
       ...item,
-      // 如果商品属于当前区域，切换其选中状态
-      checked: item.type === region ? !this.data.regions[region].selected : item.checked
+      // 如果商品属于当前区域，设置选中状态为当前状态的反值
+      checked: item.type === region ? !currentRegionSelected : item.checked
     }));
     
     this.syncCart(cartList);
@@ -483,14 +509,51 @@ Page({
       return;
     }
 
+    // 获取选中的点餐商品
+    const foodItems = this.getCheckedItemsByType('food');
+    if (!foodItems.length) {
+      wx.showToast({
+        title: '请选择点餐商品',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 同步到 orderCart，格式转换为 order 页面需要的格式
+    const orderCart = {};
+    foodItems.forEach(item => {
+      orderCart[item.id] = {
+        ...item,
+        quantity: item.count,
+        price: parseFloat(item.price)
+      };
+    });
+
+    try {
+      wx.setStorageSync('orderCart', orderCart);
+    } catch (e) {}
+
     this.setData({ showSeparateSettleModal: false }, () => {
-      this.createOrderByType('food');
+      // 点餐跳转到 order 页面
+      wx.navigateTo({
+        url: '/subpkg/order/order'
+      });
     });
   },
 
   // 结算商品区域
   settleGoods() {
+    const goodsItems = this.getCheckedItemsByType('goods');
+    if (!goodsItems.length) {
+      wx.showToast({
+        title: '请选择商品',
+        icon: 'none'
+      });
+      return;
+    }
+
     this.setData({ showSeparateSettleModal: false }, () => {
+      // 商品跳转到 orders 支付页面
       this.createOrderByType('goods');
     });
   }
