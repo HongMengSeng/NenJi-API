@@ -22,7 +22,7 @@ namespace WebAdminApi.Controllers
         /// 角色管理控制器
         /// </summary>
         [ApiController]
-        [Route("api/back-user/role")]
+        [Route("api/user/role")]
         public class RoleController : ControllerBase
         {
             /// <summary>

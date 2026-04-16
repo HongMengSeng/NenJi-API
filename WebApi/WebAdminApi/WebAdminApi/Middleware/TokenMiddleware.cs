@@ -21,11 +21,11 @@ namespace WebAdminApi.Middleware
             // 需要 Token 验证的受保护路径
             var protectedPaths = new[]
             {
-                "/api/user/list",
-                "/api/user/add",
-                "/api/user/edit",
-                "/api/user/delete",
-                "/api/user/changeStatus"
+                "/api/back-user/list",
+                "/api/back-user/add",
+                "/api/back-user/edit",
+                "/api/back-user/delete",
+                "/api/back-user/changeStatus"
             };
 
             if (protectedPaths.Any(p => path?.StartsWith(p) == true))
