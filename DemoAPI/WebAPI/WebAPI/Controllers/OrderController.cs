@@ -17,6 +17,7 @@ namespace WebAPI.Controllers;
 [Route("api/order")]
 public class OrderController : ControllerBase
 {
+    private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
     private readonly IInventoryStatsService _inventoryStatsService;
 
@@ -198,9 +199,22 @@ public class OrderController : ControllerBase
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-            var address = await _dbContext.ShippingAddresses
+            ShippingAddress? address = null;
+            if (normalizedRequest.AddressId > 0)
+            {
+                address = await _dbContext.ShippingAddresses
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        x => x.AddressId == normalizedRequest.AddressId && x.UserId == userId,
+                        cancellationToken);
+            }
+
+            address ??= await _dbContext.ShippingAddresses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AddressId == normalizedRequest.AddressId && x.UserId == userId, cancellationToken);
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => EF.Property<bool>(x, DefaultFlagProperty))
+                .ThenByDescending(x => x.AddressId)
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (address is null)
             {
@@ -468,7 +482,7 @@ public class OrderController : ControllerBase
 
             var address = await _dbContext.ShippingAddresses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AddressId == order.AddressId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.AddressId == order.AddressId && x.UserId == userId, cancellationToken);
 
             var details = await _dbContext.OrderDetails
                 .AsNoTracking()

@@ -109,16 +109,6 @@ public class AuthController : ControllerBase
                 _dbContext.Users.Add(user);
             }
 
-            // 如果前端传了手机号授权码，尝试获取并更新手机号
-            if (!string.IsNullOrWhiteSpace(request.PhoneCode))
-            {
-                var purePhone = await InternalGetPhoneNumberAsync(request.PhoneCode, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(purePhone))
-                {
-                    user.PhoneNumber = purePhone;
-                }
-            }
-
             if (!string.IsNullOrWhiteSpace(request.Avatar))
             {
                 user.WxImage = request.Avatar.Trim();
@@ -154,6 +144,123 @@ public class AuthController : ControllerBase
             Console.WriteLine(ex.ToString());
             Console.WriteLine("===================================");
 
+            return Ok(ApiResult.Fail("服务器内部异常，请稍后再试"));
+        }
+    }
+
+    /// <summary>
+    /// 微信手机号快捷登录
+    /// 前端需传 wx.login 的 code + getPhoneNumber 的 phoneCode
+    /// </summary>
+    [HttpPost("wx-phone-login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResult>> WxPhoneLogin(
+        [FromBody] WxPhoneLoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.PhoneCode))
+            {
+                return Ok(ApiResult.Fail("code and phoneCode are required"));
+            }
+
+            var appId = _configuration["WeChat:AppId"];
+            var appSecret = _configuration["WeChat:AppSecret"];
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+            {
+                return Ok(ApiResult.Fail("wechat config missing"));
+            }
+
+            var wxSession = await GetWechatSessionAsync(appId, appSecret, request.Code, cancellationToken);
+            if (wxSession is null)
+            {
+                return Ok(ApiResult.Fail("wechat login failed"));
+            }
+
+            if (wxSession.ErrCode.HasValue && wxSession.ErrCode.Value != 0)
+            {
+                return Ok(ApiResult.Fail(wxSession.ErrMsg ?? "wechat login failed", wxSession.ErrCode.Value));
+            }
+
+            if (string.IsNullOrWhiteSpace(wxSession.OpenId))
+            {
+                return Ok(ApiResult.Fail("openid is empty"));
+            }
+
+            var (purePhoneNumber, phoneError) = await InternalGetPhoneNumberWithErrorAsync(request.PhoneCode, cancellationToken);
+            if (string.IsNullOrWhiteSpace(purePhoneNumber))
+            {
+                return Ok(ApiResult.Fail(string.IsNullOrWhiteSpace(phoneError) ? "获取手机号失败" : phoneError));
+            }
+
+            var openId = wxSession.OpenId.Trim();
+            var isNewUser = false;
+
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(x => x.WxOpenId == openId, cancellationToken);
+
+            if (user is null)
+            {
+                user = await _dbContext.Users
+                    .FirstOrDefaultAsync(x => x.PhoneNumber == purePhoneNumber, cancellationToken);
+
+                if (user is not null)
+                {
+                    if (!string.IsNullOrWhiteSpace(user.WxOpenId) &&
+                        !string.Equals(user.WxOpenId.Trim(), openId, StringComparison.Ordinal))
+                    {
+                        return Ok(ApiResult.Fail("该手机号已绑定其他微信账号", 409));
+                    }
+
+                    user.WxOpenId = openId;
+                }
+                else
+                {
+                    isNewUser = true;
+                    user = await CreateWechatUserAsync(openId, cancellationToken);
+                    _dbContext.Users.Add(user);
+                }
+            }
+
+            user.PhoneNumber = purePhoneNumber;
+
+            if (!string.IsNullOrWhiteSpace(request.Avatar))
+            {
+                user.WxImage = request.Avatar.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Nickname))
+            {
+                user.WxName = request.Nickname.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(user.WxName))
+            {
+                user.WxName = "微信用户";
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            var token = _jwtHelper.GenerateToken(user);
+
+            return Ok(ApiResult.Success(new
+            {
+                token,
+                isNewUser,
+                user_id = user.UserId,
+                user_guid = user.UserNo,
+                register_time = user.RegisterTime,
+                openid = user.WxOpenId,
+                phone_number = user.PhoneNumber,
+                purePhoneNumber = purePhoneNumber
+            }));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("========== WxPhoneLogin ERROR ==========");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("========================================");
             return Ok(ApiResult.Fail("服务器内部异常，请稍后再试"));
         }
     }
@@ -234,10 +341,10 @@ public class AuthController : ControllerBase
                 return Ok(ApiResult.Fail("用户不存在", 404));
             }
 
-            var purePhoneNumber = await InternalGetPhoneNumberAsync(request.Code, cancellationToken);
+            var (purePhoneNumber, phoneError) = await InternalGetPhoneNumberWithErrorAsync(request.Code, cancellationToken);
             if (string.IsNullOrWhiteSpace(purePhoneNumber))
             {
-                return Ok(ApiResult.Fail("获取手机号失败"));
+                return Ok(ApiResult.Fail(string.IsNullOrWhiteSpace(phoneError) ? "获取手机号失败" : phoneError));
             }
 
             user.PhoneNumber = purePhoneNumber;
@@ -366,6 +473,12 @@ public class AuthController : ControllerBase
 
     private async Task<string?> InternalGetPhoneNumberAsync(string phoneCode, CancellationToken cancellationToken)
     {
+        var (phone, _) = await InternalGetPhoneNumberWithErrorAsync(phoneCode, cancellationToken);
+        return phone;
+    }
+
+    private async Task<(string? PhoneNumber, string? ErrorMessage)> InternalGetPhoneNumberWithErrorAsync(string phoneCode, CancellationToken cancellationToken)
+    {
         try
         {
             string appId = _config["WeChat:AppId"] ?? string.Empty;
@@ -373,7 +486,7 @@ public class AuthController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
             {
-                return null;
+                return (null, "wechat config missing");
             }
 
             string tokenUrl =
@@ -386,13 +499,14 @@ public class AuthController : ControllerBase
             var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenJson);
             if (tokenData.TryGetProperty("errcode", out var errCode) && errCode.GetInt32() != 0)
             {
-                return null;
+                var errMsg = tokenData.TryGetProperty("errmsg", out var tokenErrMsg) ? tokenErrMsg.GetString() : "get access_token failed";
+                return (null, $"微信access_token获取失败: {errMsg}");
             }
 
             string accessToken = tokenData.GetProperty("access_token").GetString() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                return null;
+                return (null, "微信access_token为空");
             }
 
             string phoneUrl =
@@ -415,22 +529,32 @@ public class AuthController : ControllerBase
 
             if (phoneErrCode != 0)
             {
-                return null;
+                var phoneErrMsg = phoneData.TryGetProperty("errmsg", out var phoneErrMsgValue)
+                    ? phoneErrMsgValue.GetString()
+                    : "getuserphonenumber failed";
+                return (null, $"微信手机号获取失败({phoneErrCode}): {phoneErrMsg}");
             }
 
             if (!phoneData.TryGetProperty("phone_info", out var phoneInfo))
             {
-                return null;
+                return (null, "微信返回缺少phone_info");
             }
 
-            return phoneInfo.TryGetProperty("purePhoneNumber", out var purePhoneNumberValue)
+            var phoneNumber = phoneInfo.TryGetProperty("purePhoneNumber", out var purePhoneNumberValue)
                 ? purePhoneNumberValue.GetString()
                 : null;
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                return (null, "微信返回手机号为空");
+            }
+
+            return (phoneNumber, null);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[InternalGetPhoneNumberAsync] Error: {ex}");
-            return null;
+            return (null, $"服务器异常: {ex.Message}");
         }
     }
 }

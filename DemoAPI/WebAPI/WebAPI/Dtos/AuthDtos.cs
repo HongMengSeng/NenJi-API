@@ -17,8 +17,6 @@ public class WechatLoginRequest
     [Required]
     public string Code { get; set; } = string.Empty;
 
-    public string? PhoneCode { get; set; }
-
     public string? Nickname { get; set; }
 
     public string? Avatar { get; set; }
@@ -26,6 +24,19 @@ public class WechatLoginRequest
     public string? EncryptedData { get; set; }
 
     public string? Iv { get; set; }
+}
+
+public class WxPhoneLoginRequest
+{
+    [Required]
+    public string Code { get; set; } = string.Empty;
+
+    [Required]
+    public string PhoneCode { get; set; } = string.Empty;
+
+    public string? Nickname { get; set; }
+
+    public string? Avatar { get; set; }
 }
 
 public class PhoneLoginRequest

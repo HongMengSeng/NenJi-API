@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +19,14 @@ public class LogisticsController : ControllerBase
 {
     private const string DefaultFlagProperty = "IsDefault";
     private readonly AppDbContext _dbContext;
+    private readonly IConfiguration _configuration;
+    private readonly HttpClient _httpClient;
 
-    public LogisticsController(AppDbContext dbContext)
+    public LogisticsController(AppDbContext dbContext, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
+        _configuration = configuration;
+        _httpClient = httpClientFactory.CreateClient();
     }
 
     /// <summary>
@@ -223,6 +229,84 @@ public class LogisticsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 按物流平台+运单号查询物流轨迹（默认按时间降序，最多 2000 条）
+    /// </summary>
+    [HttpPost("track")]
+    public async Task<IActionResult> Track([FromBody] LogisticsTrackRequest? request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.PlatformType) || string.IsNullOrWhiteSpace(request.WaybillNo))
+            {
+                return Ok(ApiResult.Fail("只需要传两个参数：platformType 和 waybillNo", 400));
+            }
+
+            var platformType = request.PlatformType.Trim().ToUpperInvariant();
+            var waybillNo = request.WaybillNo.Trim();
+
+            // 历史平台值兼容：把 JD/JDL 当作 EMS 处理（京东分支替换为邮政）
+            if (platformType is "JD" or "JDL" or "京东")
+            {
+                platformType = "EMS";
+            }
+
+            List<TrackRow> rows;
+            var normalizedPlatform = platformType switch
+            {
+                "顺丰" => "SF",
+                "邮政" => "EMS",
+                "POST" => "EMS",
+                "中国邮政" => "EMS",
+                _ => platformType
+            };
+
+            if (normalizedPlatform == "SF")
+            {
+                rows = await QuerySfTrackAsync(waybillNo, cancellationToken);
+            }
+            else if (normalizedPlatform == "EMS")
+            {
+                rows = await QueryEmsTrackAsync(waybillNo, cancellationToken);
+            }
+            else
+            {
+                return Ok(ApiResult.Fail("当前仅支持顺丰（SF）和邮政（EMS）查询", 400));
+            }
+
+            if (rows.Count == 0)
+            {
+                return Ok(ApiResult.Fail("未查询到物流轨迹，请确认平台类型和单号", 404));
+            }
+
+            var list = rows
+                .OrderByDescending(x => x.OperationTime)
+                .ThenByDescending(x => x.Sequence)
+                .Take(2000)
+                .Select(x => new
+                {
+                    operationTime = x.OperationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    remark = x.Remark,
+                    routeAddress = x.RouteAddress
+                })
+                .ToList();
+
+            return Ok(ApiResult.Success(new
+            {
+                platformType = normalizedPlatform,
+                waybillNo,
+                orderNo = waybillNo,
+                currentProgress = list.FirstOrDefault(),
+                list,
+                total = list.Count
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"物流查询失败：{ex.Message}", -1));
+        }
+    }
+
     private int ResolveCurrentUserId()
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -275,6 +359,212 @@ public class LogisticsController : ControllerBase
         // 示例运单号：SF + 13 位数字
         var suffix = (order.OrderId % 10000000000000L).ToString().PadLeft(13, '0');
         return $"{companyCode}{suffix}";
+    }
+
+    private async Task<List<TrackRow>> QuerySfTrackAsync(string waybillNo, CancellationToken cancellationToken)
+    {
+        var trackUrl = _configuration["Logistics:SfTrackUrl"];
+        if (string.IsNullOrWhiteSpace(trackUrl))
+        {
+            trackUrl = "https://qiao.sf-express.com/Api?category=1&apiClassify=3";
+        }
+
+        var payload = new
+        {
+            mailNo = waybillNo,
+            trackingNumber = new[] { waybillNo },
+            orderNo = waybillNo,
+            language = "zh-CN",
+            methodType = 1,
+            trackingType = 1
+        };
+
+        using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        using var response = await _httpClient.PostAsync(trackUrl, content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"顺丰接口请求失败：{response.StatusCode}");
+        }
+
+        var root = JsonSerializer.Deserialize<JsonElement>(json);
+
+        var tracks = new List<TrackRow>();
+        ExtractTrackRows(root, tracks);
+
+        return tracks;
+    }
+
+    private async Task<List<TrackRow>> QueryEmsTrackAsync(string waybillNo, CancellationToken cancellationToken)
+    {
+        var emsTrackUrl = _configuration["Logistics:EmsTrackUrl"];
+        if (string.IsNullOrWhiteSpace(emsTrackUrl))
+        {
+            throw new InvalidOperationException("未配置邮政轨迹接口地址（Logistics:EmsTrackUrl）");
+        }
+
+        // 参考《中小电商企业接口规范_V2.7》5.19：waybillNo + direction
+        var payload = new
+        {
+            waybillNo,
+            direction = "0"
+        };
+
+        using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        using var response = await _httpClient.PostAsync(emsTrackUrl, content, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"邮政接口请求失败：{response.StatusCode}");
+        }
+
+        var root = JsonSerializer.Deserialize<JsonElement>(json);
+        return ExtractEmsTrackRows(root);
+    }
+
+    private static List<TrackRow> ExtractEmsTrackRows(JsonElement root)
+    {
+        var list = new List<TrackRow>();
+
+        // 支持根节点直接是 responseItems 或者嵌套 data.responseItems
+        if (TryGetPropertyIgnoreCase(root, "responseItems", out var responseItems) && responseItems.ValueKind == JsonValueKind.Array)
+        {
+            ParseEmsResponseItems(responseItems, list);
+            return list;
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "data", out var dataNode))
+        {
+            if (TryGetPropertyIgnoreCase(dataNode, "responseItems", out var dataItems) && dataItems.ValueKind == JsonValueKind.Array)
+            {
+                ParseEmsResponseItems(dataItems, list);
+                return list;
+            }
+        }
+
+        return list;
+    }
+
+    private static void ParseEmsResponseItems(JsonElement items, List<TrackRow> output)
+    {
+        var index = 0;
+        foreach (var item in items.EnumerateArray())
+        {
+            if (!TryGetStringIgnoreCase(item, "opTime", out var opTimeRaw) || !DateTime.TryParse(opTimeRaw, out var opTime))
+            {
+                continue;
+            }
+
+            TryGetStringIgnoreCase(item, "opDesc", out var opDesc);
+            TryGetStringIgnoreCase(item, "opOrgProvName", out var provName);
+            TryGetStringIgnoreCase(item, "opOrgCity", out var cityName);
+            TryGetStringIgnoreCase(item, "opOrgName", out var orgName);
+
+            var routeAddress = $"{provName}{cityName}{orgName}".Trim();
+
+            output.Add(new TrackRow
+            {
+                OperationTime = opTime,
+                Remark = string.IsNullOrWhiteSpace(opDesc) ? "暂无备注" : opDesc!,
+                RouteAddress = routeAddress,
+                Sequence = index
+            });
+
+            index++;
+        }
+    }
+
+    private static void ExtractTrackRows(JsonElement node, List<TrackRow> output)
+    {
+        if (node.ValueKind == JsonValueKind.Object)
+        {
+            var hasAcceptTime = TryGetStringIgnoreCase(node, "acceptTime", out var acceptTimeRaw);
+            var hasRemark = TryGetStringIgnoreCase(node, "remark", out var remark);
+            var hasAcceptAddress = TryGetStringIgnoreCase(node, "acceptAddress", out var acceptAddress);
+
+            if (hasAcceptTime && DateTime.TryParse(acceptTimeRaw, out var time))
+            {
+                output.Add(new TrackRow
+                {
+                    OperationTime = time,
+                    Remark = string.IsNullOrWhiteSpace(remark) ? "暂无备注" : remark!,
+                    RouteAddress = string.IsNullOrWhiteSpace(acceptAddress) ? string.Empty : acceptAddress!
+                });
+            }
+
+            foreach (var property in node.EnumerateObject())
+            {
+                ExtractTrackRows(property.Value, output);
+            }
+        }
+        else if (node.ValueKind == JsonValueKind.Array)
+        {
+            var seq = 0;
+            foreach (var item in node.EnumerateArray())
+            {
+                var before = output.Count;
+                ExtractTrackRows(item, output);
+
+                for (var i = before; i < output.Count; i++)
+                {
+                    output[i].Sequence = seq;
+                }
+
+                seq++;
+            }
+        }
+    }
+
+    private static bool TryGetStringIgnoreCase(JsonElement obj, string name, out string? value)
+    {
+        foreach (var property in obj.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : property.Value.ToString();
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement obj, string name, out JsonElement value)
+    {
+        if (obj.ValueKind != JsonValueKind.Object)
+        {
+            value = default;
+            return false;
+        }
+
+        foreach (var property in obj.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    public sealed class LogisticsTrackRequest
+    {
+        public string PlatformType { get; set; } = string.Empty;
+        public string WaybillNo { get; set; } = string.Empty;
+    }
+
+    private sealed class TrackRow
+    {
+        public DateTime OperationTime { get; set; }
+        public string Remark { get; set; } = string.Empty;
+        public string RouteAddress { get; set; } = string.Empty;
+        public int Sequence { get; set; }
     }
 
     private static string MaskPhone(string? phone)
