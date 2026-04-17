@@ -42,8 +42,8 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 替换 192.168.203.56 为 192.168.203.56
+      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
     
     // 如果是相对路径，添加基础 URL
@@ -188,7 +188,7 @@ Page({
 
         wx.showLoading({ title: '下单中...' });
         api.request({
-          url: '/api/OrderDetails/create',
+          url: `/api/activity/${this.data.activity.id}/register`,
           method: 'POST',
           data: {
             sourceType: 'activity',

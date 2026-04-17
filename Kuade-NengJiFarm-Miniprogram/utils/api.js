@@ -230,7 +230,8 @@ const api = {
     // 获取活动列表
     getList: () => get('/api/activity/list'),
     // 获取活动详情
-    getDetail: (id) => get('/api/activity/detail', { id })
+    getDetail: (id) => get('/api/activity/detail', { id }),
+    register: (id, data = {}) => post(`/api/activity/${id}/register`, data)
   },
   
   // 商品相关
@@ -248,7 +249,8 @@ const api = {
     // 获取认购列表
     getList: () => get('/api/acres'),
     // 获取认购详情
-    getDetail: (id) => get(`/api/acres/${id}`)
+    getDetail: (id) => get(`/api/acres/${id}`),
+    adopt: (id, data = {}) => post(`/api/acres/${id}/adopt`, data)
   },
   
   // 订单相关

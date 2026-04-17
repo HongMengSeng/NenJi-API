@@ -30,12 +30,11 @@
       </view>
     </view>
     <view wx:if="{{order.logistics && order.logistics.length > 0}}" class="logistics-list">
-      <view wx:for="{{order.logistics}}" wx:key="index" class="logistics-item {{index === 0 ? 'current' : ''}}">
+      <view class="logistics-item current">
         <view class="logistics-dot"></view>
-        <view class="logistics-line" wx:if="{{index !== order.logistics.length - 1}}"></view>
         <view class="logistics-content">
-          <view class="logistics-time">{{item.time}}</view>
-          <view class="logistics-desc">{{item.desc}}</view>
+          <view class="logistics-time">{{order.logistics[0].time}}</view>
+          <view class="logistics-desc">{{order.logistics[0].desc}}</view>
         </view>
       </view>
     </view>
