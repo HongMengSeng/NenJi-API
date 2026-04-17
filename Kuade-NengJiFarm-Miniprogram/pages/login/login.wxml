@@ -22,12 +22,31 @@
       <text class="login-subtitle">登录后享受更多优质服务</text>
     </view>
     
-    <!-- 一键登录按钮 -->
+    <!-- 登录按钮 -->
     <view class="login-content">
+      <!-- 一键登录 -->
       <view class="login-btn" bindtap="oneClickLogin">
         <text class="login-btn-icon">📱</text>
         <text class="login-btn-text">一键登录</text>
       </view>
+
+      <!-- 分隔线 -->
+      <view class="divider">
+        <view class="divider-line"></view>
+        <text class="divider-text">其他登录方式</text>
+        <view class="divider-line"></view>
+      </view>
+
+      <!-- 手机号快捷登录（微信开放能力按钮） -->
+      <button
+        class="phone-login-btn"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="getPhoneNumber"
+        disabled="{{isLogging}}"
+      >
+        <text class="phone-login-icon">📲</text>
+        <text class="phone-login-text">手机号快捷登录</text>
+      </button>
     </view>
   </view>
   
@@ -41,7 +60,7 @@
 
    <!-- 版本信息 -->
    <view class="version-info">
-    <text>v1.0.0</text>
+    <text>v2.0.1</text>
   </view>
 
 </view>

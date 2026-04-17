@@ -31,6 +31,67 @@ Page({
     this.wechatLogin();
   },
 
+  // 微信手机号快捷登录 - getPhoneNumber 回调
+  getPhoneNumber(e) {
+    if (this.data.isLogging) return;
+
+    const phoneCode = e.detail.code;
+
+    if (!phoneCode) {
+      wx.showToast({
+        title: '需要授权手机号才能登录',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const api = require('../../utils/api');
+    this.setData({ isLogging: true });
+
+    wx.showLoading({ title: '登录中...', mask: true });
+
+    // 先拿 wx.login 的 code
+    wx.login({
+      success: (loginRes) => {
+        if (!loginRes.code) {
+          wx.hideLoading();
+          this.setData({ isLogging: false });
+          wx.showToast({ title: '获取登录凭证失败', icon: 'none' });
+          return;
+        }
+
+        api.request({
+          url: '/api/Auth/wx-phone-login',
+          method: 'POST',
+          data: {
+            code: loginRes.code,
+            phoneCode: phoneCode
+          }
+        })
+        .then(loginData => {
+          console.log('手机号登录成功：', loginData);
+          this.handleLoginSuccess(loginData);
+        })
+        .catch(err => {
+          console.error('手机号登录失败：', err);
+          wx.showToast({
+            title: err.Message || err.message || '手机号登录失败',
+            icon: 'none'
+          });
+        })
+        .finally(() => {
+          wx.hideLoading();
+          this.setData({ isLogging: false });
+        });
+      },
+      fail: () => {
+        wx.hideLoading();
+        this.setData({ isLogging: false });
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
+      }
+    });
+  },
+
   wechatLogin() {
     if (this.data.isLogging) return;
 
@@ -64,24 +125,7 @@ Page({
         })
         .then(loginData => {
           console.log('登录成功：', loginData);
-
-          wx.setStorageSync('token', loginData.token || '');
-          wx.setStorageSync('hasLogin', true);
-          wx.setStorageSync('user_id', loginData.user_id || '');
-          wx.setStorageSync('user_guid', loginData.user_guid || '');
-          wx.setStorageSync('openid', loginData.openid || '');
-          wx.setStorageSync('register_time', loginData.register_time || '');
-
-          wx.showToast({
-            title: '登录成功',
-            icon: 'success'
-          });
-
-          setTimeout(() => {
-            wx.switchTab({
-              url: '/pages/index/index'
-            });
-          }, 1000);
+          this.handleLoginSuccess(loginData);
         })
         .catch(err => {
           console.error('微信登录失败：', err);
@@ -105,6 +149,31 @@ Page({
         });
       }
     });
+  },
+
+  // 登录成功后的公共处理
+  handleLoginSuccess(loginData) {
+    wx.setStorageSync('token', loginData.token || '');
+    wx.setStorageSync('hasLogin', true);
+    wx.setStorageSync('user_id', loginData.user_id || '');
+    wx.setStorageSync('user_guid', loginData.user_guid || '');
+    wx.setStorageSync('openid', loginData.openid || '');
+    wx.setStorageSync('register_time', loginData.register_time || '');
+    // 手机号登录时存储手机号
+    if (loginData.phone_number) {
+      wx.setStorageSync('phone_number', loginData.phone_number);
+    }
+
+    wx.showToast({
+      title: '登录成功',
+      icon: 'success'
+    });
+
+    setTimeout(() => {
+      wx.switchTab({
+        url: '/pages/index/index'
+      });
+    }, 1000);
   },
 
   viewAgreement() {

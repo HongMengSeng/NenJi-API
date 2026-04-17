@@ -189,6 +189,71 @@
   color: #fff;
 }
 
+/* 分隔线 */
+.divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1rpx;
+  background-color: #e0e0e0;
+}
+
+.divider-text {
+  font-size: 22rpx;
+  color: #bbb;
+  margin: 0 24rpx;
+  white-space: nowrap;
+}
+
+/* 手机号快捷登录按钮 */
+.phone-login-btn {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #07C160 0%, #06AD56 100%);
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 32rpx rgba(7, 193, 96, 0.35);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+}
+
+.phone-login-btn::after {
+  border: none;
+}
+
+.phone-login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 6rpx 20rpx rgba(7, 193, 96, 0.25);
+}
+
+.phone-login-btn[disabled] {
+  opacity: 0.6;
+}
+
+.phone-login-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.phone-login-text {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
 /* 其他登录方式 */
 .other-login {
   width: 100%;
