@@ -120,11 +120,14 @@ Page({
       email: email
     })
       .then(data => {
-        this.setData({
-          'userInfo.nickname': data.nickname,
-          'userInfo.avatar': data.avatar,
-          'userInfo.email': data.email
-        });
+        // 检查数据是否存在
+        if (data) {
+          this.setData({
+            'userInfo.nickname': data.nickname || this.data.userInfo.nickname,
+            'userInfo.avatar': data.avatar ? this.processImageUrl(data.avatar) : this.data.userInfo.avatar,
+            'userInfo.email': data.email || this.data.userInfo.email
+          });
+        }
         wx.showToast({
           title: '保存成功',
           icon: 'success'
@@ -185,56 +188,51 @@ Page({
   // 选择头像（使用微信官方组件）
   onChooseAvatar: function (e) {
     const avatarUrl = e.detail.avatarUrl;
+    console.log('选择的头像临时路径:', avatarUrl);
+    
+    // 获取 token
+    const token = wx.getStorageSync('token');
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'http://192.168.203.56/api/upload',
+      url: 'http://192.168.203.56/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
+      header: {
+        Authorization: 'Bearer ' + token
+      },
       success: (res) => {
+        console.log('上传成功响应:', res);
         try {
           // 检查响应数据是否为空
           if (!res.data || res.data.trim() === '') {
             console.error('服务器返回空响应');
-            // 直接使用临时路径作为 fallback
-            this.setData({
-              'userInfo.avatar': avatarUrl
-            });
+            wx.showToast({ title: '上传失败', icon: 'none' });
             return;
           }
           
           const data = JSON.parse(res.data);
+          console.log('解析后的响应数据:', data);
           if (data.code === 0) {
-            // 使用服务器返回的图片URL
+            // 使用服务器返回的图片URL（永久地址）
             this.setData({
-              'userInfo.avatar': this.processImageUrl(data.data.url)
+              'userInfo.avatar': data.data.url
             });
             // 更新到服务器
-            this.updateProfile(this.data.userInfo.nickname, this.processImageUrl(data.data.url), this.data.userInfo.email);
+            this.updateProfile(this.data.userInfo.nickname, data.data.url, this.data.userInfo.email);
+            wx.showToast({ title: '上传成功', icon: 'success' });
           } else {
             console.error('上传头像失败:', data.message);
-            wx.showToast({ title: '上传头像失败', icon: 'none' });
-            // 失败时使用临时路径作为 fallback
-            this.setData({
-              'userInfo.avatar': avatarUrl
-            });
+            wx.showToast({ title: data.message || '上传失败', icon: 'none' });
           }
         } catch (e) {
           console.error('解析上传结果失败:', e);
-          wx.showToast({ title: '上传头像失败', icon: 'none' });
-          // 失败时使用临时路径作为 fallback
-          this.setData({
-            'userInfo.avatar': avatarUrl
-          });
+          wx.showToast({ title: '上传失败', icon: 'none' });
         }
       },
       fail: (err) => {
         console.error('上传头像失败:', err);
-        wx.showToast({ title: '上传头像失败', icon: 'none' });
-        // 失败时使用临时路径作为 fallback
-        this.setData({
-          'userInfo.avatar': avatarUrl
-        });
+        wx.showToast({ title: '上传失败', icon: 'none' });
       }
     });
   },

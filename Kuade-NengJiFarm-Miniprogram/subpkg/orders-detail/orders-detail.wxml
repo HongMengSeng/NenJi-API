@@ -1,135 +1,147 @@
 <view class="container">
 
-
   <!-- 订单状态 -->
-  <view class="order-status-section">
-    <view class="status-text">{{order.isActivityOrder || order.isAcreOrder ? (order.status === 'pending' ? '待支付' : order.status === 'cancelled' ? '已取消' : '已支付') : order.statusText}}</view>
-    <!-- 倒计时 -->
-    <view wx:if="{{order.status === 'pending' && countdownText}}" class="countdown-section">
-      <text class="countdown-label">请在</text>
-      <text class="countdown-time">{{countdownText}}</text>
-      <text class="countdown-label">内完成支付</text>
+  <view class="card">
+    <view class="card-title">
+      <text class="card-title-text">订单状态</text>
     </view>
-    <!-- 活动订单二维码 -->
-    <view wx:if="{{order.isActivityOrder && order.status !== 'pending' && order.status !== 'cancelled'}}">
-      <view class="qrcode-section">
-        <view class="qrcode-title">活动二维码</view>
-        <image class="qrcode-image" src="{{order.qrcode}}" mode="aspectFit" />
-        <view class="qrcode-hint">请保存二维码，活动现场出示</view>
+    <view class="card-body status-body">
+      <view class="status-text">{{order.isActivityOrder || order.isAcreOrder ? (order.status === 'pending' ? '待支付' : order.status === 'cancelled' ? '已取消' : '已支付') : order.statusText}}</view>
+      <view wx:if="{{order.status === 'pending' && countdownText}}" class="countdown">
+        <text class="countdown-num">{{countdownText}}</text>
+      </view>
+      <view wx:if="{{order.isActivityOrder && order.status !== 'pending' && order.status !== 'cancelled'}}" class="qrcode-area">
+        <view class="qrcode-title">活动核销二维码</view>
+        <image class="qrcode-img" src="{{order.qrcode}}" mode="aspectFit" />
+        <view class="qrcode-tip">出示给工作人员扫描</view>
+        <view class="qrcode-btn" bindtap="saveQrcode">保存二维码</view>
       </view>
     </view>
   </view>
 
-  <!-- 物流详情（非活动订单和非认购一亩订单，且已发货时显示） -->
-  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="logistics-section">
-    <view class="logistics-header" bindtap="goToLogisticsDetail">
-      <view class="section-title">物流详情</view>
-      <view class="view-more">
-        <text>查看全部</text>
-        <text class="arrow">›</text>
-      </view>
+  <!-- 物流信息 -->
+  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="card">
+    <view class="card-title" bindtap="goToLogisticsDetail">
+      <text class="card-title-text">物流信息</text>
+      <text class="card-title-arrow">›</text>
     </view>
-    <view wx:if="{{order.logistics && order.logistics.length > 0}}" class="logistics-list">
-      <view class="logistics-item current">
-        <view class="logistics-dot"></view>
-        <view class="logistics-content">
-          <view class="logistics-time">{{order.logistics[0].time}}</view>
-          <view class="logistics-desc">{{order.logistics[0].desc}}</view>
+    <view class="card-body">
+      <view wx:if="{{order.logistics && order.logistics.length > 0}}" class="logistics-list">
+        <view class="logistics-item" wx:for="{{order.logistics}}" wx:key="index">
+          <view class="logistics-dot"></view>
+          <view class="logistics-info">
+            <view class="logistics-desc">{{item.desc}}</view>
+            <view class="logistics-time">{{item.time}}</view>
+          </view>
         </view>
       </view>
-    </view>
-    <view wx:else class="no-logistics">
-      <text>暂无物流信息</text>
+      <view wx:else class="empty-tip">暂无物流信息</view>
     </view>
   </view>
 
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">加载中...</text>
+    <view class="loading-ring"></view>
+    <text class="loading-txt">加载中...</text>
   </view>
 
   <!-- 订单详情 -->
   <view wx:else class="order-detail">
-    <!-- 收货地址（非活动订单和非认购一亩订单显示） -->
-    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder}}" class="address-section">
-      <view class="section-title">收货地址</view>
-      <view class="address-info">
-        <view class="address-name">{{order.shippingAddress.name}}</view>
-        <view class="address-phone">{{order.shippingAddress.phone}}</view>
-        <view class="address-detail">{{order.shippingAddress.address}}</view>
+
+    <!-- 收货地址 -->
+    <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder}}" class="card">
+      <view class="card-title">
+        <text class="card-title-text">收货地址</text>
+      </view>
+      <view class="card-body">
+        <view class="addr-row">
+          <text class="addr-name">{{order.shippingAddress.name}}</text>
+          <text class="addr-phone">{{order.shippingAddress.phone}}</text>
+        </view>
+        <view class="addr-detail">{{order.shippingAddress.address}}</view>
       </view>
     </view>
 
     <!-- 订单信息 -->
-    <view class="order-info-section">
-      <view class="section-title">订单信息</view>
-      <view class="info-item">
-        <view class="info-label">订单号</view>
-        <view class="info-value">{{order.orderNumber || order.id}}</view>
+    <view class="card">
+      <view class="card-title">
+        <text class="card-title-text">订单信息</text>
       </view>
-      <view class="info-item">
-        <view class="info-label">下单时间</view>
-        <view class="info-value">{{order.createTime}}</view>
-      </view>
-      <view wx:if="{{order.paymentTime}}" class="info-item">
-        <view class="info-label">支付时间</view>
-        <view class="info-value">{{order.paymentTime}}</view>
-      </view>
-      <view wx:if="{{order.shippingTime}}" class="info-item">
-        <view class="info-label">发货时间</view>
-        <view class="info-value">{{order.shippingTime}}</view>
-      </view>
-      <view wx:if="{{order.completeTime}}" class="info-item">
-        <view class="info-label">完成时间</view>
-        <view class="info-value">{{order.completeTime}}</view>
-      </view>
-      <view wx:if="{{order.paymentMethod}}" class="info-item">
-        <view class="info-label">支付方式</view>
-        <view class="info-value">{{order.paymentMethod}}</view>
-      </view>
-      <view wx:if="{{order.transactionId}}" class="info-item">
-        <view class="info-label">交易流水号</view>
-        <view class="info-value">{{order.transactionId}}</view>
+      <view class="card-body rows">
+        <view class="row" wx:if="{{order.orderNumber || order.id}}">
+          <text class="row-lbl">订单编号</text>
+          <text class="row-val">{{order.orderNumber || order.id}}</text>
+        </view>
+        <view class="row" wx:if="{{order.createTime}}">
+          <text class="row-lbl">下单时间</text>
+          <text class="row-val">{{order.createTime}}</text>
+        </view>
+        <view class="row" wx:if="{{order.paymentTime}}">
+          <text class="row-lbl">支付时间</text>
+          <text class="row-val">{{order.paymentTime}}</text>
+        </view>
+        <view class="row" wx:if="{{order.shippingTime}}">
+          <text class="row-lbl">发货时间</text>
+          <text class="row-val">{{order.shippingTime}}</text>
+        </view>
+        <view class="row" wx:if="{{order.completeTime}}">
+          <text class="row-lbl">完成时间</text>
+          <text class="row-val">{{order.completeTime}}</text>
+        </view>
+        <view class="row" wx:if="{{order.paymentMethod}}">
+          <text class="row-lbl">支付方式</text>
+          <text class="row-val">{{order.paymentMethod}}</text>
+        </view>
+        <view class="row" wx:if="{{order.transactionId}}">
+          <text class="row-lbl">交易流水号</text>
+          <text class="row-val">{{order.transactionId}}</text>
+        </view>
       </view>
     </view>
 
-    <!-- 商品列表 -->
-    <view class="goods-section">
-      <view class="section-title">商品信息</view>
-      <view class="goods-list">
+    <!-- 商品信息 -->
+    <view class="card">
+      <view class="card-title">
+        <text class="card-title-text">商品信息</text>
+      </view>
+      <view class="card-body goods-body">
         <view class="goods-item" wx:for="{{order.items}}" wx:key="id">
-          <image class="goods-image" src="{{item.image}}" />
-          <view class="goods-info">
+          <image class="goods-img" src="{{item.image}}" mode="aspectFill" />
+          <view class="goods-mid">
             <view class="goods-name">{{item.name}}</view>
-            <view class="goods-price">￥{{item.price}} × {{item.quantity}}</view>
+            <view class="goods-rule">x {{item.quantity}}</view>
           </view>
+          <view class="goods-price">￥{{item.price}}</view>
         </view>
       </view>
     </view>
 
     <!-- 价格信息 -->
-    <view class="price-section">
-      <view class="price-item">
-        <view class="price-label">商品单价</view>
-        <view class="price-value" wx:for="{{order.items}}" wx:key="id">￥{{item.price}}</view>
+    <view class="card">
+      <view class="card-title">
+        <text class="card-title-text">价格明细</text>
       </view>
-      <view class="price-item total">
-        <view class="price-label">订单总价</view>
-        <view class="price-value total-price">￥{{order.totalPrice}}</view>
+      <view class="card-body rows">
+        <view class="row" wx:for="{{order.items}}" wx:key="id">
+          <text class="row-lbl">{{item.name}}</text>
+          <text class="row-val">￥{{item.price}}</text>
+        </view>
+        <view class="row row-total">
+          <text class="row-lbl">合计</text>
+          <text class="row-total-val">￥{{order.totalPrice}}</text>
+        </view>
       </view>
     </view>
 
     <!-- 操作按钮 -->
-  <view class="action-section">
-    <button wx:if="{{order.status === 'pending'}}" class="action-btn primary-btn" bindtap="payOrder">去支付</button>
-    <button wx:if="{{order.status === 'pending'}}" class="action-btn secondary-btn" bindtap="cancelOrder">取消订单</button>
-    <!-- 非活动订单和非认购一亩订单显示发货相关按钮 -->
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="action-btn secondary-btn" bindtap="markShipping">模拟发货</button>
-    <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="action-btn primary-btn" bindtap="applyRefund">申请退款</button>
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="action-btn secondary-btn" bindtap="confirmReceipt">确认收货</button>
-    <!-- 客服按钮 -->
-    <button class="action-btn secondary-btn" bindtap="contactService">联系客服</button>
-  </view>
+    <view class="btn-area">
+      <button wx:if="{{order.status === 'pending'}}" class="btn btn-gold" bindtap="payOrder">去支付</button>
+      <button wx:if="{{order.status === 'pending'}}" class="btn btn-line" bindtap="cancelOrder">取消订单</button>
+      <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="btn btn-line" bindtap="markShipping">模拟发货</button>
+      <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="btn btn-gold" bindtap="applyRefund">申请退款</button>
+      <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="btn btn-line" bindtap="confirmReceipt">确认收货</button>
+      <button class="btn btn-line" bindtap="contactService">联系客服</button>
+    </view>
+
   </view>
 </view>

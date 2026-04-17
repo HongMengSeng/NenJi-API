@@ -8,10 +8,14 @@ Page({
     this.checkLoginStatus();
     this.getBackgroundImage();
   },
-  
+
+  onUnload() {
+    // 页面卸载时重置状态，防止登录成功后页面销毁前被重新进入
+    this.setData({ isLogging: false });
+  },
+
   // 获取背景图片
   getBackgroundImage: function() {
-    // 使用API返回的图片URL，拼接基础URL
     const bgImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000012.jpg';
     this.setData({
       bgImage: bgImageUrl
@@ -28,7 +32,13 @@ Page({
   },
 
   oneClickLogin() {
+    if (this.data.isLogging) return;
     this.wechatLogin();
+  },
+
+  // 阻止登录按钮点击
+  preventLoginClick() {
+    // 什么都不做，只是阻止点击事件冒泡
   },
 
   // 微信手机号快捷登录 - getPhoneNumber 回调
@@ -50,7 +60,6 @@ Page({
 
     wx.showLoading({ title: '登录中...', mask: true });
 
-    // 先拿 wx.login 的 code
     wx.login({
       success: (loginRes) => {
         if (!loginRes.code) {
@@ -71,9 +80,11 @@ Page({
         .then(loginData => {
           console.log('手机号登录成功：', loginData);
           this.handleLoginSuccess(loginData);
+          // 成功后不重置 isLogging，保持禁用状态直到页面卸载或跳转
         })
         .catch(err => {
           console.error('手机号登录失败：', err);
+          this.setData({ isLogging: false });
           wx.showToast({
             title: err.Message || err.message || '手机号登录失败',
             icon: 'none'
@@ -81,7 +92,7 @@ Page({
         })
         .finally(() => {
           wx.hideLoading();
-          this.setData({ isLogging: false });
+          // 不在此处重置 isLogging，防止登录成功后 1 秒内再次点击
         });
       },
       fail: () => {
@@ -126,9 +137,11 @@ Page({
         .then(loginData => {
           console.log('登录成功：', loginData);
           this.handleLoginSuccess(loginData);
+          // 成功后不重置 isLogging，保持禁用状态直到页面卸载或跳转
         })
         .catch(err => {
           console.error('微信登录失败：', err);
+          this.setData({ isLogging: false });
           wx.showToast({
             title: err.Message || err.message || '登录失败',
             icon: 'none'
@@ -136,7 +149,7 @@ Page({
         })
         .finally(() => {
           wx.hideLoading();
-          this.setData({ isLogging: false });
+          // 不在此处重置 isLogging，防止登录成功后 1 秒内再次点击
         });
       },
       fail: (err) => {
@@ -159,16 +172,11 @@ Page({
     wx.setStorageSync('user_guid', loginData.user_guid || '');
     wx.setStorageSync('openid', loginData.openid || '');
     wx.setStorageSync('register_time', loginData.register_time || '');
-    // 手机号登录时存储手机号
     if (loginData.phone_number) {
       wx.setStorageSync('phone_number', loginData.phone_number);
     }
 
-    wx.showToast({
-      title: '登录成功',
-      icon: 'success'
-    });
-
+    // 延迟跳转，期间保持按钮禁用
     setTimeout(() => {
       wx.switchTab({
         url: '/pages/index/index'
