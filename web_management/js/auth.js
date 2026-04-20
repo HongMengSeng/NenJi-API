@@ -5,10 +5,13 @@
 	var TOKEN_CHECK_INTERVAL = 3000;
 	var ADMIN_THEME_NAME = 'warm-gold';
 	var ADMIN_THEME_STYLE_ID = 'admin-theme-warm-gold';
+	var SIDEBAR_ENHANCEMENT_STYLE_ID = 'admin-sidebar-orders';
+	var SIDEBAR_ORDER_STORAGE_KEY = 'adminSidebarOrderMenuExpanded';
 	var activeToken = '';
 	var sessionMonitorStarted = false;
 	var actionButtonThemeStarted = false;
 	var actionButtonThemeTimer = 0;
+	var sidebarEnhancementTimer = 0;
 	var loggingOut = false;
 
 	function safeParse(value) {
@@ -158,6 +161,391 @@
 		}, 0);
 	}
 
+	function scheduleSidebarEnhancement() {
+		if (sidebarEnhancementTimer) {
+			return;
+		}
+
+		sidebarEnhancementTimer = window.setTimeout(function () {
+			sidebarEnhancementTimer = 0;
+			enhanceSidebarMenus(document);
+		}, 0);
+	}
+
+	function getCurrentPageName() {
+		var pathname = window.location.pathname || '';
+		var segments = pathname.split('/');
+		return (segments[segments.length - 1] || '').toLowerCase();
+	}
+
+	function normalizeSidebarText(value) {
+		return (value || '').replace(/\s+/g, '');
+	}
+
+	function resolveSidebarPage(pageName) {
+		switch ((pageName || '').toLowerCase()) {
+			case 'product-add.html':
+			case 'product-edit.html':
+				return 'product.html';
+			case 'order.html':
+			case 'order-dish.html':
+			case 'order-dish-detail.html':
+				return 'order-dish.html';
+			case 'order-product.html':
+			case 'order-product-detail.html':
+				return 'order-product.html';
+			case 'dish-add.html':
+			case 'dish-edit.html':
+				return 'dish.html';
+			case 'coupon-add.html':
+			case 'coupon-edit.html':
+				return 'coupon.html';
+			case 'subscription-add.html':
+			case 'subscription-edit.html':
+				return 'subscription.html';
+			case 'user-add.html':
+			case 'user-edit.html':
+				return 'user.html';
+			default:
+				return (pageName || '').toLowerCase();
+		}
+	}
+
+	function getSidebarPageByLabel(label) {
+		if (!label) {
+			return '';
+		}
+
+		if (label.indexOf('产品管理') !== -1) {
+			return 'product.html';
+		}
+		if (label.indexOf('菜品管理') !== -1) {
+			return 'dish.html';
+		}
+		if (label.indexOf('券类管理') !== -1) {
+			return 'coupon.html';
+		}
+		if (label.indexOf('认购一亩田管理') !== -1) {
+			return 'subscription.html';
+		}
+		if (label.indexOf('用户管理') !== -1) {
+			return 'user.html';
+		}
+
+		return '';
+	}
+
+	function isOrderSidebarPage(pageName) {
+		return pageName === 'order-dish.html' || pageName === 'order-product.html';
+	}
+
+	function readOrderMenuExpanded(defaultValue) {
+		try {
+			var savedState = window.sessionStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY);
+			if (savedState === 'true') {
+				return true;
+			}
+			if (savedState === 'false') {
+				return false;
+			}
+		} catch (error) {
+			console.warn('读取订单侧边栏状态失败:', error);
+		}
+
+		return defaultValue;
+	}
+
+	function writeOrderMenuExpanded(isExpanded) {
+		try {
+			window.sessionStorage.setItem(SIDEBAR_ORDER_STORAGE_KEY, isExpanded ? 'true' : 'false');
+		} catch (error) {
+			console.warn('保存订单侧边栏状态失败:', error);
+		}
+	}
+
+	function setOrderMenuExpanded(group, shouldOpen) {
+		if (!group) {
+			return;
+		}
+
+		var toggle = group.querySelector('.sidebar-group-toggle');
+		group.classList.toggle('open', !!shouldOpen);
+
+		if (toggle) {
+			toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+		}
+	}
+
+	function createOrderSubmenuItem(label, href) {
+		var item = document.createElement('li');
+		var link = document.createElement('a');
+		link.className = 'sidebar-submenu-link';
+		link.href = href;
+		link.textContent = label;
+		link.setAttribute('data-sidebar-page', href.toLowerCase());
+		item.appendChild(link);
+		return item;
+	}
+
+	function createOrderSidebarGroup() {
+		var group = document.createElement('li');
+		var toggle = document.createElement('button');
+		var label = document.createElement('span');
+		var arrow = document.createElement('span');
+		var submenu = document.createElement('ul');
+
+		group.className = 'sidebar-group';
+		group.setAttribute('data-sidebar-group', 'orders');
+
+		toggle.type = 'button';
+		toggle.className = 'sidebar-group-toggle';
+		toggle.setAttribute('aria-expanded', 'false');
+
+		label.className = 'sidebar-group-label';
+		label.textContent = '订单管理';
+
+		arrow.className = 'sidebar-group-arrow';
+		arrow.textContent = '▾';
+
+		submenu.className = 'sidebar-submenu';
+		submenu.appendChild(createOrderSubmenuItem('菜品订单', 'order-dish.html'));
+		submenu.appendChild(createOrderSubmenuItem('产品订单', 'order-product.html'));
+
+		toggle.appendChild(label);
+		toggle.appendChild(arrow);
+		group.appendChild(toggle);
+		group.appendChild(submenu);
+
+		return group;
+	}
+
+	function bindSidebarNavigationItem(item, page) {
+		if (!item || !page || item.__sidebarBound) {
+			return;
+		}
+
+		item.__sidebarBound = true;
+		item.addEventListener('click', function (event) {
+			if (event.target && typeof event.target.closest === 'function' && event.target.closest('a, button')) {
+				return;
+			}
+
+			window.location.href = page;
+		});
+	}
+
+	function bindOrderSidebarGroup(group) {
+		if (!group || group.__sidebarBound) {
+			return;
+		}
+
+		var toggle = group.querySelector('.sidebar-group-toggle');
+		if (!toggle) {
+			return;
+		}
+
+		group.__sidebarBound = true;
+		toggle.addEventListener('click', function () {
+			var shouldOpen = !group.classList.contains('open');
+			setOrderMenuExpanded(group, shouldOpen);
+			writeOrderMenuExpanded(shouldOpen);
+		});
+	}
+
+	function updateSidebarActiveState(menu) {
+		if (!menu) {
+			return;
+		}
+
+		var currentPage = resolveSidebarPage(getCurrentPageName());
+		var menuItems = menu.children;
+		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
+		var submenuLinks = orderGroup ? orderGroup.querySelectorAll('.sidebar-submenu-link') : [];
+		var hasActiveOrderChild = false;
+		var i;
+
+		for (i = 0; i < menuItems.length; i += 1) {
+			if (menuItems[i].getAttribute('data-sidebar-group') !== 'orders') {
+				menuItems[i].classList.remove('active');
+			}
+		}
+
+		for (i = 0; i < menuItems.length; i += 1) {
+			var page = (menuItems[i].getAttribute('data-sidebar-page') || '').toLowerCase();
+			if (page && page === currentPage) {
+				menuItems[i].classList.add('active');
+			}
+		}
+
+		if (!orderGroup) {
+			return;
+		}
+
+		orderGroup.classList.remove('active');
+
+		for (i = 0; i < submenuLinks.length; i += 1) {
+			var link = submenuLinks[i];
+			var linkPage = (link.getAttribute('data-sidebar-page') || '').toLowerCase();
+			var isActive = !!linkPage && linkPage === currentPage;
+			link.classList.toggle('active', isActive);
+			if (isActive) {
+				hasActiveOrderChild = true;
+			}
+		}
+
+		orderGroup.classList.toggle('active', hasActiveOrderChild);
+		setOrderMenuExpanded(orderGroup, hasActiveOrderChild || readOrderMenuExpanded(isOrderSidebarPage(currentPage)));
+	}
+
+	function enhanceSidebarMenu(menu) {
+		if (!menu) {
+			return;
+		}
+
+		var menuItems = menu.children;
+		var orderGroup = menu.querySelector('[data-sidebar-group="orders"]');
+		var i;
+
+		if (!orderGroup) {
+			for (i = 0; i < menuItems.length; i += 1) {
+				var label = normalizeSidebarText(menuItems[i].textContent);
+				if (label.indexOf('订单管理') !== -1) {
+					orderGroup = createOrderSidebarGroup();
+					menu.replaceChild(orderGroup, menuItems[i]);
+					break;
+				}
+			}
+		}
+
+		menuItems = menu.children;
+		for (i = 0; i < menuItems.length; i += 1) {
+			var item = menuItems[i];
+			if (item.getAttribute('data-sidebar-group') === 'orders') {
+				continue;
+			}
+
+			var page = getSidebarPageByLabel(normalizeSidebarText(item.textContent));
+			if (page) {
+				item.setAttribute('data-sidebar-page', page);
+				bindSidebarNavigationItem(item, page);
+			}
+		}
+
+		bindOrderSidebarGroup(orderGroup);
+		updateSidebarActiveState(menu);
+	}
+
+	function enhanceSidebarMenus(root) {
+		var scope = root && typeof root.querySelectorAll === 'function' ? root : document;
+		var menus = scope.querySelectorAll('.sidebar .sidebar-menu');
+
+		Array.prototype.forEach.call(menus, function (menu) {
+			enhanceSidebarMenu(menu);
+		});
+	}
+
+	function ensureSidebarEnhancementStyles() {
+		var head = document.head || document.getElementsByTagName('head')[0];
+
+		if (!head || document.getElementById(SIDEBAR_ENHANCEMENT_STYLE_ID)) {
+			return;
+		}
+
+		var style = document.createElement('style');
+		style.id = SIDEBAR_ENHANCEMENT_STYLE_ID;
+		style.type = 'text/css';
+		style.textContent = [
+			'.sidebar-menu .sidebar-group {',
+			'	padding: 0 !important;',
+			'	background: transparent;',
+			'}',
+			'.sidebar-menu .sidebar-group-toggle {',
+			'	width: 100%;',
+			'	display: flex;',
+			'	align-items: center;',
+			'	justify-content: space-between;',
+			'	padding: 12px 20px;',
+			'	border: none;',
+			'	background: transparent;',
+			'	color: inherit;',
+			'	font: inherit;',
+			'	text-align: left;',
+			'	cursor: pointer;',
+			'}',
+			'.sidebar-menu .sidebar-group-toggle:hover {',
+			'	background: #2d3748;',
+			'}',
+			'.sidebar-menu .sidebar-group-arrow {',
+			'	font-size: 12px;',
+			'	transition: transform 0.2s ease;',
+			'}',
+			'.sidebar-menu .sidebar-group.open > .sidebar-group-toggle .sidebar-group-arrow {',
+			'	transform: rotate(180deg);',
+			'}',
+			'.sidebar-menu .sidebar-group.active > .sidebar-group-toggle {',
+			'	background: #3182ce;',
+			'	color: #ffffff;',
+			'}',
+			'.sidebar-menu .sidebar-submenu {',
+			'	display: none;',
+			'	list-style: none;',
+			'	margin: 0;',
+			'	padding: 4px 0 8px;',
+			'	background: rgba(255, 255, 255, 0.05);',
+			'}',
+			'.sidebar-menu .sidebar-group.open > .sidebar-submenu {',
+			'	display: block;',
+			'}',
+			'.sidebar-menu .sidebar-submenu li {',
+			'	padding: 0;',
+			'}',
+			'.sidebar-menu .sidebar-submenu-link {',
+			'	display: block;',
+			'	padding: 10px 20px 10px 44px;',
+			'	color: rgba(255, 255, 255, 0.82);',
+			'	text-decoration: none;',
+			'	font-size: 14px;',
+			'	transition: background 0.2s ease, color 0.2s ease;',
+			'}',
+			'.sidebar-menu .sidebar-submenu-link:hover {',
+			'	background: rgba(255, 255, 255, 0.08);',
+			'	color: #ffffff;',
+			'}',
+			'.sidebar-menu .sidebar-submenu-link.active {',
+			'	background: rgba(49, 130, 206, 0.18);',
+			'	color: #ffffff;',
+			'	font-weight: 600;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-group-toggle {',
+			'	color: #D3A239 !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-group-toggle:hover,',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-group.open > .sidebar-group-toggle {',
+			'	background: rgba(211, 162, 57, 0.12) !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-group.active > .sidebar-group-toggle {',
+			'	background: linear-gradient(180deg, #E5B846 0%, #D3A239 100%) !important;',
+			'	color: #FFFFFF !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-submenu {',
+			'	background: rgba(211, 162, 57, 0.06) !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-submenu-link {',
+			'	color: rgba(211, 162, 57, 0.86) !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-submenu-link:hover {',
+			'	background: rgba(211, 162, 57, 0.1) !important;',
+			'	color: #C59222 !important;',
+			'}',
+			'html[data-admin-theme="warm-gold"] .sidebar-menu .sidebar-submenu-link.active {',
+			'	background: rgba(229, 184, 70, 0.2) !important;',
+			'	color: #C59222 !important;',
+			'}'
+		].join('\n');
+
+		head.appendChild(style);
+	}
+
 	function startActionButtonTheme() {
 		if (actionButtonThemeStarted) {
 			return;
@@ -165,14 +553,17 @@
 
 		actionButtonThemeStarted = true;
 		scheduleActionButtonTheme();
+		scheduleSidebarEnhancement();
 
 		if (document.readyState === 'loading') {
 			document.addEventListener('DOMContentLoaded', scheduleActionButtonTheme);
+			document.addEventListener('DOMContentLoaded', scheduleSidebarEnhancement);
 		}
 
 		if (typeof window.MutationObserver === 'function' && document.documentElement) {
 			var observer = new window.MutationObserver(function () {
 				scheduleActionButtonTheme();
+				scheduleSidebarEnhancement();
 			});
 
 			observer.observe(document.documentElement, {
@@ -561,6 +952,7 @@
 	};
 
 	ensureAdminTheme();
+	ensureSidebarEnhancementStyles();
 	startActionButtonTheme();
 
 	if (ensureAuthenticated()) {
