@@ -63,8 +63,8 @@ Page({
       checked: !!item.checked, 
       count: Number(item.count || 0),
       price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-      // 添加默认值
-      type: item.type || 'goods' // food: 点餐, goods: 商品
+      stock: Number(item.stock || 0),
+      type: item.type || 'goods'
     })); 
 
     this.setData({ cartList }); 
@@ -140,7 +140,8 @@ Page({
         image: item.image || '', 
         count: Number(item.count || 0), 
         checked: !!item.checked,
-        type: item.type || 'goods' 
+        type: item.type || 'goods',
+        stock: Number(item.stock || 0)
       })); 
 
     this.setData({ cartList: normalizedCartList }); 
@@ -148,10 +149,22 @@ Page({
     this.calcTotal(); 
     wx.setStorageSync('cartList', normalizedCartList); 
 
-    // 购物车同步暂时使用本地存储，后端API暂未实现
-    console.log('购物车已同步到本地存储');
-    wx.setStorageSync('cartList', normalizedCartList); 
-  }, 
+// 同步更新orderCart（点餐页面购物车数据）
+const orderCart = {};
+normalizedCartList.forEach(item => {
+  if (item.type === 'food') {
+    orderCart[item.id] = {
+      ...item,
+      quantity: item.count,
+      price: parseFloat(item.price)
+    };
+  }
+});
+wx.setStorageSync('orderCart', orderCart);
+
+// 购物车同步暂时使用本地存储，后端API暂未实现
+console.log('购物车已同步到本地存储');
+},
 
   handleMinus(e) { 
     const id = String(e.currentTarget.dataset.id); 
@@ -180,17 +193,24 @@ Page({
       return;
     }
 
-    // 确保商品数量不超过库存上限
-    const stock = cartList[itemIndex].stock || 10;
-    if (cartList[itemIndex].count < stock) {
+    const stock = cartList[itemIndex].stock;
+    
+    if (stock && stock > 0 && stock <= 10) {
       cartList[itemIndex].count += 1;
       this.syncCart(cartList);
-    } else {
+      return;
+    }
+
+    if (stock && stock > 0 && cartList[itemIndex].count >= stock) {
       wx.showToast({ 
         title: '已达到库存上限', 
         icon: 'none' 
       });
+      return;
     }
+
+    cartList[itemIndex].count += 1;
+    this.syncCart(cartList);
   }, 
 
   toggleSelect(e) { 
@@ -396,22 +416,7 @@ Page({
       }
 
       if (hasFood) {
-        // 只有热销菜品时跳转到order页面
-        const foodItems = this.getCheckedItemsByType('food');
-        const orderCart = {};
-        foodItems.forEach(item => {
-          orderCart[item.id] = {
-            ...item,
-            quantity: item.count,
-            price: parseFloat(item.price)
-          };
-        });
-        try {
-          wx.setStorageSync('orderCart', orderCart);
-        } catch (e) {}
-        wx.navigateTo({
-          url: '/subpkg/order/order'
-        });
+        this.createOrderByType('food');
         return;
       }
 
@@ -459,7 +464,6 @@ Page({
             cartList: [],
             selectAll: false
           });
-          this.groupItemsByRegion();
           this.calcTotal();
           wx.removeStorageSync('cartList');
           wx.showToast({ title: '购物车已清空', icon: 'success' });
@@ -486,30 +490,6 @@ Page({
   addAddress() {
     wx.navigateTo({
       url: '/subpkg/address/address'
-    });
-  },
-
-  setDefaultAddress(e) {
-    const addressId = e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '确认设置',
-      content: '确定要将此地址设为默认收货地址吗？',
-      success: (res) => {
-        if (res.confirm) {
-          // 更新地址列表，将选中的地址设为默认，其他地址设为非默认
-          const updatedAddressList = this.data.addressList.map(item => ({
-            ...item,
-            isDefault: String(item.id) === String(addressId)
-          }));
-          
-          this.setData({
-            addressList: updatedAddressList,
-            selectedAddress: addressId
-          });
-          
-          wx.showToast({ title: '设置成功', icon: 'success' });
-        }
-      }
     });
   },
 
