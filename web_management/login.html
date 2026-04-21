@@ -175,16 +175,6 @@
 					const id = this.loginForm.id.trim();
 					const password = this.loginForm.password;
 
-					if (!id) {
-						this.errorMessage = '帐号不能为空';
-						return;
-					}
-
-					if (!password) {
-						this.errorMessage = '密码不能为空';
-						return;
-					}
-
 					this.loading = true;
 					this.errorMessage = '';
 
