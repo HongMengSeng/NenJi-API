@@ -125,15 +125,15 @@
 		<div class="login-bg">
 			<div class="login-container">
 				<div class="login-title">农场管理后台</div>
-				<div class="login-subtitle">请输入管理员手机号和密码登录系统</div>
+				<div class="login-subtitle">请输入管理员账号和密码登录系统</div>
 				<form @submit.prevent="login">
 					<div class="login-input-group">
-						<label for="phone">手机号</label>
+						<label for="phone">账号</label>
 						<input
-							id="phone"
-							v-model.trim="loginForm.phone"
+							id="id"
+							v-model.trim="loginForm.id"
 							type="text"
-							placeholder="请输入手机号"
+							placeholder="请输入账号"
 							autocomplete="username"
 						/>
 					</div>
@@ -165,23 +165,18 @@
 					loading: false,
 					errorMessage: '',
 					loginForm: {
-						phone: '',
+						id: '',
 						password: ''
 					}
 				};
 			},
 			methods: {
 				async login() {
-					const phone = this.loginForm.phone.trim();
+					const id = this.loginForm.id.trim();
 					const password = this.loginForm.password;
 
-					if (!phone) {
-						this.errorMessage = '手机号不能为空';
-						return;
-					}
-
-					if (!/^\d{11}$/.test(phone)) {
-						this.errorMessage = '请输入正确的 11 位手机号';
+					if (!id) {
+						this.errorMessage = '帐号不能为空';
 						return;
 					}
 
@@ -200,7 +195,7 @@
 								'Content-Type': 'application/json'
 							},
 							body: JSON.stringify({
-								phone: this.loginForm.phone,
+								id: this.loginForm.id,
 								password: this.loginForm.password
 							})
 						});
