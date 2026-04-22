@@ -70,7 +70,38 @@ Page({
       if (tableNumber) {
         this.setData({ tableNumber });
       }
+      
+      // 从购物车同步food类型商品数据
+      this.syncFromCart();
     } catch (e) {}
+  },
+
+  syncFromCart() {
+    try {
+      const cartList = wx.getStorageSync('cartList') || [];
+      const foodItems = cartList.filter(item => item.type === 'food');
+      
+      if (foodItems.length === 0) return;
+      
+      const newCart = { ...this.data.cart };
+      
+      foodItems.forEach(item => {
+        const key = String(item.id);
+        if (item.count > 0) {
+          newCart[key] = {
+            ...item,
+            quantity: item.count,
+            price: parseFloat(item.price)
+          };
+        } else {
+          delete newCart[key];
+        }
+      });
+      
+      this.syncCartState(newCart);
+    } catch (e) {
+      console.error('从购物车同步数据失败:', e);
+    }
   },
 
   getOrderData() {

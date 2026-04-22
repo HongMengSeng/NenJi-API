@@ -8,6 +8,43 @@
     background-color: #FAF6F0;
     padding-bottom: 120rpx;
   }
+
+  .cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 32rpx;
+    background-color: #fff;
+    border-bottom: 1rpx solid #F0E6D2;
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .table-number {
+    font-size: 28rpx;
+    font-weight: 500;
+    color: #D4A76A;
+    background-color: #FAF6F0;
+    padding: 8rpx 20rpx;
+    border-radius: 24rpx;
+  }
+
+  .table-number.placeholder {
+    color: #999;
+    background-color: #F5F5F5;
+  }
   
   .container.fixed {
     overflow: hidden;
@@ -120,23 +157,6 @@
     margin-left: 8rpx;
   }
 
-  /* 到店吃选项 */
-  .take-away-option {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-  }
-
-  .take-away-option text {
-    font-size: 24rpx;
-    color: #666;
-    margin-right: 8rpx;
-  }
-
-  .take-away-switch {
-    transform: scale(0.8);
-  }
-
   .region-items {
     padding: 0 24rpx 24rpx;
   }
@@ -212,35 +232,38 @@
     align-items: center;
     background-color: #FAF6F0;
     border-radius: 32rpx;
-    padding: 8rpx 16rpx;
-    gap: 24rpx;
+    padding: 4rpx;
+    gap: 0;
   }
   
   .count-btn {
-    width: 56rpx;
-    height: 56rpx;
+    width: 52rpx;
+    height: 52rpx;
     border-radius: 50%;
     background-color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36rpx;
-    color: #333;
-    font-weight: 300;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+    font-size: 32rpx;
+    color: #D4A76A;
+    font-weight: 500;
+    box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.15);
+    transition: all 0.2s ease;
   }
   
   .count-btn:active {
     background-color: #D4A76A;
     color: #fff;
+    transform: scale(0.95);
   }
   
   .count-num {
-    font-size: 28rpx;
+    font-size: 26rpx;
     font-weight: 600;
     color: #333;
     min-width: 48rpx;
     text-align: center;
+    padding: 0 12rpx;
   }
   
   /* 底部结算栏 */
@@ -297,6 +320,13 @@
   .settle-btn:active {
     opacity: 0.9;
     transform: scale(0.98);
+  }
+  
+  .settle-btn.disabled {
+    background-color: #ccc;
+    color: #999;
+    box-shadow: none;
+    pointer-events: none;
   }
   
   /* 弹窗样式 */

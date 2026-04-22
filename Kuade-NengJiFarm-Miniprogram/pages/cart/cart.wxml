@@ -1,4 +1,13 @@
 ﻿<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}}">
+  <view class="cart-header">
+    <view class="header-left">
+      <text class="header-title">购物车</text>
+    </view>
+    <view class="header-right">
+      <text class="table-number" wx:if="{{tableNumber && tableNumber > 0}}">桌号: {{tableNumber}}</text>
+      <text class="table-number placeholder" wx:else>请先选择桌号</text>
+    </view>
+  </view>
   <view class="cart-list">
     <!-- 空购物车提示 -->
     <view class="empty-cart" wx:if="{{cartList.length === 0}}">
@@ -31,11 +40,6 @@
         <view class="region-title">
           <text class="region-name">{{regions.food.name}}</text>
           <text class="region-count">（{{regions.food.items.length}}件）</text>
-        </view>
-        <!-- 到店吃选项 -->
-        <view class="take-away-option">
-          <text>到店吃</text>
-          <switch class="take-away-switch" bindchange="toggleTakeAway" checked="{{isTakeAway}}" />
         </view>
       </view>
       <!-- 区域商品 -->
@@ -123,7 +127,7 @@
       </view>
       <view class="total-price">合计: ￥{{totalPrice}}</view>
     </view>
-    <view class="settle-btn" bindtap="handleSettle">
+    <view class="settle-btn {{canSettle ? '' : 'disabled'}}" bindtap="handleSettle">
       {{selectedCount > 0 ? '结算(' + selectedCount + ')' : '结算'}}
     </view>
   </view>
@@ -284,7 +288,7 @@
       <view class="settle-section" wx:if="{{regions.food.selected}}">
         <view class="settle-section-header">
           <text class="section-name">{{regions.food.name}}</text>
-          <text class="section-tag">{{isTakeAway ? '到店吃' : '外卖'}}</text>
+          <text class="section-tag">堂食</text>
         </view>
         <view class="settle-content">
           <view class="settle-goods-preview">

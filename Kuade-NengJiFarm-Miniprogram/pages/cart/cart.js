@@ -1,4 +1,5 @@
 ﻿const api = require('../../utils/api'); 
+const app = getApp();
 
 Page({ 
   data: { 
@@ -16,18 +17,39 @@ Page({
       food: { name: '点餐', selected: false, items: [], totalPrice: '0.00' },
       goods: { name: '商品', selected: false, items: [], totalPrice: '0.00' }
     },
-    // 到店吃选项
-    isTakeAway: false
+    // 桌号
+    tableNumber: null,
+    // 是否可结算
+    canSettle: false
   }, 
 
   onLoad() { 
     this.restoreCart(); 
     this.getUserAddressList();
+    this.loadTableNumber();
   }, 
 
   onShow() { 
     this.restoreCart(); 
     this.getUserAddressList();
+    this.loadTableNumber();
+  },
+
+  loadTableNumber() {
+    const tableNumber = wx.getStorageSync('tableNumber');
+    const appTableNumber = app.globalData.tableNumber;
+    const finalTableNumber = tableNumber || appTableNumber;
+    
+    this.setData({ 
+      tableNumber: finalTableNumber,
+      canSettle: this.canSettle()
+    });
+  },
+
+  canSettle() {
+    const hasTableNumber = this.data.tableNumber && this.data.tableNumber > 0;
+    const hasSelectedItems = this.data.selectedCount > 0;
+    return hasTableNumber && hasSelectedItems;
   },
 
   getUserAddressList() {
@@ -242,10 +264,9 @@ console.log('购物车已同步到本地存储');
     this.setData({ 
       totalPrice: totalPrice.toFixed(2), 
       selectedCount,
-      selectAll
+      selectAll,
+      canSettle: this.canSettle()
     }); 
-
- 
   }, 
 
   getCheckedItemsByType(type) {
@@ -289,7 +310,7 @@ console.log('购物车已同步到本地存储');
       return;
     }
 
-    const needAddress = type === 'goods' || (type === 'food' && !this.data.isTakeAway);
+    const needAddress = type === 'goods';
     const address = this.buildAddressPayload();
     if (needAddress && !address) {
       wx.showToast({
@@ -368,13 +389,22 @@ console.log('购物车已同步到本地存储');
       return; 
     } 
 
+    // 检查是否选择桌号（点餐商品需要桌号）
+    const hasFood = this.data.regions.food.selected;
+    if (hasFood && (!this.data.tableNumber || this.data.tableNumber <= 0)) {
+      wx.showToast({ 
+        title: '请先选择桌号', 
+        icon: 'none' 
+      }); 
+      return; 
+    }
+
     // 先关闭购物车详情弹窗
     if (this.data.showCartDetail) {
       this.setData({ showCartDetail: false });
     }
 
     // 检查选中的区域
-    const hasFood = this.data.regions.food.selected;
     const hasGoods = this.data.regions.goods.selected;
 
     // 如果同时选中了点餐和商品区域，显示分别结算弹窗
@@ -387,15 +417,6 @@ console.log('购物车已同步到本地存储');
   }, 
 
   handleConfirmPurchase() { 
-    // 检查是否选择了地址（仅外卖需要）
-    if (!this.data.isTakeAway && this.data.regions.food.selected && !this.data.selectedAddress) {
-      wx.showToast({
-        title: '请选择收货地址',
-        icon: 'none'
-      });
-      return;
-    }
-
     // 检查是否有选中的商品
     if (this.data.selectedCount === 0) {
       wx.showToast({
@@ -416,7 +437,8 @@ console.log('购物车已同步到本地存储');
       }
 
       if (hasFood) {
-        this.createOrderByType('food');
+        // 点餐直接跳转到 confirm-order 页面
+        this.settleFood();
         return;
       }
 
@@ -506,13 +528,6 @@ console.log('购物车已同步到本地存储');
     this.syncCart(cartList);
   },
 
-  // 切换到店吃选项
-  toggleTakeAway(e) {
-    this.setData({
-      isTakeAway: e.detail.value
-    });
-  },
-
   // 关闭分别结算弹窗
   handleCloseSeparateSettleModal() {
     this.setData({ showSeparateSettleModal: false });
@@ -520,10 +535,10 @@ console.log('购物车已同步到本地存储');
 
   // 结算点餐区域
   settleFood() {
-    // 检查是否选择了地址（仅外卖需要）
-    if (!this.data.isTakeAway && !this.data.selectedAddress) {
+    // 检查是否选择桌号
+    if (!this.data.tableNumber || this.data.tableNumber <= 0) {
       wx.showToast({
-        title: '请选择收货地址',
+        title: '请先选择桌号',
         icon: 'none'
       });
       return;
@@ -539,7 +554,7 @@ console.log('购物车已同步到本地存储');
       return;
     }
 
-    // 同步到 orderCart，格式转换为 order 页面需要的格式
+    // 同步到 orderCart，格式转换为 confirm-order 页面需要的格式
     const orderCart = {};
     foodItems.forEach(item => {
       orderCart[item.id] = {
@@ -554,9 +569,9 @@ console.log('购物车已同步到本地存储');
     } catch (e) {}
 
     this.setData({ showSeparateSettleModal: false }, () => {
-      // 点餐跳转到 order 页面
+      // 点餐直接跳转到 confirm-order 页面
       wx.navigateTo({
-        url: '/subpkg/order/order'
+        url: '/subpkg/confirm-order/confirm-order'
       });
     });
   },
