@@ -1,13 +1,4 @@
-﻿<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}}">
-  <view class="cart-header">
-    <view class="header-left">
-      <text class="header-title">购物车</text>
-    </view>
-    <view class="header-right">
-      <text class="table-number" wx:if="{{tableNumber && tableNumber > 0}}">桌号: {{tableNumber}}</text>
-      <text class="table-number placeholder" wx:else>请先选择桌号</text>
-    </view>
-  </view>
+<view class="container {{showModal ? 'fixed' : ''}} {{showCartDetail ? 'fixed' : ''}}">
   <view class="cart-list">
     <!-- 空购物车提示 -->
     <view class="empty-cart" wx:if="{{cartList.length === 0}}">
@@ -40,6 +31,10 @@
         <view class="region-title">
           <text class="region-name">{{regions.food.name}}</text>
           <text class="region-count">（{{regions.food.items.length}}件）</text>
+        </view>
+        <view class="region-right">
+          <text class="table-number" wx:if="{{tableNumber && tableNumber > 0}}">桌号: {{tableNumber}}</text>
+          <text class="table-number placeholder" wx:else>请先选择桌号</text>
         </view>
       </view>
       <!-- 区域商品 -->
@@ -173,6 +168,11 @@
                 </view>
                 <view class="default-text" wx:else>
                   <text>默认</text>
+                </view>
+                <view class="edit-address-btn" 
+                      bindtap="editAddress" 
+                      data-id="{{item.id}}">
+                  <text>编辑</text>
                 </view>
               </view>
             </view>

@@ -157,6 +157,11 @@
     margin-left: 8rpx;
   }
 
+  .region-right {
+    display: flex;
+    align-items: center;
+  }
+
   .region-items {
     padding: 0 24rpx 24rpx;
   }
@@ -231,20 +236,20 @@
     display: flex;
     align-items: center;
     background-color: #FAF6F0;
-    border-radius: 32rpx;
-    padding: 4rpx;
+    border-radius: 36rpx;
+    padding: 6rpx;
     gap: 0;
   }
   
   .count-btn {
-    width: 52rpx;
-    height: 52rpx;
+    width: 68rpx;
+    height: 68rpx;
     border-radius: 50%;
     background-color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32rpx;
+    font-size: 36rpx;
     color: #D4A76A;
     font-weight: 500;
     box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.15);
@@ -356,7 +361,8 @@
     background-color: #fff;
     border-radius: 32rpx 32rpx 0 0;
     max-height: 80vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
   
   .modal-header {
@@ -523,6 +529,21 @@
     padding: 8rpx 20rpx;
   }
 
+  .edit-address-btn {
+    font-size: 22rpx;
+    color: #666;
+    padding: 8rpx 20rpx;
+    border: 1rpx solid #ddd;
+    border-radius: 24rpx;
+    background-color: #fff;
+    margin-top: 8rpx;
+    transition: all 0.3s ease;
+  }
+
+  .edit-address-btn:active {
+    background-color: #FAF6F0;
+  }
+
   .cart-detail-list {
     max-height: 400rpx;
     overflow-y: auto;
@@ -621,10 +642,19 @@
     border-radius: 8rpx;
   }
   
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24rpx 32rpx;
+  }
+  
   /* 弹窗按钮 */
   .modal-footer {
     display: flex;
     border-top: 1rpx solid #FAF6F0;
+    position: sticky;
+    bottom: 0;
+    background-color: #fff;
   }
   
   .modal-btn {

@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api'); 
+const api = require('../../utils/api'); 
 const app = getApp();
 
 Page({ 
@@ -46,10 +46,21 @@ Page({
     });
   },
 
-  canSettle() {
-    const hasTableNumber = this.data.tableNumber && this.data.tableNumber > 0;
-    const hasSelectedItems = this.data.selectedCount > 0;
-    return hasTableNumber && hasSelectedItems;
+  canSettle(cartList) {
+    const items = cartList || this.data.cartList;
+    const hasSelectedItems = items.some(item => item.checked);
+    if (!hasSelectedItems) {
+      return false;
+    }
+    
+    const hasFood = items.some(item => item.type === 'food' && item.checked);
+    const hasGoods = items.some(item => item.type === 'goods' && item.checked);
+    
+    if (hasFood && !hasGoods) {
+      return this.data.tableNumber && this.data.tableNumber > 0;
+    }
+    
+    return true;
   },
 
   getUserAddressList() {
@@ -80,7 +91,7 @@ Page({
   }, 
 
   restoreCart() { 
-    const cartList = (wx.getStorageSync('cartList') || []).map(item => ({ 
+    let cartList = (wx.getStorageSync('cartList') || []).map(item => ({ 
       ...item, 
       checked: !!item.checked, 
       count: Number(item.count || 0),
@@ -89,14 +100,32 @@ Page({
       type: item.type || 'goods'
     })); 
 
+    const orderCart = wx.getStorageSync('orderCart') || {};
+    const cartItemIds = new Set(cartList.map(item => String(item.id)));
+    
+    for (const id in orderCart) {
+      if (!cartItemIds.has(id)) {
+        const item = orderCart[id];
+        cartList.push({
+          id: String(id),
+          name: item.name || '',
+          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          image: item.image || '',
+          count: Number(item.count || item.quantity || 0),
+          checked: false,
+          type: 'food',
+          stock: Number(item.stock || 0)
+        });
+      }
+    }
+
     this.setData({ cartList }); 
-    this.groupItemsByRegion();
+    this.groupItemsByRegion(cartList);
     this.calcTotal(); 
   },
 
   // 按类型分组商品
-  groupItemsByRegion() {
-    const cartList = this.data.cartList;
+  groupItemsByRegion(cartList) {
     const regions = {
       food: { 
         name: '点餐', 
@@ -120,7 +149,6 @@ Page({
       }
     };
 
-    // 按照商品类型分组
     cartList.forEach(item => {
       if (item.type === 'food') {
         regions.food.items.push(item);
@@ -129,28 +157,20 @@ Page({
       }
     });
 
-    // 检查每个区域是否有选中的商品，并计算每个区域的总价格
     Object.keys(regions).forEach(key => {
       const region = regions[key];
-      // 获取选中的商品
       const checkedItems = region.items.filter(item => item.checked);
       region.checkedItems = checkedItems;
       region.selected = checkedItems.length > 0;
-      // 计算区域总价格
       const totalPrice = checkedItems.reduce((total, item) => total + (item.price * item.count), 0);
       region.totalPrice = totalPrice.toFixed(2);
-      // 获取选中商品名称
       region.checkedItemNames = checkedItems.map(item => item.name);
-      // 获取预览图片（最多3张）
       region.previewImages = checkedItems.slice(0, 3).map(item => item.image);
-      // 计算超出数量
       region.moreCount = checkedItems.length > 3 ? checkedItems.length - 3 : 0;
     });
 
     this.setData({ regions });
   },
-
-
 
   syncCart(cartList) { 
     const normalizedCartList = cartList 
@@ -167,26 +187,26 @@ Page({
       })); 
 
     this.setData({ cartList: normalizedCartList }); 
-    this.groupItemsByRegion();
+    this.groupItemsByRegion(normalizedCartList);
     this.calcTotal(); 
     wx.setStorageSync('cartList', normalizedCartList); 
 
-// 同步更新orderCart（点餐页面购物车数据）
-const orderCart = {};
-normalizedCartList.forEach(item => {
-  if (item.type === 'food') {
-    orderCart[item.id] = {
-      ...item,
-      quantity: item.count,
-      price: parseFloat(item.price)
-    };
-  }
-});
-wx.setStorageSync('orderCart', orderCart);
+    // 同步更新orderCart（点餐页面购物车数据）
+    const orderCart = {};
+    normalizedCartList.forEach(item => {
+      if (item.type === 'food') {
+        orderCart[item.id] = {
+          ...item,
+          quantity: item.count,
+          price: parseFloat(item.price)
+        };
+      }
+    });
+    wx.setStorageSync('orderCart', orderCart);
 
-// 购物车同步暂时使用本地存储，后端API暂未实现
-console.log('购物车已同步到本地存储');
-},
+    // 购物车同步暂时使用本地存储，后端API暂未实现
+    console.log('购物车已同步到本地存储');
+  },
 
   handleMinus(e) { 
     const id = String(e.currentTarget.dataset.id); 
@@ -251,21 +271,22 @@ console.log('购物车已同步到本地存储');
   calcTotal() { 
     let totalPrice = 0; 
     let selectedCount = 0; 
+    const cartList = this.data.cartList;
 
-    this.data.cartList.forEach((item) => { 
+    cartList.forEach((item) => { 
       if (item.checked) { 
         totalPrice += Number(item.price || 0) * Number(item.count || 0); 
         selectedCount += Number(item.count || 0); 
       } 
     }); 
 
-    const selectAll = this.data.cartList.length > 0 && this.data.cartList.every(item => item.checked); 
+    const selectAll = cartList.length > 0 && cartList.every(item => item.checked); 
 
     this.setData({ 
       totalPrice: totalPrice.toFixed(2), 
       selectedCount,
       selectAll,
-      canSettle: this.canSettle()
+      canSettle: this.canSettle(cartList)
     }); 
   }, 
 
@@ -452,7 +473,6 @@ console.log('购物车已同步到本地存储');
     this.setData({ showModal: false }); 
   },
 
- 
 
   navTo(e) { 
     const pageMap = { 
@@ -477,18 +497,21 @@ console.log('购物车已同步到本地存储');
   },
 
   handleClearCart() {
+    const selectedItems = this.data.cartList.filter(item => item.checked);
+    
+    if (selectedItems.length === 0) {
+      wx.showToast({ title: '请先选择要清空的商品', icon: 'none' });
+      return;
+    }
+
     wx.showModal({
       title: '确认清空',
-      content: '确定要清空购物车吗？',
+      content: `确定要清空选中的 ${selectedItems.length} 件商品吗？`,
       success: (res) => {
         if (res.confirm) {
-          this.setData({ 
-            cartList: [],
-            selectAll: false
-          });
-          this.calcTotal();
-          wx.removeStorageSync('cartList');
-          wx.showToast({ title: '购物车已清空', icon: 'success' });
+          const remainCart = this.data.cartList.filter(item => !item.checked);
+          this.syncCart(remainCart);
+          wx.showToast({ title: '已清空选中商品', icon: 'success' });
         }
       }
     });
@@ -509,6 +532,31 @@ console.log('购物车已同步到本地存储');
     });
   },
 
+  setDefaultAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    
+    wx.showLoading({ title: '设置中...' });
+    api.api.user.setDefaultAddress(addressId)
+      .then(() => {
+        this.getUserAddressList();
+        wx.showToast({ title: '已设为默认地址', icon: 'success' });
+      })
+      .catch((err) => {
+        console.error('设置默认地址失败:', err);
+        wx.showToast({ title: '设置失败', icon: 'none' });
+      })
+      .finally(() => {
+        wx.hideLoading();
+      });
+  },
+
+  editAddress(e) {
+    const addressId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/subpkg/address/address?id=${addressId}`
+    });
+  },
+
   addAddress() {
     wx.navigateTo({
       url: '/subpkg/address/address'
@@ -518,10 +566,11 @@ console.log('购物车已同步到本地存储');
   // 切换区域选中状态
   toggleRegionSelect(e) {
     const region = e.currentTarget.dataset.region;
-    const currentRegionSelected = this.data.regions[region].selected;
+    const currentRegionSelected = this.data.cartList
+      .filter(item => item.type === region)
+      .every(item => item.checked);
     const cartList = this.data.cartList.map(item => ({
       ...item,
-      // 如果商品属于当前区域，设置选中状态为当前状态的反值
       checked: item.type === region ? !currentRegionSelected : item.checked
     }));
     
