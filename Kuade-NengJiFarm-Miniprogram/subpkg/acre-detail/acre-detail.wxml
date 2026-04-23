@@ -95,8 +95,7 @@
   </view>
 
   <view class="bottom-bar">
-   
-    <button class="service-btn function-item function-item-btn" open-type="contact">联系客服</button>
+    
     <button 
       class="buy-btn" 
       bindtap="confirmPurchase"
@@ -105,4 +104,9 @@
       {{acreDetail.remainingAcres <= 0 ? '已卖完' : '立即购买'}}
     </button>
   </view>
+
+  <!-- 客服按钮 -->
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
 </view>

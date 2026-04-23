@@ -356,7 +356,7 @@
 }
 
 .service-button .service-icon {
-  width: 48rpx;
-  height: 48rpx;
-  filter: brightness(0) invert(1);
+  width: 50rpx;
+  height: 50rpx;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(90deg) brightness(200%) contrast(100%);
 }

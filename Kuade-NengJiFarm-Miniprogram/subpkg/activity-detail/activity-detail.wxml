@@ -58,11 +58,15 @@
   
   <!-- 底部按钮 -->
   <view class="bottom-buttons" wx:if="{{!showQRCode}}">
-    <button class="contact-btn function-item function-item-btn" open-type="contact">联系客服</button>
     <button class="register-btn" bindtap="registerActivity" disabled="{{activity.remainingSlots <= 0}}">
       {{activity.remainingSlots <= 0 ? '已报满' : '立即报名'}}
     </button>
   </view>
+  
+  <!-- 客服按钮 -->
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
   
   <!-- 二维码页面 -->
   <view class="qrcode-container" wx:if="{{showQRCode}}">
