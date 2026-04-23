@@ -32,16 +32,19 @@
           <text class="region-name">{{regions.food.name}}</text>
           <text class="region-count">（{{regions.food.items.length}}件）</text>
         </view>
-        <view class="region-right">
+        <view class="region-right" catchtap="goToOrder">
           <text class="table-number" wx:if="{{tableNumber && tableNumber > 0}}">桌号: {{tableNumber}}</text>
-          <text class="table-number placeholder" wx:else>请先选择桌号</text>
+          <view class="table-number-link" wx:else>
+            <text>点击选择桌号</text>
+            <text class="arrow">→</text>
+          </view>
         </view>
       </view>
       <!-- 区域商品 -->
       <view class="region-items">
         <view class="cart-item" wx:for="{{regions.food.items}}" wx:key="id">
           <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" bindtap="toggleSelect" data-id="{{item.id}}">
+          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}">
             <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
               <text wx:if="{{item.checked}}">✓</text>
             </view>
@@ -60,9 +63,9 @@
 
           <!-- 数量加减 -->
           <view class="item-count">
-            <view class="count-btn" bindtap="handleMinus" data-id="{{item.id}}">-</view>
+            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}">-</view>
             <view class="count-num">{{item.count}}</view>
-            <view class="count-btn" bindtap="handlePlus" data-id="{{item.id}}">+</view>
+            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </view>
@@ -86,7 +89,7 @@
       <view class="region-items">
         <view class="cart-item" wx:for="{{regions.goods.items}}" wx:key="id">
           <!-- 勾选框：空心圆样式 -->
-          <view class="checkbox" bindtap="toggleSelect" data-id="{{item.id}}">
+          <view class="checkbox" catchtap="toggleSelect" data-id="{{item.id}}">
             <view class="checkbox-circle {{item.checked ? 'checked' : ''}}">
               <text wx:if="{{item.checked}}">✓</text>
             </view>
@@ -105,9 +108,9 @@
 
           <!-- 数量加减 -->
           <view class="item-count">
-            <view class="count-btn" bindtap="handleMinus" data-id="{{item.id}}">-</view>
+            <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}">-</view>
             <view class="count-num">{{item.count}}</view>
-            <view class="count-btn" bindtap="handlePlus" data-id="{{item.id}}">+</view>
+            <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </view>

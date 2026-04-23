@@ -41,9 +41,9 @@ Page({
     const finalTableNumber = tableNumber || appTableNumber;
     
     this.setData({ 
-      tableNumber: finalTableNumber,
-      canSettle: this.canSettle()
+      tableNumber: finalTableNumber
     });
+    this.calcTotal();
   },
 
   canSettle(cartList) {
@@ -560,6 +560,12 @@ Page({
   addAddress() {
     wx.navigateTo({
       url: '/subpkg/address/address'
+    });
+  },
+
+  goToOrder() {
+    wx.navigateTo({
+      url: '/subpkg/order/order'
     });
   },
 
