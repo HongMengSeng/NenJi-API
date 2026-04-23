@@ -4,6 +4,10 @@ const api = apiModule.api;
 const ORDER_TIMEOUT_MINUTES = 0.3;
 const ORDER_TIMEOUT_MS = ORDER_TIMEOUT_MINUTES * 60 * 1000;
 
+// 已取消订单自动删除的时间（单位：分钟）
+const CANCELLED_ORDER_DELETE_MINUTES = 10;
+const CANCELLED_ORDER_DELETE_MS = CANCELLED_ORDER_DELETE_MINUTES * 60 * 1000;
+
 class OrderTimer {
   constructor() {
     this.timers = {};
@@ -70,6 +74,8 @@ class OrderTimer {
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);
+        // 记录取消时间到本地 Storage
+        this.saveCancelledTime(orderId, Date.now());
         // 状态更新成功后再通知页面刷新，避免页面读到旧状态
         if (onTimeout) {
           onTimeout(orderId);
@@ -89,6 +95,71 @@ class OrderTimer {
       });
   }
 
+  // ========== 本地取消时间存储（Storage）==========
+
+  static get STORAGE_KEY() { return 'order_cancelled_times'; }
+
+  // 获取所有已记录的取消时间 { orderId: timestamp }
+  getCancelledTimesFromStorage() {
+    try {
+      const data = wx.getStorageSync(OrderTimer.STORAGE_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      console.warn('读取取消时间缓存失败:', e);
+      return {};
+    }
+  }
+
+  // 记录某个订单的取消时间
+  saveCancelledTime(orderId, timestamp) {
+    try {
+      const times = this.getCancelledTimesFromStorage();
+      times[String(orderId)] = timestamp;
+      wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
+      console.log(`已记录订单 ${orderId} 的取消时间:`, new Date(timestamp).toLocaleString());
+    } catch (e) {
+      console.warn('保存取消时间到缓存失败:', e);
+    }
+  }
+
+  // 获取某个订单的本地记录的取消时间
+  getLocalCancelledTime(orderId) {
+    const times = this.getCancelledTimesFromStorage();
+    return times[String(orderId)] || null;
+  }
+
+  // 删除某个订单的取消时间记录（订单被删除后清理）
+  removeCancelledTime(orderId) {
+    try {
+      const times = this.getCancelledTimesFromStorage();
+      delete times[String(orderId)];
+      wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
+    } catch (e) {
+      console.warn('清除取消时间缓存失败:', e);
+    }
+  }
+
+  // 清理所有过期的取消时间记录（防止 Storage 无限增长）
+  cleanExpiredRecords() {
+    try {
+      const times = this.getCancelledTimesFromStorage();
+      const now = Date.now();
+      let changed = false;
+      Object.keys(times).forEach(orderId => {
+        // 记录超过 48 小时就清理掉（已经是安全余量了）
+        if (now - times[orderId] > 48 * 3600 * 1000) {
+          delete times[orderId];
+          changed = true;
+        }
+      });
+      if (changed) {
+        wx.setStorageSync(OrderTimer.STORAGE_KEY, JSON.stringify(times));
+      }
+    } catch (e) {
+      // 忽略
+    }
+  }
+
   clearTimer(orderId) {
     if (this.timers[orderId]) {
       clearTimeout(this.timers[orderId]);
@@ -101,6 +172,29 @@ class OrderTimer {
       this.clearTimer(orderId);
     });
   }
+
+  // 检查已取消订单是否超过自动删除时间（优先用本地记录的取消时间）
+  isCancelledOrderExpired(orderId, serverCancelledTime) {
+    // 优先使用本地 Storage 记录的取消时间
+    const localTime = this.getLocalCancelledTime(orderId);
+    const cancelledAt = localTime || this.parseCreateTime(serverCancelledTime);
+    
+    // 没有任何取消时间信息，说明无法判断，不自动删除
+    if (!localTime && !serverCancelledTime) return false;
+    
+    const now = Date.now();
+    const elapsed = now - cancelledAt;
+    return elapsed >= CANCELLED_ORDER_DELETE_MS;
+  }
+
+  // 获取已取消订单剩余可保留时间（毫秒）
+  getCancelledRemainingTime(cancelledTime) {
+    if (!cancelledTime) return 0;
+    const now = Date.now();
+    const cancelledAt = this.parseCreateTime(cancelledTime);
+    const elapsed = now - cancelledAt;
+    return Math.max(0, CANCELLED_ORDER_DELETE_MS - elapsed);
+  }
 }
 
 const orderTimer = new OrderTimer();
@@ -108,5 +202,7 @@ const orderTimer = new OrderTimer();
 module.exports = {
   orderTimer,
   ORDER_TIMEOUT_MINUTES,
-  ORDER_TIMEOUT_MS
+  ORDER_TIMEOUT_MS,
+  CANCELLED_ORDER_DELETE_MINUTES,
+  CANCELLED_ORDER_DELETE_MS
 };

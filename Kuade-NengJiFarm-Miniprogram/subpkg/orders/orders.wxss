@@ -344,6 +344,12 @@
   color: #ff4d4f;
 }
 
+.danger-btn {
+  background-color: #fff0f0;
+  color: #e64340;
+  border: 1rpx solid #ffccc7;
+}
+
 /* 无订单状态 */
 .empty-order {
   display: flex;
@@ -369,4 +375,18 @@
 .empty-hint {
   font-size: 24rpx;
   color: #d4a76a;
+}
+
+/* 更多商品提示 */
+.more-items-hint {
+  padding: 16rpx 0;
+  text-align: center;
+  background-color: #fafafa;
+  border-radius: 8rpx;
+  margin-top: 8rpx;
+}
+
+.more-items-hint text {
+  font-size: 24rpx;
+  color: #999;
 }

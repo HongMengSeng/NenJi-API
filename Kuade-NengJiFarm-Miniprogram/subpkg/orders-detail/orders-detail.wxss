@@ -622,6 +622,55 @@
   background: #ece8e0;
 }
 
+/* 危险按钮（删除） */
+.btn-danger {
+  background: #fff0f0;
+  color: #e64340;
+  border: 1rpx solid #ffccc7;
+}
+
+.btn-danger:active {
+  background: #ffe4e4;
+}
+
+/* 客服按钮（红色圆形悬浮） */
+.service-button {
+  position: fixed;
+  bottom: 200rpx;
+  left: 30rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #e64340;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(230, 67, 64, 0.4);
+  z-index: 9999;
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1;
+  border: none;
+}
+
+.service-button::after {
+  border: none;
+}
+
+.function-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-icon {
+  width: 50rpx;
+  height: 50rpx;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(90deg) brightness(200%) contrast(100%);
+}
+
 /* ============================================
    深色模式
    ============================================ */

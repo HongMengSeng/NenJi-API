@@ -77,12 +77,15 @@
           
           <view class="order-content">
             <view class="order-items" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
-              <view class="order-item-row" wx:for="{{item.items}}" wx:for-item="goods" wx:key="index">
+              <view class="order-item-row" wx:for="{{item.items}}" wx:for-item="goods" wx:key="index" wx:if="{{index < 2}}">
                 <image class="item-image" src="{{goods.image}}" />
                 <view class="item-info">
                   <view class="item-name">{{goods.name}}</view>
                   <view class="item-price">￥{{goods.price}} × {{goods.quantity}}</view>
                 </view>
+              </view>
+              <view class="more-items-hint" wx:if="{{item.items.length > 2}}">
+                <text>还有 {{item.items.length - 2}} 件商品，点击查看详情</text>
               </view>
             </view>
             
@@ -93,7 +96,7 @@
               </view>
               
               <view class="order-actions">
-                <button 
+                <button
                   wx:if="{{item.status === 'pending'}}"
                   class="action-btn primary-btn"
                   catchtap="payOrder"
@@ -101,7 +104,7 @@
                 >
                   去支付
                 </button>
-                <button 
+                <button
                   wx:if="{{item.status === 'pending'}}"
                   class="action-btn delete-btn"
                   catchtap="deleteOrder"
@@ -109,7 +112,23 @@
                 >
                   删除
                 </button>
-                <button 
+                <block wx:if="{{item.status === 'cancelled'}}">
+                  <button
+                    class="action-btn danger-btn"
+                    catchtap="deleteCancelledOrder"
+                    data-order-id="{{item.id}}"
+                  >
+                    删除订单
+                  </button>
+                  <button
+                    class="action-btn secondary-btn"
+                    catchtap="viewOrderDetail"
+                    data-order-id="{{item.id}}"
+                  >
+                    查看详情
+                  </button>
+                </block>
+                <button
                   wx:else
                   class="action-btn secondary-btn"
                   catchtap="viewOrderDetail"

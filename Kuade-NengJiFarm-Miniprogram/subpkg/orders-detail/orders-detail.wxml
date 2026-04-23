@@ -190,8 +190,13 @@
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="btn btn-ghost" bindtap="markShipping">模拟发货</button>
     <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
-    <button class="btn btn-ghost" open-type="contact">联系客服</button>
+    <button wx:if="{{order.status === 'cancelled'}}" class="btn btn-danger" bindtap="deleteOrder">删除订单</button>
     <button wx:if="{{order.status === 'pending'}}" class="btn btn-primary" bindtap="payOrder">立即支付</button>
   </view>
+
+  <!-- 客服悬浮按钮 -->
+  <button class="service-button function-item function-item-btn" open-type="contact">
+    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/666666/headset.png" />
+  </button>
 
 </view>

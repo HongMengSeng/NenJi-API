@@ -7,11 +7,12 @@ Page({
     currentOrderType: '',
     scrollToView: '',
     tabs: [
-      { key: 'all', name: '全部' },
-      { key: 'pending', name: '待付款' },
-      { key: 'paid', name: '待发货' },
-      { key: 'shipping', name: '待收货' },
-    ],
+        { key: 'all', name: '全部' },
+        { key: 'pending', name: '待付款' },
+        { key: 'paid', name: '待发货' },
+        { key: 'shipping', name: '待收货' },
+        { key: 'cancelled', name: '已取消' }
+      ],
     searchKeyword: '',
     searching: false,
     allOrders: [],
@@ -28,9 +29,8 @@ Page({
   refreshTimer: null,
 
   onLoad(options) {
-    // 防御性初始化，防止 getOrders 在 onLoad 完成前被调用
-    if (!this.processingTimeoutOrders) this.processingTimeoutOrders = new Set();
-    if (!this.deletedTimeoutOrderIds) this.deletedTimeoutOrderIds = new Set();
+    // 完整初始化所有状态
+    this.initPageState();
     console.log('Orders page onLoad, options:', options);
     let tab = 'all';
     if (options.tab) {
@@ -48,12 +48,25 @@ Page({
   },
 
   onShow() {
+    // 每次显示页面时都重新初始化关键状态
+    this.initPageState();
     if (this.data.isPageVisible) {
       this.getOrders();
     }
     this.setData({ isPageVisible: true });
     this.startCountdownUpdate();
     this.startOrderRefresh();
+  },
+
+  // 页面状态初始化函数
+  initPageState() {
+    // 初始化处理超时订单的集合
+    if (!this.processingTimeoutOrders) {
+      this.processingTimeoutOrders = new Set();
+    } else {
+      this.processingTimeoutOrders.clear();
+    }
+    console.log('Page state initialized');
   },
 
   onHide() {
@@ -189,24 +202,7 @@ Page({
             createTime: order.createTime
           });
         });
-        
-        const deletedIds = (self.deletedTimeoutOrderIds instanceof Set)
-          ? self.deletedTimeoutOrderIds
-          : new Set();
-        ordersData = ordersData.filter(order => {
-          const orderIdStr = String(order.id);
-          const isDeleted = deletedIds.has(orderIdStr);
-          if (isDeleted) {
-            console.log('过滤掉已删除订单:', { 
-              id: order.id, 
-              idStr: orderIdStr,
-              type: order.type 
-            });
-          }
-          return !isDeleted;
-        });
-        console.log('过滤已删除订单后:', ordersData.length, '个订单');
-        
+
         const allOrders = ordersData.map(order => ({
           ...order,
           type: order.type,
@@ -222,7 +218,10 @@ Page({
         }));
         
         self.initOrderCountdowns(allOrders);
-        
+
+        // 自动清理超期已取消订单（超过24小时未删除的）
+        self.autoCleanExpiredCancelledOrders(ordersData);
+
         const filteredOrders = self.filterOrders(allOrders, self.data.searchKeyword);
         const hasSearchKeyword = self.data.searchKeyword && self.data.searchKeyword.trim();
         const noSearchResult = hasSearchKeyword && filteredOrders.length === 0 && allOrders.length > 0;
@@ -363,52 +362,23 @@ Page({
     if (!this.processingTimeoutOrders || !(this.processingTimeoutOrders instanceof Set)) {
       this.processingTimeoutOrders = new Set();
     }
-    if (!this.deletedTimeoutOrderIds || !(this.deletedTimeoutOrderIds instanceof Set)) {
-      this.deletedTimeoutOrderIds = new Set();
-    }
     
     if (this.processingTimeoutOrders.has(orderIdStr)) {
       console.log('订单已在处理中，跳过:', { orderId, orderIdStr });
       return;
     }
     
-    if (this.deletedTimeoutOrderIds.has(orderIdStr)) {
-      console.log('订单已删除过，跳过:', { orderId, orderIdStr });
-      return;
-    }
-    
     this.processingTimeoutOrders.add(orderIdStr);
-    this.deletedTimeoutOrderIds.add(orderIdStr);
     
-    // 先从界面移除订单
-    const newAllOrders = this.data.allOrders.filter(order => String(order.id) !== orderIdStr);
-    const filteredOrders = this.filterOrders(newAllOrders, this.data.searchKeyword);
-    
-    const newCountdowns = { ...this.data.orderCountdowns };
-    delete newCountdowns[orderIdStr];
-    
-    console.log('更新界面，移除订单');
-    this.setData({
-      allOrders: newAllOrders,
-      orders: filteredOrders,
-      orderCountdowns: newCountdowns
-    });
-    
+    // 不立即从界面移除，等待取消成功后刷新列表
     orderTimer.clearTimer(orderId);
     
-    console.log('调用 API 处理订单');
+    console.log('调用 API 取消订单');
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);
-        // 尝试删除订单，但即使删除失败也没关系
-        return api.order.delete(orderId)
-          .then(() => {
-            console.log(`订单 ${orderId} 自动删除成功`);
-          })
-          .catch((deleteErr) => {
-            console.warn(`订单 ${orderId} 删除失败，但已成功取消:`, deleteErr);
-            // 删除失败不算错误，因为订单已经取消了
-          });
+        // 取消成功后刷新订单列表，显示已取消状态
+        this.getOrders();
       })
       .catch((err) => {
         // 如果订单不存在（404），说明已经被处理了，不算错误
@@ -417,6 +387,8 @@ Page({
         } else {
           console.error(`订单 ${orderId} 取消失败:`, err);
         }
+        // 无论成功或失败，都刷新一下列表
+        this.getOrders();
       })
       .finally(() => {
         if (this.processingTimeoutOrders) {
@@ -431,7 +403,7 @@ Page({
     if (tab === this.data.activeTab) return;
     
     let newCurrentOrderType = this.data.currentOrderType;
-    if (['pending', 'paid', 'shipping', 'review', 'refund'].includes(tab)) {
+    if (['pending', 'paid', 'shipping', 'cancelled', 'review', 'refund'].includes(tab)) {
       newCurrentOrderType = '';
     } else if (['food', 'acre', 'activity', 'cart'].includes(tab)) {
       newCurrentOrderType = tab;
@@ -457,6 +429,37 @@ Page({
     const orderId = e.currentTarget.dataset.orderId;
     wx.navigateTo({
       url: `/subpkg/pay/pay?orderId=${orderId}`
+    });
+  },
+
+  // 删除已取消的订单
+  deleteCancelledOrder(e) {
+    const orderId = e.currentTarget.dataset.orderId;
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个已取消的订单吗？删除后将无法恢复。',
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: '#e64340',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '删除中...' });
+          api.order.delete(orderId)
+            .then(() => {
+              // 清理本地的取消时间记录
+              orderTimer.removeCancelledTime(orderId);
+              wx.showToast({ title: '订单已删除', icon: 'success' });
+              this.getOrders();
+            })
+            .catch((err) => {
+              console.error('删除已取消订单失败:', err);
+              wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+            })
+            .finally(() => {
+              wx.hideLoading();
+            });
+        }
+      }
     });
   },
 
@@ -500,6 +503,36 @@ Page({
             });
         }
       }
+    });
+  },
+
+  // 自动清理超期已取消订单（超过10分钟未删除的）
+  autoCleanExpiredCancelledOrders(orders) {
+    const self = this;
+    // 先清理过期的本地缓存记录
+    orderTimer.cleanExpiredRecords();
+
+    const expiredOrders = orders.filter(order => {
+      if (order.status !== 'cancelled') return false;
+      // 优先使用本地 Storage 记录的取消时间判断
+      const cancelledTime = order.cancelTime || order.updateTime || order.createTime;
+      return orderTimer.isCancelledOrderExpired(order.id, cancelledTime);
+    });
+
+    if (expiredOrders.length === 0) return;
+
+    console.log('发现超期已取消订单，自动清理:', expiredOrders.length, '条');
+    expiredOrders.forEach(order => {
+      console.log(`自动删除超期订单: ${order.id} - ${order.orderNumber}`);
+      api.order.delete(order.id)
+        .then(() => {
+          console.log(`超期已取消订单 ${order.id} 自动删除成功`);
+          // 清理本地的取消时间记录
+          orderTimer.removeCancelledTime(order.id);
+        })
+        .catch((err) => {
+          console.warn(`超期已取消订单 ${order.id} 删除失败:`, err);
+        });
     });
   },
 

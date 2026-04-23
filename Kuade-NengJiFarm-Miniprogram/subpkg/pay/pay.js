@@ -16,6 +16,8 @@ Page({
   },
 
   onLoad: function (options) {
+    // 初始化页面状态
+    this.initPageState();
     // 获取订单ID和支付金额
     const orderId = options.orderId || '';
     const totalPrice = Number(options.totalPrice || 0);
@@ -42,6 +44,30 @@ Page({
 
     // 自动开始支付
     this.ensurePayAmountAndStart();
+  },
+
+  onShow: function () {
+    // 每次显示页面时确保状态正确
+    console.log('Pay page onShow');
+  },
+
+  onHide: function () {
+    // 页面隐藏时清理临时状态
+    console.log('Pay page onHide');
+  },
+
+  onUnload: function () {
+    // 页面卸载时清理
+    console.log('Pay page onUnload');
+  },
+
+  // 初始化页面状态
+  initPageState: function () {
+    this.setData({
+      loading: false,
+      payStatus: 'pending'
+    });
+    console.log('Pay page state initialized');
   },
 
   ensurePayAmountAndStart: function () {

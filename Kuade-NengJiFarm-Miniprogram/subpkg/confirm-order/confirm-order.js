@@ -16,6 +16,8 @@ Page({
   },
 
   onLoad: function () {
+    // 初始化页面状态
+    this.initPageState();
     const cart = wx.getStorageSync('orderCart') || {};
     const cartItems = Object.values(cart);
 
@@ -38,6 +40,46 @@ Page({
       },
       tableNumber: tableNumber || '未选择'
     });
+  },
+
+  onShow: function () {
+    // 每次显示页面时重新加载购物车数据
+    console.log('Confirm order page onShow');
+    const cart = wx.getStorageSync('orderCart') || {};
+    const cartItems = Object.values(cart);
+
+    let totalPrice = 0;
+    let totalCount = 0;
+    cartItems.forEach(item => {
+      const price = Number((item.price || 0).toString().replace(/[¥￥]/g, ''));
+      totalPrice += price * Number(item.quantity || 0);
+      totalCount += Number(item.quantity || 0);
+    });
+    totalPrice = Number(totalPrice.toFixed(2));
+
+    this.setData({
+      'orderInfo.items': cartItems,
+      'orderInfo.totalPrice': totalPrice,
+      'orderInfo.totalCount': totalCount
+    });
+  },
+
+  onHide: function () {
+    console.log('Confirm order page onHide');
+  },
+
+  onUnload: function () {
+    console.log('Confirm order page onUnload');
+  },
+
+  // 初始化页面状态
+  initPageState: function () {
+    this.setData({
+      loading: false,
+      isCreatingOrder: false,
+      selectedPayment: 'wechat'
+    });
+    console.log('Confirm order page state initialized');
   },
 
   selectPayment: function (e) {
