@@ -191,12 +191,8 @@ Page({
       const localTime = orderTimer.getLocalCancelledTime(order.id);
       if (localTime) {
         const remaining = orderTimer.getCancelledRemainingTime(localTime);
-        if (remaining <= 0) {
-          this.setData({ cancelledDeleteText: '即将自动删除' });
-        } else {
-          const totalMinutes = Math.ceil(remaining / (60 * 1000));
-          this.setData({ cancelledDeleteText: `${totalMinutes}分钟后自动删除` });
-        }
+        const totalMinutes = Math.ceil(remaining / (60 * 1000));
+        this.setData({ cancelledDeleteText: `${totalMinutes}分钟后自动删除` });
       }
     } else {
       this.setData({ cancelledDeleteText: '' });

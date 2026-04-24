@@ -39,11 +39,19 @@ class OrderTimer {
   parseCreateTime(createTime) {
     if (!createTime) return Date.now();
     
+    // 如果是数字类型，直接返回
+    if (typeof createTime === 'number') {
+      return createTime;
+    }
+    
     let date = new Date(createTime);
     if (!isNaN(date.getTime())) {
-      const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
-      if (parts) {
-        date = new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]);
+      // 只有当是字符串时才尝试 match
+      if (typeof createTime === 'string') {
+        const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+        if (parts) {
+          date = new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]);
+        }
       }
     }
     return date.getTime();

@@ -112,6 +112,11 @@
   padding: 0 8rpx;
 }
 
+.cancelled-inline {
+  background: rgba(255,255,255,0.25);
+  font-size: 26rpx;
+}
+
 /* 二维码区域（在 Banner 内） */
 .qrcode-divider {
   height: 1rpx;

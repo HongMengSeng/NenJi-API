@@ -130,6 +130,18 @@
   resize: none;
 }
 
+/* 手机号按钮 */
+.phone-button {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 /* 所在地区选择 */
 .region-select {
   flex: 1;

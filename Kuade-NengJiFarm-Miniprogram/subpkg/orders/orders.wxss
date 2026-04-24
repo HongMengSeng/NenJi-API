@@ -242,6 +242,15 @@
   font-size: 28rpx;
 }
 
+.cancelled-countdown {
+  font-size: 24rpx;
+}
+
+.cancelled-delete-text {
+  color: #e64340;
+  font-weight: 500;
+}
+
 .order-content {
   padding: 20rpx 24rpx;
 }

@@ -418,7 +418,7 @@ Page({
 
   // 格式化已取消订单剩余时间（X分钟后自动删除）
   formatCancelledRemaining(ms) {
-    if (ms <= 0) return '即将自动删除';
+    if (ms <= 0) return '1分钟后自动删除';
     const totalMinutes = Math.ceil(ms / (60 * 1000));
     return `${totalMinutes}分钟后自动删除`;
   },
