@@ -44,7 +44,7 @@
 | `name` | String | 是 | `宫保鸡丁` | 菜品名称 |
 | `price` | Number | 是 | `28.5` | 菜品价格 |
 | `stock` | Number | 列表建议返回 | `25` | 库存数量 |
-| `status` | String | 是 | `已上架` | 状态，`已上架` / `已下架` |
+| `status` | Number | 是 | `1` | 状态，`1`（已上架）/ `0`（已下架） |
 | `image` | String | 列表建议返回 | `https://example.com/dish-cover.jpg` | 列表主图 |
 | `coverImage` | String | 新增/编辑建议返回 | `https://example.com/dish-cover.jpg` | 菜品封面 |
 | `carouselImages` | String[] | 否 | `["https://example.com/a.jpg"]` | 轮播图，前端最多 5 张 |
@@ -223,7 +223,7 @@
 | `id` | 是 | String | `20240601120000` | 菜品 ID |
 | `name` | 是 | String | `宫保鸡丁` | 菜品名称 |
 | `price` | 是 | Number | `29.9` | 菜品价格 |
-| `status` | 是 | String | `已下架` | 状态 |
+| `status` | 是 | Number | `0` | 状态，1-已上架，0-已下架 |
 | `coverImage` | 是 | String | `https://example.com/dish/gongbao-cover.jpg` | 封面图 |
 | `carouselImages` | 否 | String[] | `["https://example.com/a.jpg"]` | 轮播图 |
 | `specImages` | 否 | String[] | `["https://example.com/spec.jpg"]` | 规格图 |
