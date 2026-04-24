@@ -39,11 +39,19 @@ class OrderTimer {
   parseCreateTime(createTime) {
     if (!createTime) return Date.now();
     
+    // 如果是数字类型，直接返回
+    if (typeof createTime === 'number') {
+      return createTime;
+    }
+    
     let date = new Date(createTime);
     if (!isNaN(date.getTime())) {
-      const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
-      if (parts) {
-        date = new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]);
+      // 只有当是字符串时才尝试 match
+      if (typeof createTime === 'string') {
+        const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+        if (parts) {
+          date = new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]);
+        }
       }
     }
     return date.getTime();
@@ -175,15 +183,12 @@ class OrderTimer {
 
   // 检查已取消订单是否超过自动删除时间（优先用本地记录的取消时间）
   isCancelledOrderExpired(orderId, serverCancelledTime) {
-    // 优先使用本地 Storage 记录的取消时间
+    // 只有本地有取消时间记录时才判断是否过期
     const localTime = this.getLocalCancelledTime(orderId);
-    const cancelledAt = localTime || this.parseCreateTime(serverCancelledTime);
-    
-    // 没有任何取消时间信息，说明无法判断，不自动删除
-    if (!localTime && !serverCancelledTime) return false;
+    if (!localTime) return false;
     
     const now = Date.now();
-    const elapsed = now - cancelledAt;
+    const elapsed = now - localTime;
     return elapsed >= CANCELLED_ORDER_DELETE_MS;
   }
 
