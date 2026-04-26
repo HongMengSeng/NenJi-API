@@ -201,7 +201,9 @@
 	function resolveSidebarPage(pageName) {
 		switch ((pageName || '').toLowerCase()) {
 			case 'user.html':
-				return 'user-back.html';
+			case 'user-add.html':
+			case 'user-edit.html':
+				return 'user.html';
 			case 'product-add.html':
 			case 'product-edit.html':
 				return 'product.html';
@@ -227,11 +229,6 @@
 			case 'subscription-add.html':
 			case 'subscription-edit.html':
 				return 'subscription.html';
-			case 'user-back-add.html':
-			case 'user-back-edit.html':
-				return 'user-back.html';
-			case 'user-wechat.html':
-				return 'user-wechat.html';
 			default:
 				return (pageName || '').toLowerCase();
 		}
@@ -273,7 +270,9 @@
 	}
 
 	function isUserSidebarPage(pageName) {
-		return pageName === 'user.html' || pageName === 'user-back.html' || pageName === 'user-wechat.html';
+		return pageName === 'user.html' ||
+			pageName === 'user-add.html' ||
+			pageName === 'user-edit.html';
 	}
 
 	function readOrderMenuExpanded(defaultValue) {
@@ -459,8 +458,7 @@
 		arrow.textContent = '▾';
 
 		submenu.className = 'sidebar-submenu';
-		submenu.appendChild(createOrderSubmenuItem('普通员工管理', 'user-back.html'));
-		submenu.appendChild(createOrderSubmenuItem('普通用户管理', 'user-wechat.html'));
+		submenu.appendChild(createOrderSubmenuItem('用户管理', 'user.html'));
 
 		toggle.appendChild(label);
 		toggle.appendChild(arrow);
@@ -655,18 +653,6 @@
 				if (matchesSidebarLabel(itemLabel, ['点餐管理', '菜品管理', '鑿滃搧绠＄悊'])) {
 					dishGroup = createDishSidebarGroup();
 					menu.replaceChild(dishGroup, menuItems[i]);
-					break;
-				}
-			}
-		}
-
-		menuItems = menu.children;
-		if (!userGroup) {
-			for (i = 0; i < menuItems.length; i += 1) {
-				var userItemLabel = normalizeSidebarText(menuItems[i].textContent);
-				if (matchesSidebarLabel(userItemLabel, ['用户管理', '鐢ㄦ埛绠＄悊', '閻劍鍩涚粻锛勬倞'])) {
-					userGroup = createUserSidebarGroup();
-					menu.replaceChild(userGroup, menuItems[i]);
 					break;
 				}
 			}
