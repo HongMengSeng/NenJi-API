@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!-- 商店信息 -->
+﻿﻿<!-- 商店信息 -->
 <view class="shop-info">
   <view class="shop-header">
     <view class="shop-name">
@@ -49,8 +49,8 @@
 <view class="content">
   <!-- 左侧分类 -->
   <view class="category-list">
-    <view 
-      wx:for="{{categories}}" 
+    <view
+      wx:for="{{categories}}"
       wx:key="id"
       class="category-item {{activeCategory === item.id ? 'active' : ''}}"
       bindtap="switchCategory"
@@ -61,17 +61,29 @@
   </view>
 
   <!-- 右侧商品列表 -->
-  <view class="goods-list">
+  <scroll-view
+    class="goods-list"
+    scroll-y
+    scroll-into-view="{{scrollIntoViewId}}"
+    scroll-with-animation
+    enhanced
+    bounces="false"
+    bindscroll="onScroll"
+  >
     <block wx:if="{{loading}}">
       <view class="loading">加载中...</view>
     </block>
     <block wx:else>
-      <block wx:for="{{mergedGoodsList}}" wx:key="id" wx:for-index="index">
-        <!-- 类别标签 -->
-        <view wx:if="{{item.type === 'category'}}" id="category-{{item.id}}" class="category-tag">
+      <block wx:for="{{mergedGoodsList}}" wx:key="uniqueKey">
+        <!-- 分类标题 -->
+        <view
+          wx:if="{{item.type === 'category'}}"
+          id="category-{{item.id}}"
+          class="category-tag"
+        >
           {{item.name}}
         </view>
-        <!-- 商品项 -->
+        <!-- 商品 -->
         <view wx:else class="goods-item">
           <view class="goods-image-container">
             <image class="goods-image" src="{{item.image}}" bindtap="navigateToGoodsDetail" data-id="{{item.id}}" />
@@ -87,25 +99,19 @@
               <view class="quantity-control">
                 <view class="quantity-btn" catchtap="decreaseQuantity" data-id="{{item.id}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}">-</view>
                 <input class="quantity-input" type="text" pattern="[0-9]*" value="{{cart[item.id] ? cart[item.id].quantity : 0}}" wx:if="{{cart[item.id] && cart[item.id].quantity > 0}}" bindtap="stopPropagation" bindblur="onQuantityInput" bindconfirm="onQuantityInput" data-id="{{item.id}}" />
-                <view class="add-btn" catchtap="addToCart" data-category="{{item.category}}" data-id="{{item.id}}">+</view>
+                <view class="add-btn" catchtap="addToCart" data-id="{{item.id}}">+</view>
               </view>
             </view>
           </view>
         </view>
       </block>
-      <block wx:if="{{mergedGoodsList.length === 0}}">
-        <view class="empty">暂无商品</view>
-      </block>
-      
-      <!-- 懒加载提示 -->
-      <block wx:if="{{lazyLoading}}">
-        <view class="lazy-loading">
-          <view class="loading-spinner"></view>
-          <view class="loading-text">加载中...</view>
-        </view>
-      </block>
+
+      <!-- 底部加高占位 ← 解决最后3个分类无法置顶的核心！ -->
+      <view class="bottom-placeholder">
+        <text>已经到底啦</text>
+      </view>
     </block>
-  </view>
+  </scroll-view>
 </view>
 
 <!-- 底部结算栏 -->
@@ -124,29 +130,28 @@
 
 <!-- 购物车弹窗 -->
 <view class="cart-modal" wx:if="{{showCartModal}}">
-  <view class="cart-modal-overlay"></view>
+  <view class="cart-modal-overlay" bindtap="hideCartModal"></view>
   <view class="cart-modal-content">
     <view class="cart-modal-header">
       <text class="cart-modal-title">购物车</text>
-      <view class="cart-modal-close" bindtap="hideCartModal">×</view>
+      <view class="table-modal-close" bindtap="hideCartModal">×</view>
     </view>
     <view class="cart-modal-body">
-      <block wx:for="{{cartItems}}" wx:key="id">
-        <view class="cart-item">
-          <image class="cart-item-image" src="{{item.image}}" />
+      <block wx:if="{{cartItems.length > 0}}">
+        <view wx:for="{{cartItems}}" wx:key="id" class="cart-item">
           <view class="cart-item-info">
-            <view class="cart-item-name">{{item.name}}</view>
-            <view class="cart-item-price">￥{{item.price}}</view>
+            <text class="cart-item-name">{{item.name}}</text>
+            <text class="cart-item-price">￥{{item.price}}</text>
           </view>
           <view class="cart-item-quantity">
             <view class="quantity-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">-</view>
-            <view class="quantity-input">{{item.quantity}}</view>
+            <text class="quantity-input">{{item.quantity}}</text>
             <view class="quantity-btn" bindtap="increaseQuantity" data-id="{{item.id}}">+</view>
           </view>
         </view>
       </block>
-      <block wx:if="{{cartCount === 0}}">
-        <view class="empty-cart">购物车为空</view>
+      <block wx:else>
+        <view class="empty">购物车为空</view>
       </block>
     </view>
   </view>

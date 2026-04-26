@@ -5,7 +5,7 @@ Page({
     activeCategory: 'vegetables',
     categories: [],
     goodsList: {},
-    mergedGoodsList: [], // 合并所有类别的商品列表
+    mergedGoodsList: [],
     pageMap: {},
     hasMoreMap: {},
     pageSize: 6,
@@ -21,58 +21,41 @@ Page({
 
     tableNumber: null,
     showTableModal: false,
-    tableList: []
+    tableList: [],
+
+    scrollIntoViewId: '',
+    isManualScroll: false
   },
 
   onLoad(options) {
-     // 检查是否通过扫码进入，处理URL参数
-     if (options.tableId && options.secret) {
-       // 绑定桌台号码
-       const tableNumber = options.tableId;
-       this.setData({ tableNumber });
-       wx.setStorageSync('tableNumber', tableNumber);
-       // 延迟显示提示，确保能够正常显示
-       setTimeout(() => {
-         wx.showToast({ title: `已绑定桌台 ${tableNumber}`, icon: 'success', duration: 2000 });
-       }, 100);
-     } else {
-       // 恢复购物车
-       const cart = wx.getStorageSync('orderCart') || {};
-       this.restoreCart(cart);
-       // 获取桌台
-       const storedTableNumber = wx.getStorageSync('tableNumber');
-       if (storedTableNumber) {
-         this.setData({ tableNumber: storedTableNumber });
-       }
-     }
- 
-    try {
+    if (options.tableId && options.secret) {
+      const tableNumber = options.tableId;
+      this.setData({ tableNumber });
+      wx.setStorageSync('tableNumber', tableNumber);
+      setTimeout(() => {
+        wx.showToast({ title: `已绑定桌台 ${tableNumber}`, icon: 'success' });
+      }, 500);
+    } else {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
-    } catch (e) {}
+      const storedTableNumber = wx.getStorageSync('tableNumber');
+      if (storedTableNumber) {
+        this.setData({ tableNumber: storedTableNumber });
+      }
+    }
+
     this.getTableList();
-    // 延迟加载数据，确保提示能够先显示
     setTimeout(() => {
       this.getOrderData();
     }, 500);
   },
 
-  onBackPress() {
-    wx.switchTab({ url: '/pages/index/index' });
-    return true;
-  },
-
   onShow() {
-    // 页面显示时更新购物车数据和桌台号码
     try {
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
       const tableNumber = wx.getStorageSync('tableNumber');
-      if (tableNumber) {
-        this.setData({ tableNumber });
-      }
-      
-      // 从购物车同步food类型商品数据
+      if (tableNumber) this.setData({ tableNumber });
       this.syncFromCart();
     } catch (e) {}
   },
@@ -80,517 +63,233 @@ Page({
   syncFromCart() {
     try {
       const cartList = wx.getStorageSync('cartList') || [];
-      const foodItems = cartList.filter(item => item.type === 'food');
-      
+      const foodItems = cartList.filter(i => i.type === 'food');
       if (foodItems.length === 0) return;
-      
       const newCart = { ...this.data.cart };
-      
       foodItems.forEach(item => {
         const key = String(item.id);
-        if (item.count > 0) {
-          newCart[key] = {
-            ...item,
-            quantity: item.count,
-            price: parseFloat(item.price)
-          };
-        } else {
-          delete newCart[key];
-        }
+        if (item.count > 0) newCart[key] = { ...item, quantity: item.count, price: +item.price };
+        else delete newCart[key];
       });
-      
       this.syncCartState(newCart);
-    } catch (e) {
-      console.error('从购物车同步数据失败:', e);
-    }
+    } catch (e) {}
   },
 
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
     api.request({
       url: '/api/order',
-      method: 'GET',
-      data: {
-        categoryId: this.data.activeCategory,
-        page: 1,
-        pageSize: this.data.pageSize
-      }
+      data: { categoryId: this.data.activeCategory, page: 1, pageSize: this.data.pageSize }
     }).then(data => {
-      console.log("后端返回:", data)
-      const categories = data.categories || []
-      const currentCategory = data.currentCategory || 'vegetables'
-      let goods = data.goodsList || []
-
-      // 为餐品添加图片URL和类别信息
-      goods = this.addImageUrlsToGoods(goods, currentCategory)
+      const categories = data.categories || [];
+      const currentCategory = data.currentCategory || 'vegetables';
+      const goods = this.addImageUrlsToGoods(data.goodsList || [], currentCategory);
 
       this.setData({
         activeCategory: currentCategory,
-        categories: categories,
-        goodsList: {
-          [currentCategory]: goods
-        },
-        pageMap: {
-          [currentCategory]: 1
-        },
-        hasMoreMap: {
-          [currentCategory]: !!data.hasMore
-        },
+        categories,
+        goodsList: { [currentCategory]: goods },
+        pageMap: { [currentCategory]: 1 },
+        hasMoreMap: { [currentCategory]: !!data.hasMore },
         loading: false
-      })
-      
-      // 加载所有类别数据
-      this.loadAllCategories()
-    }).catch(err => {
-      console.error("加载失败", err)
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载失败', icon: 'none' })
-    }).finally(() => wx.hideLoading())
+      });
+
+      this.updateMergedGoodsList();
+      this.loadAllCategories();
+    }).catch(() => {
+      this.setData({ loading: false });
+      wx.showToast({ title: '加载失败', icon: 'none' });
+    }).finally(() => wx.hideLoading());
   },
 
-  // 为餐品添加图片URL和类别信息
   addImageUrlsToGoods(goods, category) {
-    // 直接使用API返回的图片URL
-    return goods.map((item) => {
-      return {
-        ...item,
-        price: item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price,
-        category: category // 添加类别信息
-      }
-    })
+    return goods.map(item => ({
+      ...item,
+      price: (item.price || '').toString().replace(/[¥￥]/g, ''),
+      category
+    }));
   },
 
   switchCategory(e) {
-    const category = e.currentTarget.dataset.category
-    if (category === this.data.activeCategory) return
-    this.setData({ activeCategory: category })
-    
-    // 确保mergedGoodsList已经更新
-    this.updateMergedGoodsList()
-    
-    if (this.data.goodsList[category]) {
-      // 滚动到对应类别
-      this.scrollToCategory(category)
-      return
-    }
-    this.loadCategoryGoods(category, false)
+    const category = e.currentTarget.dataset.category;
+    this.setData({ isManualScroll: true, activeCategory: category });
+    this.updateMergedGoodsList();
+    this.setData({ scrollIntoViewId: `category-${category}` });
+    setTimeout(() => {
+      this.setData({ isManualScroll: false, scrollIntoViewId: '' });
+    }, 500);
+  },
+
+  onScroll(e) {
+    if (this.data.isManualScroll) return;
+    const scrollTop = e.detail.scrollTop;
+    const query = wx.createSelectorQuery();
+    this.data.categories.forEach(item => {
+      query.select(`#category-${item.id}`).boundingClientRect()
+    });
+    query.select('.goods-list').boundingClientRect();
+    query.exec(res => {
+      const listRect = res[res.length - 1];
+      let curId = '';
+      for (let i = 0; i < this.data.categories.length; i++) {
+        const rect = res[i];
+        if (rect && rect.top <= listRect.top + 10) {
+          curId = this.data.categories[i].id;
+        }
+      }
+      if (curId && curId !== this.data.activeCategory) {
+        this.setData({ activeCategory: curId });
+      }
+    })
   },
 
   loadCategoryGoods(category, isLoadMore) {
-    if (isLoadMore && this.data.lazyLoading) return
-    const nextPage = isLoadMore ? (this.data.pageMap[category] || 0) + 1 : 1
-    this.setData({ loading: !isLoadMore, lazyLoading: isLoadMore })
+    if (isLoadMore && this.data.lazyLoading) return;
+    const nextPage = isLoadMore ? (this.data.pageMap[category] || 0) + 1 : 1;
+    this.setData({ lazyLoading: isLoadMore });
 
-    setTimeout(() => {
-      api.request({
-        url: '/api/order',
-        method: 'GET',
-        data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
-      }).then(data => {
-        let newGoods = data.goodsList || []
-        
-        // 为新餐品添加图片URL和类别信息
-        newGoods = this.addImageUrlsToGoods(newGoods, category)
-        
-        const oldGoods = isLoadMore ? (this.data.goodsList[category] || []) : []
-        this.setData({
-          [`goodsList.${category}`]: oldGoods.concat(newGoods),
-          [`pageMap.${category}`]: nextPage,
-          [`hasMoreMap.${category}`]: !!data.hasMore,
-          loading: false,
-          lazyLoading: false
-        })
-        
-        // 更新合并商品列表
-        this.updateMergedGoodsList()
-        
-        // 如果不是加载更多，滚动到对应类别
-        if (!isLoadMore) {
-          this.scrollToCategory(category)
-        }
-      }).catch(() => {
-        this.setData({ loading: false, lazyLoading: false })
-      })
-    }, 200)
+    api.request({
+      url: '/api/order',
+      data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
+    }).then(data => {
+      const newGoods = this.addImageUrlsToGoods(data.goodsList || [], category);
+      const old = this.data.goodsList[category] || [];
+      this.setData({
+        [`goodsList.${category}`]: old.concat(newGoods),
+        [`pageMap.${category}`]: nextPage,
+        [`hasMoreMap.${category}`]: !!data.hasMore,
+        lazyLoading: false
+      });
+      this.updateMergedGoodsList();
+    }).catch(() => this.setData({ lazyLoading: false }));
   },
 
   loadAllCategories() {
-    const categories = this.data.categories
-    categories.forEach(category => {
-      if (!this.data.goodsList[category.id]) {
-        this.loadCategoryGoods(category.id, false)
-      }
-    })
+    this.data.categories.forEach(c => {
+      if (!this.data.goodsList[c.id]) this.loadCategoryGoods(c.id, false);
+    });
   },
 
   updateMergedGoodsList() {
-    const { categories, goodsList } = this.data
-    let mergedList = []
-    
-    categories.forEach(category => {
-      const categoryGoods = goodsList[category.id] || []
-      // 总是添加类别标签，即使没有商品
-      mergedList.push({
-        type: 'category',
-        id: category.id,
-        name: category.name
-      })
-      // 添加商品
-      mergedList = mergedList.concat(categoryGoods)
-    })
-    
-    this.setData({ mergedGoodsList: mergedList })
-  },
-
-  scrollToCategory(categoryId) {
-    // 确保mergedGoodsList已经更新
-    this.updateMergedGoodsList()
-    
-    const { mergedGoodsList } = this.data
-    const index = mergedGoodsList.findIndex(item => item.type === 'category' && item.id === categoryId)
-    if (index !== -1) {
-      wx.createSelectorQuery()
-        .select(`#category-${categoryId}`)
-        .boundingClientRect()
-        .exec(res => {
-          if (res[0]) {
-            wx.pageScrollTo({
-              scrollTop: res[0].top - 120, // 减去农场直购区域的高度
-              duration: 300
-            })
-          }
-        })
-    } else {
-      // 如果该类别没有商品，滚动到页面顶部
-      wx.pageScrollTo({
-        scrollTop: 0,
-        duration: 300
-      })
-    }
+    const { categories, goodsList } = this.data;
+    const merged = [];
+    categories.forEach(c => {
+      merged.push({ type: 'category', id: c.id, name: c.name, uniqueKey: `cat-${c.id}` });
+      (goodsList[c.id] || []).forEach(g => merged.push({ ...g, uniqueKey: `g-${g.id}` }));
+    });
+    this.setData({ mergedGoodsList: merged });
   },
 
   addToCart(e) {
-    const { category, id } = e.currentTarget.dataset
-    // 从合并列表中查找商品
-    const goods = this.data.mergedGoodsList.find(item => item.id === id)
-    if (!goods) return
-    const key = String(goods.id)
-    const newCart = { ...this.data.cart }
-
+    const id = e.currentTarget.dataset.id;
+    const goods = this.data.mergedGoodsList.find(i => i.id == id);
+    if (!goods) return;
+    const newCart = { ...this.data.cart };
+    const key = String(id);
     if (newCart[key]) {
-      if (newCart[key].quantity >= goods.stock) {
-        wx.showToast({ title: '库存不足', icon: 'none' })
-        return
-      }
-      newCart[key].quantity += 1
-    } else {
-      newCart[key] = { ...goods, quantity: 1 }
-    }
-    this.syncCartState(newCart)
+      if (newCart[key].quantity >= goods.stock) return wx.showToast({ title: '库存不足', icon: 'none' });
+      newCart[key].quantity++;
+    } else newCart[key] = { ...goods, quantity: 1 };
+    this.syncCartState(newCart);
   },
 
   increaseQuantity(e) {
-    const id = e.currentTarget.dataset.id + ''
-    const newCart = { ...this.data.cart }
-    if (!newCart[id]) return
-    if (newCart[id].quantity >= newCart[id].stock) {
-      wx.showToast({ title: '库存不足', icon: 'none' })
-      return
-    }
-    newCart[id].quantity += 1
-    this.syncCartState(newCart)
+    const id = e.currentTarget.dataset.id + '';
+    const newCart = { ...this.data.cart };
+    if (!newCart[id]) return;
+    if (newCart[id].quantity >= newCart[id].stock) return wx.showToast({ title: '库存不足', icon: 'none' });
+    newCart[id].quantity++;
+    this.syncCartState(newCart);
   },
 
   decreaseQuantity(e) {
-    const id = e.currentTarget.dataset.id + ''
-    const newCart = { ...this.data.cart }
-    if (!newCart[id]) return
-    if (newCart[id].quantity <= 1) {
-      delete newCart[id]
-    } else {
-      newCart[id].quantity -= 1
-    }
-    this.syncCartState(newCart)
+    const id = e.currentTarget.dataset.id + '';
+    const newCart = { ...this.data.cart };
+    if (!newCart[id]) return;
+    if (newCart[id].quantity <= 1) delete newCart[id];
+    else newCart[id].quantity--;
+    this.syncCartState(newCart);
   },
 
   onQuantityInput(e) {
-    const id = e.currentTarget.dataset.id + ''
-    const value = parseInt(e.detail.value) || 0
-    const goods = this.findGoodsById(id)
-    if (!goods) return
-
-    const newCart = { ...this.data.cart }
-
-    if (value <= 0) {
-      delete newCart[id]
-    } else {
-      const quantity = Math.min(value, goods.stock)
-      if (newCart[id]) {
-        newCart[id].quantity = quantity
-      } else {
-        newCart[id] = { ...goods, quantity: quantity }
-      }
-    }
-
-    this.syncCartState(newCart)
-  },
-
-  stopPropagation() {
-    return false
+    const id = e.currentTarget.dataset.id + '';
+    const val = Math.max(0, parseInt(e.detail.value) || 0);
+    const goods = this.data.mergedGoodsList.find(i => i.id == id);
+    if (!goods) return;
+    const newCart = { ...this.data.cart };
+    if (val === 0) delete newCart[id];
+    else newCart[id] = { ...newCart[id], quantity: Math.min(val, goods.stock) };
+    this.syncCartState(newCart);
   },
 
   syncCartState(newCart) {
-    let count = 0, total = 0
-    Object.values(newCart).forEach(item => {
-      count += item.quantity
-      total += item.price * item.quantity
-    })
-    this.setData({
-      cart: newCart,
-      cartItems: Object.values(newCart),
-      cartCount: count,
-      totalPrice: parseFloat(total.toFixed(2))
-    })
-    try { wx.setStorageSync('orderCart', newCart) } catch (e) {}
-    
-    // 同步更新cart页面的cartList
-    const cartList = wx.getStorageSync('cartList') || [];
-    const newCartList = [...cartList];
-    
-    // 更新或添加food类型商品到cartList
-    Object.values(newCart).forEach(cartItem => {
-      const existingIndex = newCartList.findIndex(
-        item => String(item.id) === String(cartItem.id) && item.type === 'food'
-      );
-      
-      if (existingIndex >= 0) {
-        // 更新已存在的商品数量
-        newCartList[existingIndex].count = cartItem.quantity;
-        newCartList[existingIndex].price = parseFloat(cartItem.price);
-        newCartList[existingIndex].name = cartItem.name;
-        newCartList[existingIndex].image = cartItem.image;
-        newCartList[existingIndex].stock = cartItem.stock;
-      } else {
-        // 添加新商品
-        newCartList.push({
-          id: String(cartItem.id),
-          name: cartItem.name,
-          price: parseFloat(cartItem.price),
-          image: cartItem.image,
-          count: cartItem.quantity,
-          stock: cartItem.stock,
-          type: 'food',
-          checked: false
-        });
-      }
-    });
-    
-    // 移除已删除的food类型商品
-    const filteredCartList = newCartList.filter(item => {
-      if (item.type !== 'food') return true;
-      const cartKey = String(item.id);
-      return newCart[cartKey] && newCart[cartKey].quantity > 0;
-    });
-    
-    wx.setStorageSync('cartList', filteredCartList);
+    let count = 0, total = 0;
+    Object.values(newCart).forEach(i => { count += i.quantity; total += i.price * i.quantity });
+    this.setData({ cart: newCart, cartItems: Object.values(newCart), cartCount: count, totalPrice: +total.toFixed(2) });
+    wx.setStorageSync('orderCart', newCart);
   },
 
   restoreCart(cart) {
-    let count = 0, total = 0
-    Object.values(cart || {}).forEach(item => {
-      const qty = parseInt(item.quantity) || parseInt(item.count) || 0
-      const price = parseFloat(item.price) || 0
-      count += qty
-      total += price * qty
-    })
-    this.setData({
-      cart: cart || {},
-      cartItems: Object.values(cart || {}),
-      cartCount: count,
-      totalPrice: parseFloat(total.toFixed(2))
-    })
+    let count = 0, total = 0;
+    Object.values(cart || {}).forEach(i => { count += i.quantity || i.count || 0; total += (i.price || 0) * (i.quantity || i.count || 0) });
+    this.setData({ cart: cart || {}, cartItems: Object.values(cart || {}), cartCount: count, totalPrice: +total.toFixed(2) });
   },
 
   viewCart() {
-    if (this.data.cartCount === 0) {
-      wx.showToast({ title: '购物车为空', icon: 'none' })
-      return
-    }
-    this.setData({ showCartModal: true })
+    if (this.data.cartCount === 0) return wx.showToast({ title: '购物车为空', icon: 'none' });
+    this.setData({ showCartModal: true });
   },
-
-  hideCartModal() {
-    this.setData({ showCartModal: false })
-  },
+  hideCartModal() { this.setData({ showCartModal: false }); },
 
   checkout() {
-    if (this.data.cartCount === 0) {
-      wx.showToast({ title: '购物车为空', icon: 'none' })
-      return
-    }
-    if (!this.data.tableNumber) {
-      wx.showToast({ title: '请选择桌台号码', icon: 'none' })
-      return
-    }
-    wx.navigateTo({ url: '/subpkg/confirm-order/confirm-order' })
+    if (this.data.cartCount === 0) return wx.showToast({ title: '购物车为空', icon: 'none' });
+    if (!this.data.tableNumber) return wx.showToast({ title: '请选择桌台', icon: 'none' });
+    wx.navigateTo({ url: '/subpkg/confirm-order/confirm-order' });
   },
 
   navigateToGoodsDetail(e) {
-    const id = e.currentTarget.dataset.id
-    const goods = this.findGoodsById(id)
-    if (goods) {
-      // 将商品数据传递到详情页，确保已售和库存数据一致
-      const params = encodeURIComponent(JSON.stringify({
-        id: goods.id,
-        sold: goods.sold,
-        stock: goods.stock
-      }))
-      wx.navigateTo({ url: `/subpkg/order-foods-detail/order-foods-detail?params=${params}` })
-    }
-  },
-
-  findGoodsById(id) {
-    const { goodsList, activeCategory } = this.data
-    const goods = goodsList[activeCategory]
-    if (goods) {
-      return goods.find(item => String(item.id) === String(id))
-    }
-    return null
+    const id = e.currentTarget.dataset.id;
+    const goods = this.data.mergedGoodsList.find(i => i.id == id);
+    if (!goods) return;
+    const p = encodeURIComponent(JSON.stringify({ id: goods.id, sold: goods.sold, stock: goods.stock }));
+    wx.navigateTo({ url: `/subpkg/order-foods-detail/order-foods-detail?params=${p}` });
   },
 
   onReachBottom() {
-    const cat = this.data.activeCategory
-    if (this.data.lazyLoading || !this.data.hasMoreMap[cat]) return
-    this.loadCategoryGoods(cat, true)
+    const cat = this.data.activeCategory;
+    if (!this.data.hasMoreMap[cat] || this.data.lazyLoading) return;
+    this.loadCategoryGoods(cat, true);
   },
 
-  selectTable() {
-    this.setData({ showTableModal: true })
-  },
-
-  hideTableModal() {
-    this.setData({ showTableModal: false })
-  },
-
+  selectTable() { this.setData({ showTableModal: true }); },
+  hideTableModal() { this.setData({ showTableModal: false }); },
   selectTableNumber(e) {
-    const tableId = e.currentTarget.dataset.tableId
-    this.setData({ tableNumber: tableId, showTableModal: false })
-    wx.setStorageSync('tableNumber', tableId)
+    const id = e.currentTarget.dataset.tableId;
+    this.setData({ tableNumber: id, showTableModal: false });
+    wx.setStorageSync('tableNumber', id);
   },
 
   testScanCode() {
     wx.scanCode({
-      success: (res) => {
-        console.log('扫码成功，完整结果:', res)
-        const result = res.result
-        console.log('扫码内容:', result)
-        const qrData = this.parseQRCode(result)
-        console.log('解析后的数据:', qrData)
-        
-        if (qrData && qrData.tableId) {
-          console.log('绑定桌台:', qrData.tableId, qrData.secret)
-          this.bindTableWithSecret(qrData.tableId, qrData.secret)
-        } else {
-          console.log('无效的桌台二维码，qrData:', qrData)
-          wx.showToast({ title: '无效的桌台二维码', icon: 'none' })
-        }
-      },
-      fail: (err) => {
-        console.error('扫码失败:', err)
-        wx.showToast({ title: '扫码失败，请重试', icon: 'none' })
-      }
-    })
-  },
-
-  parseQRCode(result) {
-    try {
-      console.log('原始扫码结果:', result);
-      
-      // 处理微信小程序跳转链接
-      if (result.includes('weixin://')) {
-        console.log('检测到微信小程序链接');
-        // 提取query参数
-        const queryMatch = result.match(/&query=([^&]*)/);
-        console.log('queryMatch:', queryMatch);
-        if (queryMatch && queryMatch[1]) {
-          const queryString = queryMatch[1];
-          console.log('queryString:', queryString);
-          const pairs = queryString.split('&');
-          console.log('pairs:', pairs);
-          const data = {};
-          for (const pair of pairs) {
-            const [key, value] = pair.split('=');
-            data[key] = decodeURIComponent(value);
-            console.log('解析参数:', key, value, decodeURIComponent(value));
-          }
-          console.log('解析结果:', data);
-          return data;
+      success: res => {
+        const q = res.result.match(/query=([^&]+)/)?.[1];
+        if (!q) return wx.showToast({ title: '无效二维码', icon: 'none' });
+        const d = Object.fromEntries(q.split('&').map(kv => kv.split('=').map(decodeURIComponent)));
+        if (d.tableId) {
+          this.setData({ tableNumber: d.tableId });
+          wx.setStorageSync('tableId', d.tableId);
+          wx.showToast({ title: `桌台 ${d.tableId} 绑定成功`, icon: 'success' });
         }
       }
-      // 处理普通URL格式
-      else if (result.includes('?')) {
-        console.log('检测到普通URL格式');
-        const params = result.split('?')[1];
-        const pairs = params.split('&');
-        const data = {};
-        for (const pair of pairs) {
-          const [key, value] = pair.split('=');
-          data[key] = decodeURIComponent(value);
-        }
-        console.log('解析结果:', data);
-        return data;
-      }
-      // 处理纯文本格式
-      else {
-        console.log('检测到纯文本格式');
-        // 尝试直接解析为键值对
-        if (result.includes('tableId=') && result.includes('secret=')) {
-          const pairs = result.split('&');
-          const data = {};
-          for (const pair of pairs) {
-            const [key, value] = pair.split('=');
-            data[key] = decodeURIComponent(value);
-          }
-          console.log('解析结果:', data);
-          return data;
-        }
-      }
-      console.log('无法解析二维码内容');
-      return null;
-    } catch (e) {
-      console.error('解析二维码失败:', e);
-      return null;
-    }
-  },
-
-  bindTableWithSecret(tableId, secret) {
-    // 直接使用解析出的tableId作为桌台号码
-    const tableNumber = tableId
-    this.setData({ tableNumber })
-    wx.setStorageSync('tableNumber', tableNumber)
-    wx.showToast({ title: `绑定成功，桌台号码：${tableNumber}`, icon: 'success' })
+    });
   },
 
   getTableList() {
-    this.setData({
-      tableList: [
-        { id: '1', name: '桌台1' },{ id: '2', name: '桌台2' },
-        { id: '3', name: '桌台3' },{ id: '4', name: '桌台4' },
-        { id: '5', name: '桌台5' },{ id: '6', name: '桌台6' },
-        { id: '7', name: '桌台7' },{ id: '8', name: '桌台8' }
-      ]
-    })
+    this.setData({ tableList: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ id: String(i), name: `桌台${i}` })) });
   },
 
-  stopAll() {
-    return false
-  },
-
+  stopPropagation() { return false },
   navigateToService() {
-    wx.showModal({
-      title: '能记家庭农场客服',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
+    wx.showModal({ title: '客服', content: '电话：15876534944\n微信：njjtnc15876534944', showCancel: false });
   }
-})
+});
