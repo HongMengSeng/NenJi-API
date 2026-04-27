@@ -64,9 +64,11 @@ function switchTab(tab) {
 // 渲染订单列表
 function renderOrders() {
     const orderList = document.getElementById('order-list');
+    // 待出餐：还有未处理的餐品（未出餐且未取消）
+    // 已出餐：所有餐品都已处理（已出餐或已取消）
     const filteredOrders = currentTab === 'pending' 
-        ? orders.filter(order => !order.items.every(item => item.status))
-        : orders.filter(order => order.items.every(item => item.status));
+        ? orders.filter(order => order.items.some(item => !item.status && !item.cancelled))
+        : orders.filter(order => order.items.every(item => item.status || item.cancelled));
     
     if (filteredOrders.length === 0) {
         orderList.innerHTML = '<div class="no-orders">暂无' + (currentTab === 'pending' ? '待出餐' : '已出餐') + '订单</div>';
@@ -75,6 +77,11 @@ function renderOrders() {
     
     orderList.innerHTML = filteredOrders.map(order => {
         const completedItems = order.items.filter(item => item.status).length;
+        const cancelledItems = order.items.filter(item => item.cancelled).length;
+        const statusClass = currentTab === 'pending' ? '' : (cancelledItems > 0 ? 'has-cancelled' : '');
+        const statusText = currentTab === 'pending' 
+            ? `${completedItems}/${order.items.length}` 
+            : `${completedItems}出餐${cancelledItems > 0 ? ' ' + cancelledItems + '取消' : ''}/${order.items.length}`;
         return `
             <div class="order-card" onclick="openOrderDetail('${order.id}')">
                 <div class="order-header">
@@ -83,7 +90,7 @@ function renderOrders() {
                 </div>
                 <div class="order-info">
                     <span class="table-number">${order.table}</span>
-                    <span class="status">${completedItems}/${order.items.length} 已出餐</span>
+                    <span class="status ${statusClass}">${statusText}</span>
                 </div>
             </div>
         `;
@@ -98,9 +105,18 @@ function renderOrders() {
 
 // 更新营业额
 function updateRevenue() {
-    // 只计算已经完成出餐的订单
-    const completedOrders = orders.filter(order => order.items.every(item => item.status));
-    const total = completedOrders.reduce((sum, order) => sum + order.total, 0);
+    // 只计算已完成订单中已出餐的餐品价格
+    let total = 0;
+    for (const order of orders) {
+        // 订单完成的条件：所有餐品都已处理（已出餐或已取消）
+        if (order.items.every(item => item.status || item.cancelled)) {
+            // 只计算已出餐的餐品价格
+            const orderRevenue = order.items
+                .filter(item => item.status)
+                .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            total += orderRevenue;
+        }
+    }
     document.getElementById('total-revenue').textContent = total;
 }
 

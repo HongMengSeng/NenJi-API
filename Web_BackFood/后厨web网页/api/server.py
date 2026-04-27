@@ -37,8 +37,8 @@ def get_default_orders():
         },
         {
             "id": "ORD003",
-            "time": "2026-04-27 10:40:00",
-            "table": "B2",
+            "time": "2026-04-27 10:20:00",
+            "table": "B1",
             "items": [
                 {"name": "麻婆豆腐", "quantity": 1, "status": True, "price": 22},
                 {"name": "青椒肉丝", "quantity": 1, "status": True, "price": 26},
@@ -90,8 +90,14 @@ class APIHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404, "Order not found")
         elif path == 'revenue':
             # 获取营业额
-            completed_orders = [o for o in orders if all(item['status'] for item in o['items'])]
-            total_revenue = sum(o['total'] for o in completed_orders)
+            # 只计算已完成订单中已出餐的餐品价格
+            total_revenue = 0
+            for order in orders:
+                # 订单完成的条件：所有餐品都已处理（已出餐或已取消）
+                if all(item.get('status', False) or item.get('cancelled', False) for item in order['items']):
+                    # 只计算已出餐的餐品价格
+                    order_revenue = sum(item['price'] * item['quantity'] for item in order['items'] if item.get('status', False))
+                    total_revenue += order_revenue
             self.send_json_response({"total": total_revenue})
         elif path == 'reset':
             # 重置数据
@@ -117,14 +123,17 @@ class APIHandler(http.server.SimpleHTTPRequestHandler):
             return
         
         if path.startswith('orders/') and '/items/' in path:
-            # 标记菜品为已出餐
+            # 标记菜品为已出餐或已取消
             parts = path.split('/')
             order_id = parts[1]
             item_index = int(parts[3])
             
             order = next((o for o in orders if o['id'] == order_id), None)
             if order and 0 <= item_index < len(order['items']):
-                order['items'][item_index]['status'] = True
+                if 'status' in data:
+                    order['items'][item_index]['status'] = data['status']
+                if 'cancelled' in data:
+                    order['items'][item_index]['cancelled'] = data['cancelled']
                 self.send_json_response(order)
             else:
                 self.send_error(404, "Order or item not found")

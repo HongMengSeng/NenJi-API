@@ -107,6 +107,9 @@ body {
     color: #4CAF50;
     font-weight: bold;
 }
+.status.has-cancelled {
+    color: #f44336;
+}
 .no-orders {
     text-align: center;
     padding: 60px 20px;

@@ -66,25 +66,48 @@ function renderOrderDetails() {
     document.getElementById('order-time').textContent = currentOrder.time;
     document.getElementById('table-number').textContent = currentOrder.table;
     
+    // 计算已出餐的餐品总价
+    const completedItemsTotal = currentOrder.items
+        .filter(item => item.status)
+        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
     const itemsList = document.getElementById('items-list');
-    itemsList.innerHTML = currentOrder.items.map((item, index) => `
-        <div class="item">
-            <div class="item-info">
-                <span class="item-name">${item.name}</span>
-                <span class="item-quantity">x${item.quantity}</span>
+    itemsList.innerHTML = `
+        ${currentOrder.items.map((item, index) => `
+            <div class="item">
+                <div class="item-info">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-quantity">x${item.quantity}</span>
+                    <span class="item-price">¥${item.price}</span>
+                </div>
+                <div class="item-status">
+                    <span class="status-text ${item.status ? 'completed' : item.cancelled ? 'cancelled' : 'pending'}">
+                        ${item.status ? '已出餐' : item.cancelled ? '已取消' : '未出餐'}
+                    </span>
+                    <div class="button-group">
+                        <button class="complete-button" 
+                                ${item.status || item.cancelled ? 'disabled' : ''}
+                                onclick="markAsCompleted(${index})")">
+                            ${item.status ? '已出餐' : '出餐'}
+                        </button>
+                        <button class="cancel-button" 
+                                ${item.status || item.cancelled ? 'disabled' : ''}
+                                onclick="markAsCancelled(${index})")">
+                            取消
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="item-status">
-                <span class="status-text ${item.status ? 'completed' : 'pending'}">
-                    ${item.status ? '已出餐' : '未出餐'}
-                </span>
-                <button class="complete-button" 
-                        ${item.status ? 'disabled' : ''}
-                        onclick="markAsCompleted(${index})">
-                    ${item.status ? '已出餐' : '出餐'}
-                </button>
-            </div>
+        `).join('')}
+        <div class="order-total">
+            <div class="total-label">订单总价：</div>
+            <div class="total-amount">¥${currentOrder.total}</div>
         </div>
-    `).join('');
+        <div class="completed-total">
+            <div class="total-label">已出餐金额：</div>
+            <div class="total-amount">¥${completedItemsTotal}</div>
+        </div>
+    `;
 }
 
 // 标记菜品为已出餐
@@ -134,6 +157,55 @@ async function markAsCompleted(index) {
         }
     } catch (error) {
         console.error('Error marking item as completed:', error);
+        // 显示错误提示
+        document.getElementById('error-message').style.display = 'block';
+        // 恢复按钮状态
+        button.disabled = false;
+        button.classList.remove('loading');
+    } finally {
+        button.classList.remove('loading');
+    }
+}
+
+// 标记菜品为已取消
+async function markAsCancelled(index) {
+    const button = event.target;
+    button.classList.add('loading');
+    button.disabled = true;
+    
+    try {
+        // 设置超时时间
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超时
+        
+        // 通过API标记菜品为已取消
+        const response = await fetch(`${API_BASE_URL}/orders/${currentOrder.id}/items/${index}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ cancelled: true }),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error('Failed to mark item as cancelled');
+        }
+        
+        // 更新本地订单数据
+        currentOrder = await response.json();
+        
+        // 重新渲染当前页面
+        renderOrderDetails();
+        
+        // 更新父页面的订单数据
+        if (window.opener && window.opener.refreshOrders) {
+            window.opener.refreshOrders();
+        }
+    } catch (error) {
+        console.error('Error marking item as cancelled:', error);
         // 显示错误提示
         document.getElementById('error-message').style.display = 'block';
         // 恢复按钮状态

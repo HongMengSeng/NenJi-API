@@ -111,6 +111,8 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
 }
 .complete-button:hover {
     background-color: #45a049;
@@ -118,6 +120,31 @@ body {
 .complete-button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
+}
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+.cancel-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+.cancel-button:hover {
+    background-color: #d32f2f;
+}
+.cancel-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+.status-text.cancelled {
+    color: #f44336;
 }
 .loading {
     opacity: 0.6;
@@ -128,4 +155,30 @@ body {
     text-align: center;
     margin-top: 15px;
     display: none;
+}
+.item-price {
+    color: #333;
+    font-weight: bold;
+    margin-left: 20px;
+}
+.order-total,
+.completed-total {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.total-label {
+    font-size: 16px;
+    color: #666;
+}
+.total-amount {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+.completed-total .total-amount {
+    color: #4CAF50;
 }
