@@ -39,6 +39,8 @@ Page({
             ...item,
             image: this.processImageUrl(item.image)
           })),
+          // 活动图片风格：images 优先
+          images: (detail.images || []).map(image => this.processImageUrl(image)),
           longExampleImages: (detail.longExampleImages || []).map(image => this.processImageUrl(image)),
           longExampleImageList: (detail.longExampleImageList || []).map(image => this.processImageUrl(image)),
           bottomImages: (detail.bottomImages || []).map(image => this.processImageUrl(image))
@@ -61,6 +63,7 @@ Page({
             remainingAcres: cleanData.remainingAcres,
             soldAcres: cleanData.soldAcres,
             longExampleImage: cleanData.longExampleImage,
+            images: cleanData.images,
             bottomImages: cleanData.bottomImages,
             longExampleImages: cleanData.longExampleImages,
             longExampleImageList: cleanData.longExampleImageList,
@@ -103,9 +106,11 @@ Page({
   // 预览示例图列表
   previewExampleImage(e) {
     const { acreDetail } = this.data;
-    // 获取所有示例图 URL 列表（优先级：bottomImages > longExampleImages > longExampleImageList > 单张）
+    // 获取所有示例图 URL 列表（优先级：images > bottomImages > longExampleImages > longExampleImageList > 单张）
     let imageList = [];
-    if (acreDetail.bottomImages && acreDetail.bottomImages.length > 0) {
+    if (acreDetail.images && acreDetail.images.length > 0) {
+      imageList = acreDetail.images;
+    } else if (acreDetail.bottomImages && acreDetail.bottomImages.length > 0) {
       imageList = acreDetail.bottomImages;
     } else if (acreDetail.longExampleImages && acreDetail.longExampleImages.length > 0) {
       imageList = acreDetail.longExampleImages;

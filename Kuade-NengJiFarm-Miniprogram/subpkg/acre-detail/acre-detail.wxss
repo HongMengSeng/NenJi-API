@@ -1,6 +1,7 @@
 .page {
   min-height: 100vh;
   background: #FAF6F0;
+  padding-bottom: 120rpx;
 }
 
 .detail-swiper {
@@ -139,26 +140,13 @@
 
 .example-images-vertical image {
   width: 100%;
-  height: 400rpx !important;
-  object-fit: cover !important;
-  border-radius: 8rpx;
-  background-color: #f0f0f0;
-  display: block !important;
+  display: block;
   margin: 0 !important;
   padding: 0 !important;
-}
-
-/* 响应式调整 */
-@media (max-width: 375px) {
-  .example-images-vertical image {
-    height: 300rpx;
-  }
-}
-
-@media (min-width: 750px) {
-  .example-images-vertical image {
-    height: 500rpx;
-  }
+  border: 0 !important;
+  border-radius: 0 !important;
+  line-height: 0;
+  font-size: 0;
 }
 
 /* 无图片提示 */
@@ -198,72 +186,6 @@
 /* 农场示例标题与图片容器 */
 .example-section .example-long-image {
   margin-bottom: 0;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #333333;
-  margin-bottom: 28rpx;
-  padding-left: 24rpx;
-  position: relative;
-}
-
-.section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8rpx;
-  height: 32rpx;
-  background: linear-gradient(180deg, #D4A76A 0%, #E8C69A 50%, #D4A76A 100%);
-  border-radius: 4rpx;
-  box-shadow: 0 2rpx 8rpx rgba(212, 167, 106, 0.4);
-  margin-right: 0;
-}
-
-.example-long-image {
-  width: 100%;
-  border-radius: 12rpx;
-  overflow: hidden;
-  background: #FAF6F0;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
-  margin-bottom: 24rpx;
-}
-
-.long-image {
-  width: 100%;
-  display: block;
-  height: 400rpx;
-  object-fit: cover;
-  background-color: #FAF6F0;
-}
-
-/* 底部图片列表 - 垂直排列成长图（无缝拼接） */
-.example-images-vertical {
-  display: block;
-  width: 100%;
-  margin-top: 24rpx;
-  overflow: hidden;
-  background: #ffffff;
-  font-size: 0;
-  line-height: 0;
-}
-
-.example-images-vertical image {
-  display: block !important;
-  width: 100%;
-  height: 250rpx;
-  object-fit: cover;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  vertical-align: top;
-  font-size: 0;
-  line-height: 0;
-  float: left;
-  clear: both;
 }
 
 .bottom-bar {

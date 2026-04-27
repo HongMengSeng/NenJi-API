@@ -53,7 +53,7 @@
 
   <!-- 商品详情图片 -->
   <view class="detail-image">
-    <image src="{{goods.image}}" mode="aspectFill" />
+    <image src="{{goods.image}}" mode="widthFix" />
   </view>
 
   <!-- 底部操作栏 -->

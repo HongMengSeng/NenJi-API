@@ -177,7 +177,7 @@
   margin-bottom: 20rpx;
 }
 
-/* 农场示例图片 */
+/* 农场示例图片：widthFix 模式下不设固定 height */
 .example-images-vertical {
   display: flex;
   flex-direction: column;
@@ -186,38 +186,12 @@
 
 .example-images-vertical image {
   width: 100%;
-  height: 400rpx !important;
-  object-fit: cover !important;
+  display: block;
   border-radius: 8rpx;
   background-color: #f0f0f0;
-  display: block !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
   cursor: pointer;
-}
-
-/* 响应式调整 */
-@media (max-width: 375px) {
-  .example-images-vertical image {
-    height: 300rpx;
-  }
-}
-
-@media (min-width: 750px) {
-  .example-images-vertical image {
-    height: 500rpx;
-  }
-}
-
-/* 无图片提示 */
-.no-images {
-  text-align: center;
-  padding: 60rpx 0;
-  color: #999999;
-  font-size: 28rpx;
-  background-color: #f9f9f9;
-  border-radius: 8rpx;
-  margin: 20rpx 0;
 }
 
 

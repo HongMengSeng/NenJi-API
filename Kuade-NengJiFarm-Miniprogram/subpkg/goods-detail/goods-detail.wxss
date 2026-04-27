@@ -6,7 +6,8 @@ page {
 
 .container {
   min-height: 100vh;
-  background-color: #FAF6F0; /* 丝苗米白 */
+  background-color: #FAF6F0;
+  padding-bottom: 120rpx;
 }
 
 /* 轮播样式 */
@@ -179,46 +180,43 @@ page {
   flex: 1;
 }
 
-/* 商品展示图片 */
+/* 商品展示图片 - 与详情图片合并成无缝区域 */
 .goods-display-image {
   background-color: #fff;
-  padding: 20rpx;
-  margin-bottom: 10rpx;
+  padding: 0;
+  margin-bottom: 0;
 }
 
 .display-image {
   width: 100%;
-  height: 600rpx;
-  object-fit: cover;
-  border-radius: 8rpx;
+  display: block;
+  border-radius: 0 !important;
+  line-height: 0;
+  font-size: 0;
 }
 
-/* 商品详情图片 */
+/* 商品详情图片 - widthFix 自适应（无缝拼接） */
 .goods-detail-images {
   background-color: #fff;
-  padding: 20rpx;
-  margin-bottom: 100rpx;
-}
-
-.detail-image {
-  width: 100%;
-  height: auto;
-  border-radius: 8rpx;
-  display: block;
+  padding: 0;
+  margin-bottom: 120rpx;
 }
 
 .detail-image-container {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10rpx;
+  gap: 0rpx;
 }
 
-.detail-image-container .detail-image {
+.detail-image {
   width: 100%;
-  height: auto;
-  border-radius: 8rpx;
   display: block;
+  border-radius: 0 !important;
+  line-height: 0;
+  font-size: 0;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* 底部操作栏 */

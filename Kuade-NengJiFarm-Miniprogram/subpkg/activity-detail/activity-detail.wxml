@@ -95,10 +95,10 @@
   <!-- 活动图片展示 -->
   <view class="activity-gallery">
     <view class="section-title">活动图片</view>
-    <!-- 垂直排列成长图 -->
+    <!-- 接口返回的图片列表（垂直排列成长图） -->
     <view class="example-images-vertical" wx:if="{{activity.images && activity.images.length > 0}}">
       <block wx:for="{{activity.images}}" wx:key="index">
-        <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
+        <image src="{{item}}" mode="widthFix" bindtap="previewImage" data-index="{{index}}" />
       </block>
     </view>
     <!-- 无图片时的提示 -->

@@ -3,10 +3,15 @@ const api = require('../../utils/api');
 Page({
   data: {
     isLogging: false,
-    bgImage: ''
+    bgImage: '',
+    statusBarHeight: 20
   },
 
   onLoad() {
+    // 获取状态栏高度（适配刘海屏）
+    const sysInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    this.setData({ statusBarHeight: sysInfo.statusBarHeight });
+
     this.checkLoginStatus();
     this.getBackgroundImage();
   },
