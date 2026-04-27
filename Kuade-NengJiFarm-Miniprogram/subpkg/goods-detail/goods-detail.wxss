@@ -221,7 +221,7 @@ page {
   padding: 0 !important;
 }
 
-/* 底部操作栏 */
+/* 底部操作栏 — 与 order-foods-detail 统一 */
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -231,43 +231,80 @@ page {
   background-color: #fff;
   display: flex;
   align-items: center;
-  padding: 0 20rpx;
-  border-top: 1px solid #eee;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0 30rpx;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  z-index: 10;
 }
 
 .cart-icon {
+  position: relative;
   width: 60rpx;
   height: 60rpx;
-  background-color: #f0f0f0;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
-  position: relative;
 }
 
 .cart-text {
-  font-size: 32rpx;
+  font-size: 40rpx;
 }
 
-/* 购物车徽章 */
 .cart-badge {
   position: absolute;
   top: -10rpx;
   right: -10rpx;
+  width: 30rpx;
+  height: 30rpx;
   background-color: #D4A76A;
-  color: white;
+  color: #fff;
+  border-radius: 15rpx;
   font-size: 20rpx;
-  font-weight: bold;
-  min-width: 36rpx;
-  height: 36rpx;
-  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8rpx;
+}
+
+.btn-container {
+  flex: 1;
+  display: flex;
+  gap: 15rpx;
+}
+
+.add-cart-btn {
+  flex: 1;
+  height: 60rpx;
+  background-color: #fff;
+  color: #D4A76A;
+  border: 1rpx solid #D4A76A;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.add-cart-btn::after {
+  border: none;
+}
+
+.buy-btn {
+  flex: 1;
+  height: 60rpx;
+  background-color: #D4A76A;
+  color: #fff;
+  border: none;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.buy-btn::after {
+  border: none;
 }
 
 /* 客服按钮 */
@@ -300,28 +337,6 @@ page {
   width: 48rpx;
   height: 48rpx;
   filter: brightness(0) invert(1);
-}
-
-.add-to-cart-btn {
-  flex: 1;
-  height: 60rpx;
-  background-color: #fff9e6;
-  color: #D4A76A;
-  border: 1px solid #D4A76A;
-  border-radius: 30rpx;
-  font-size: 24rpx;
-  margin-right: 10rpx;
-}
-
-.buy-now-btn {
-  flex: 1;
-  height: 60rpx;
-  background-color: #D4A76A;
-  color: #fff;
-  border: none;
-  border-radius: 30rpx;
-  font-size: 24rpx;
-  margin-left: 10rpx;
 }
 
 /* 立即购买弹窗 */

@@ -172,8 +172,10 @@
       <text class="cart-text">🛒</text>
       <view wx:if="{{cartCount > 0}}" class="cart-badge">{{cartCount}}</view>
     </view>
-    <button class="add-to-cart-btn" bindtap="addToCart">加入购物车</button>
-    <button class="buy-now-btn" bindtap="buyNow">立即购买</button>
+    <view class="btn-container">
+      <button class="add-cart-btn" bindtap="addToCart">加入购物车</button>
+      <button class="buy-btn" bindtap="buyNow">立即购买</button>
+    </view>
   </view>
 
   <!-- 客服按钮 -->
