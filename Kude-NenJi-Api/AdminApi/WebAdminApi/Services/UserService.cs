@@ -129,14 +129,19 @@ namespace WebAdminApi.Services
             // 创建新用户实体
             var newUser = new User
             {
-                
+                UserGuid = dto.user_guid,
                 PhoneNumber = dto.Phone,
+                RegisterTime = DateTime.Now,
+                WxOpenId = "",
+                WxImage = "",
+                WxNickname = "",
                 RealName = dto.RealName,
-                Gender = dto.Gender,
-                RoleId = roleId,
                 PasswordHash = _passwordService.HashPassword(dto.PasswordHash),
+                Gender = dto.Gender,
+                RoleId = roleId
+                
                 //LoginTime = null,
-                RegisterTime = DateTime.Now
+                
             };
 
             _dbContext.Users.Add(newUser);

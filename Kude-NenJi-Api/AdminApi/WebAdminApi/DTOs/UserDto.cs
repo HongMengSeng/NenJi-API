@@ -69,7 +69,7 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class AddUserDto
     {
-        
+        public string user_guid { get; set; } = null!;
         public string Phone { get; set; } = null!;
         public string RealName { get; set; } = null!;
         public string Gender { get; set; } = null!;

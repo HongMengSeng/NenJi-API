@@ -7,7 +7,7 @@ using WebAdminApi.Entities;
 namespace WebAdminApi.Controllers
 {
     [ApiController]
-    [Route("api/back-user")]
+    [Route("api/user")]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
