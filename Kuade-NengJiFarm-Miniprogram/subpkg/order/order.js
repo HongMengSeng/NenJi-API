@@ -120,28 +120,30 @@ Page({
     }, 500);
   },
 
-  onScroll(e) {
-    if (this.data.isManualScroll) return;
-    const scrollTop = e.detail.scrollTop;
-    const query = wx.createSelectorQuery();
-    this.data.categories.forEach(item => {
-      query.select(`#category-${item.id}`).boundingClientRect()
-    });
-    query.select('.goods-list').boundingClientRect();
-    query.exec(res => {
-      const listRect = res[res.length - 1];
-      let curId = '';
-      for (let i = 0; i < this.data.categories.length; i++) {
-        const rect = res[i];
-        if (rect && rect.top <= listRect.top + 10) {
-          curId = this.data.categories[i].id;
+    // 右侧滚动监听 → 自动切换左侧高亮（加大容错，更灵敏）
+    onScroll(e) {
+      if (this.data.isManualScroll) return;
+      const scrollTop = e.detail.scrollTop;
+      const query = wx.createSelectorQuery();
+      this.data.categories.forEach(item => {
+        query.select(`#category-${item.id}`).boundingClientRect()
+      });
+      query.select('.goods-list').boundingClientRect();
+      query.exec(res => {
+        const listRect = res[res.length - 1];
+        let curId = '';
+        // 🔴 关键修改：把容错放大到80rpx，标签只要靠近顶部就立刻高亮
+        for (let i = 0; i < this.data.categories.length; i++) {
+          const rect = res[i];
+          if (rect && rect.top <= listRect.top + 80) {
+            curId = this.data.categories[i].id;
+          }
         }
-      }
-      if (curId && curId !== this.data.activeCategory) {
-        this.setData({ activeCategory: curId });
-      }
-    })
-  },
+        if (curId && curId !== this.data.activeCategory) {
+          this.setData({ activeCategory: curId });
+        }
+      })
+    },
 
   loadCategoryGoods(category, isLoadMore) {
     if (isLoadMore && this.data.lazyLoading) return;
