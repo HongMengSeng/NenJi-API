@@ -23,16 +23,6 @@ namespace WebAdminApi.DTOs
         public string role { get; set; } = null!;
 
         /// <summary>
-        /// 状态，可以是：启用/禁用
-        /// </summary>
-        public string? status { get; set; } = null!;
-
-        /// <summary>
-        /// 最后登录时间（格式为：yyyy-MM-dd HH:mm）
-        /// </summary>
-        public string loginTime { get; set; } = "未登录";
-
-        /// <summary>
         /// 是否被选中
         /// </summary>
         public bool selected { get; set; } = false;
@@ -88,11 +78,21 @@ namespace WebAdminApi.DTOs
         public string PasswordHash { get; set; } = null!;
     }
 
-    /// <summary>
-    /// 编辑用户请求DTO
-    /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
-    /// </summary>
-    public class EditUserDto
+    public class UserDetailDto
+    {
+        public string id { get; set; } = "";        
+        public string phone { get; set; } = "";
+        public string nickname { get; set; } = "";
+        public string avatar { get; set; } = "";
+        public string gender { get; set; } = "";
+        public string loginTime { get; set; } = "";
+    }
+
+        /// <summary>
+        /// 编辑用户请求DTO
+        /// 用户在前端可选择某个字段修改，仅发送变更的字段，其他字段保持不变
+        /// </summary>
+        public class EditUserDto
     {
         /// <summary>
         /// 用户ID，必须提供，以此识别要编辑的个用户
@@ -168,7 +168,8 @@ namespace WebAdminApi.DTOs
         public string nickname { get; set; } = null!;
         public string gender { get; set; } = null!;
         public string role { get; set; } = null!;
-        public string status { get; set; } = null!;
         public string token { get; set; } = null!;
+
+        public string user_password { get; set; } = null!;
     }
 }

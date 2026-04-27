@@ -6,7 +6,7 @@
    .container {
     min-height: 100vh;
     background-color: #FAF6F0;
-    padding-bottom: 120rpx;
+    padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
   }
 
   .cart-header {
@@ -339,7 +339,7 @@
   /* 底部结算栏 */
   .cart-bottom {
     position: fixed;
-    bottom: 0;
+    bottom: calc(120rpx + env(safe-area-inset-bottom));
     left: 0;
     right: 0;
     height: 100rpx;
@@ -349,7 +349,7 @@
     justify-content: space-between;
     padding: 0 32rpx;
     box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
-    z-index: 100;
+    z-index: 10000;
   }
 
   .left-section {

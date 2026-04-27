@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebAdminApi.DTOs;
 using WebAdminApi.Services;
 using WebAdminApi.PasswordHash;
+using WebAdminApi.Entities;
 
 namespace WebAdminApi.Controllers
 {
@@ -31,6 +32,8 @@ namespace WebAdminApi.Controllers
             {
                 if (pageNum < 1) pageNum = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+                
 
                 _logger.LogInformation($"获取用户列表|关键词: {keyword}, 页码: {pageNum}, 每页: {pageSize}");
                 var result = _userService.GetUserListPage(keyword, pageNum, pageSize);
@@ -80,7 +83,7 @@ namespace WebAdminApi.Controllers
                     });
                 }
 
-                _logger.LogInformation($"添加用户|手机号: {dto.Phone}|昵称: {dto.Nickname}");
+                _logger.LogInformation($"添加用户|手机号: {dto.Phone}|昵称: {dto.RealName}");
                 await _userService.AddUser(dto);
 
                 return Ok(new ApiResponse
@@ -137,51 +140,82 @@ namespace WebAdminApi.Controllers
             }
         }
 
-        /// <summary>
-        /// 接口4：修改用户状态（启用/禁用）
-        /// </summary>
-        [HttpPost("changeStatus")]
-        public async Task<IActionResult> ChangeStatus([FromBody] ChangeStatusDto dto)
+        [HttpGet("detail")]
+        public async Task<IActionResult> GetUserDetail([FromQuery] string id)
         {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest(new { code = 400, message = "ID 不能为空" });
+            }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.id))
+                var result = await _userService.GetUserDetailAsync(id);
+
+                if (result == null)
                 {
-                    return BadRequest(new ApiResponse
-                    {
-                        Code = 400,
-                        Message = "用户ID不能为空"
-                    });
+                    return NotFound(new { code = 404, message = "未找到该用户" });
                 }
 
-                if (dto.status != "启用" && dto.status != "禁用")
+                return Ok(new
                 {
-                    return BadRequest(new ApiResponse
-                    {
-                        Code = 400,
-                        Message = "状态值不正确，只能是'启用'或'禁用'"
-                    });
-                }
-
-                _logger.LogInformation($"修改用户状态|用户ID: {dto.id}|目标状态: {dto.status}");
-                await _userService.ChangeUserStatus(dto.id, dto.status);
-
-                return Ok(new ApiResponse
-                {
-                    Code = 200,
-                    Message = "状态修改成功"
+                    code = 200,
+                    message = "获取成功",
+                    data = result
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"修改用户状态失败: {ex.Message}");
-                return BadRequest(new ApiResponse
-                {
-                    Code = 400,
-                    Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "修改用户状态失败"
-                });
+                _logger.LogError($"获取用户详情异常: {ex.Message}");
+                return StatusCode(500, new { code = 500, message = "服务器内部错误" });
             }
         }
+
+        ///// <summary>
+        ///// 接口4：修改用户状态（启用/禁用）
+        ///// </summary>
+        //[HttpPost("changeStatus")]
+        //public async Task<IActionResult> ChangeStatus([FromBody] ChangeStatusDto dto)
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(dto.id))
+        //        {
+        //            return BadRequest(new ApiResponse
+        //            {
+        //                Code = 400,
+        //                Message = "用户ID不能为空"
+        //            });
+        //        }
+
+        //        if (dto.status != "启用" && dto.status != "禁用")
+        //        {
+        //            return BadRequest(new ApiResponse
+        //            {
+        //                Code = 400,
+        //                Message = "状态值不正确，只能是'启用'或'禁用'"
+        //            });
+        //        }
+
+        //        _logger.LogInformation($"修改用户状态|用户ID: {dto.id}|目标状态: {dto.status}");
+        //        //await _userService.ChangeUserStatus(dto.id, dto.status);
+
+        //        return Ok(new ApiResponse
+        //        {
+        //            Code = 200,
+        //            Message = "状态修改成功"
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError($"修改用户状态失败: {ex.Message}");
+        //        return BadRequest(new ApiResponse
+        //        {
+        //            Code = 400,
+        //            Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "修改用户状态失败"
+        //        });
+        //    }
+        //}
 
         /// <summary>
         /// 接口5：删除用户
