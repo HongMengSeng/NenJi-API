@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Data;
+
+using Microsoft.EntityFrameworkCore;
 
 using WebAdminApi.DBs;
 using WebAdminApi.DTOs;
@@ -125,17 +127,19 @@ namespace WebAdminApi.Services
             }
 
             // 获取角色ID（从 role_staff 表）
-            int roleId = GetRoleIdByName(dto.Role);
+            //int roleId = GetRoleIdByName(dto.RoleId);
+
+            int roleId = string.IsNullOrWhiteSpace(dto.RoleId) ? 2 : GetRoleIdByName(dto.RoleId);
 
             // 创建新用户实体
             var newUser = new User
             {
-                WxOpenId = "",
+                
                 PhoneNumber = dto.Phone,
-                WxNickname = dto.Nickname,
+                RealName = dto.RealName,
                 Gender = dto.Gender,
                 RoleId = roleId,
-                PasswordHash = "",
+                PasswordHash = _passwordService.HashPassword(dto.PasswordHash),
                 //LoginTime = null,
                 RegisterTime = DateTime.Now
             };
@@ -143,7 +147,7 @@ namespace WebAdminApi.Services
             _dbContext.Users.Add(newUser);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 新增用户成功 | 手机号: {dto.Phone} | 昵称: {dto.Nickname} | 角色: {dto.Role} | 用户ID: {newUser.UserId}");
+            _logger.LogInformation($"✅ 新增用户成功 | 手机号: {dto.Phone} | 昵称: {dto.RealName} | 角色: {dto.RoleId} | 用户ID: {newUser.UserId}");
             return true;
         }
 
@@ -291,24 +295,24 @@ namespace WebAdminApi.Services
 
         #region 辅助方法
 
-        /// <summary>
-        /// 生成新员工的AdminId
-        /// 格式：staff_ + 5位序号
-        /// 例如：staff_10001、staff_10002
-        /// </summary>
-        private string GenerateAdminId()
-        {
-            // 获取所有以 "staff_" 开头的管理员ID
-            var maxStaffId = _dbContext.Users
-                .Where(u => u.WxOpenId.StartsWith("staff_"))
-                .Select(u => u.WxOpenId)
-                .AsEnumerable()
-                .Select(id => int.TryParse(id.Replace("staff_", ""), out int num) ? num : 0)
-                .DefaultIfEmpty(10000)
-                .Max();
+        ///// <summary>
+        ///// 生成新员工的AdminId
+        ///// 格式：staff_ + 5位序号
+        ///// 例如：staff_10001、staff_10002
+        ///// </summary>
+        //private string GenerateAdminId()
+        //{
+        //    // 获取所有以 "staff_" 开头的管理员ID
+        //    var maxStaffId = _dbContext.Users
+        //        .Where(u => u.WxOpenId.StartsWith("staff_"))
+        //        .Select(u => u.WxOpenId)
+        //        .AsEnumerable()
+        //        .Select(id => int.TryParse(id.Replace("staff_", ""), out int num) ? num : 0)
+        //        .DefaultIfEmpty(10000)
+        //        .Max();
 
-            return $"staff_{maxStaffId + 1:D5}";
-        }
+        //    return $"staff_{maxStaffId + 1:D5}";
+        //}
 
         /// <summary>
         /// 根据角色名称获取角色ID

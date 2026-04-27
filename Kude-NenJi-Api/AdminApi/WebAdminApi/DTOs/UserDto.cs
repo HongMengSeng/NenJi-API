@@ -79,12 +79,13 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class AddUserDto
     {
+        
         public string Phone { get; set; } = null!;
-        public string Nickname { get; set; } = null!;
+        public string RealName { get; set; } = null!;
         public string Gender { get; set; } = null!;
-        public string? Address { get; set; }
-        public string Role { get; set; } = null!;
-        public string Status { get; set; } = "∆Ù”√";
+        public string RoleId { get; set; } = null!;
+
+        public string PasswordHash { get; set; } = null!;
     }
 
     /// <summary>
