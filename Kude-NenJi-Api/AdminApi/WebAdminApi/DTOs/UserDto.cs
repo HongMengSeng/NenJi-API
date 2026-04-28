@@ -154,7 +154,7 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class LoginDto
     {
-        public string phone { get; set; } = null!;
+        public string user_no { get; set; } = null!;
         public string password { get; set; } = null!;
     }
 
@@ -163,11 +163,8 @@ namespace WebAdminApi.DTOs
     /// </summary>
     public class LoginResponseDto
     {
-        public string id { get; set; } = null!;
-        public string phone { get; set; } = null!;
-        public string nickname { get; set; } = null!;
-        public string gender { get; set; } = null!;
-        public string role { get; set; } = null!;
+        public string user_no { get; set; } = null!;
+
         public string token { get; set; } = null!;
 
         public string user_password { get; set; } = null!;

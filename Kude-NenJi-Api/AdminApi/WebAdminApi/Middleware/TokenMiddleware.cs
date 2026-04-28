@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using WebAdminApi.Services;
 
 namespace WebAdminApi.Middleware
@@ -21,11 +20,10 @@ namespace WebAdminApi.Middleware
             // 需要 Token 验证的受保护路径
             var protectedPaths = new[]
             {
-                "/api/back-user/list",
-                "/api/back-user/add",
-                "/api/back-user/edit",
-                "/api/back-user/delete",
-                "/api/back-user/changeStatus"
+                "/api/user/list",
+                "/api/user/add",
+                "/api/user/edit",
+                "/api/user/delete"
             };
 
             if (protectedPaths.Any(p => path?.StartsWith(p) == true))
@@ -60,38 +58,8 @@ namespace WebAdminApi.Middleware
                 }
 
                 _logger.LogInformation("? Token 签名验证成功");
-
-                // 从 Token 中提取用户信息
-                var userRole = tokenService.GetUserRoleFromToken(token);
                 var userId = tokenService.GetUserIdFromToken(token);
 
-                _logger.LogInformation($"?? 提取用户信息 | UserId: {userId} | Role: {userRole}");
-
-                // ? 添加详细的权限检查日志
-                if (string.IsNullOrEmpty(userRole))
-                {
-                    _logger.LogError("? 用户角色为空，拒绝访问");
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    var response = new { code = 401, message = "用户角色信息无效，请重新登录" };
-                    await context.Response.WriteAsJsonAsync(response);
-                    return;
-                }
-
-                if (userRole != "管理员")
-                {
-                    _logger.LogWarning($"? 权限不足 | 用户角色: {userRole} | 需要: 管理员");
-                    context.Response.StatusCode = 403;
-                    context.Response.ContentType = "application/json";
-                    var response = new { code = 403, message = $"权限不足，用户角色: {userRole}，仅管理员可操作" };
-                    await context.Response.WriteAsJsonAsync(response);
-                    return;
-                }
-
-                _logger.LogInformation($"? 权限验证通过 | UserId: {userId} | Role: {userRole}");
-
-                // 将用户信息存储到 HttpContext
-                context.Items["UserRole"] = userRole;
                 context.Items["UserId"] = userId;
             }
 

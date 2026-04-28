@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -45,6 +44,7 @@ namespace WebAdminApi.Entities
         public int RoleId { get; set; }
     }
 
+    [Table("admin")]
     public class Admin
     {
         [Key]

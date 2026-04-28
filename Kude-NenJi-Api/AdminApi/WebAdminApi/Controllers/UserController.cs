@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebAdminApi.DTOs;
 using WebAdminApi.Services;
-using WebAdminApi.PasswordHash;
-using WebAdminApi.Entities;
 
 namespace WebAdminApi.Controllers
 {
@@ -262,26 +260,17 @@ namespace WebAdminApi.Controllers
         {             
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.phone) || string.IsNullOrWhiteSpace(dto.password))
+                if (string.IsNullOrWhiteSpace(dto.user_no) || string.IsNullOrWhiteSpace(dto.password))
                 {
                     return BadRequest(new ApiResponse
                     {
                         Code = 400,
-                        Message = "手机号和密码不能为空"
+                        Message = "账号和密码不能为空"
                     });
                 }
 
-                if (!ValidatePhoneNumber(dto.phone))
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Code = 400,
-                        Message = "手机号格式不正确，11位数字"
-                    });
-                }
-
-                _logger.LogInformation($"用户登录|手机号: {dto.phone}");
-                var result = await _userService.Login(dto.phone, dto.password);
+                _logger.LogInformation($"用户登录|用户账号名称: {dto.user_no}");
+                var result = await _userService.Login(dto.user_no, dto.password);
 
                 return Ok(new ApiResponse<LoginResponseDto>
                 {
@@ -295,16 +284,13 @@ namespace WebAdminApi.Controllers
                 _logger.LogError($"登录失败: {ex.Message}");
 
                 if (ex.Message.Contains("未注册"))
-                    return Unauthorized(new ApiResponse { Code = 401, Message = "该手机号未注册" });
+                    return Unauthorized(new ApiResponse { Code = 401, Message = "该账号未注册" });
 
                 if (ex.Message.Contains("禁用"))
                     return StatusCode(403, new ApiResponse { Code = 403, Message = "账号已禁用，请联系管理员" });
 
                 if (ex.Message.Contains("密码"))
                     return Unauthorized(new ApiResponse { Code = 401, Message = "密码错误，请重新输入" });
-
-                if (ex.Message.Contains("权限不足") || ex.Message.Contains("管理员"))
-                    return Unauthorized(new ApiResponse { Code = 401, Message = "权限不足，仅管理员可登录" });
 
                 return BadRequest(new ApiResponse { Code = 400, Message = "登录失败" });
             }

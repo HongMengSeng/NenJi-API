@@ -233,7 +233,7 @@ namespace WebAdminApi.Services
             if (string.IsNullOrWhiteSpace(user_no) || string.IsNullOrWhiteSpace(password))
                 throw new Exception("管理员账号和密码不能为空");
 
-            _logger.LogInformation($"🔍 开始验证用户 | 手机号: {user_no}");
+            _logger.LogInformation($"🔍 开始验证用户 | 管理员账号: {user_no}");
 
             var user = _dbContext.Admins.FirstOrDefault(u => u.UserNo == user_no);
 
@@ -243,6 +243,8 @@ namespace WebAdminApi.Services
                 throw new Exception("该管理员账号未注册");
             }
 
+            
+            //_logger.LogInformation($"TEST_HASH: {BCrypt.Net.BCrypt.HashPassword("123")}");
             bool isPasswordValid = _passwordService.VerifyPassword(password, user.UserPassword);
 
             if (!isPasswordValid)
@@ -251,33 +253,7 @@ namespace WebAdminApi.Services
                 throw new Exception("密码错误，请重新输入");
             }
 
-            _logger.LogInformation($"✅ 登录成功 | UserId: {user.UserNo}");
-
-            //if (user.Status == "禁用")
-            //{
-            //    _logger.LogWarning($"❌ 用户已禁用 | 用户ID: {user.WxOpenId}");
-            //    throw new Exception("账号已禁用，请联系管理员");
-            //}
-
-            if (user.UserPassword != password)
-            {
-                _logger.LogWarning($"❌ 密码错误 | 用户ID: {user.UserNo}");
-                throw new Exception("密码错误，请重新输入");
-            }
-
-    //        //获取用户角色信息（从 role_staff 表）
-    //        var role = await _dbContext.Roles
-    //.FirstOrDefaultAsync(r => r.RoleId == user.RoleId);
-    //        string roleName = role?.RoleName ?? "普通用户";
-
-            //_logger.LogInformation($"📋 角色信息 | RoleStaffId: {user.RoleId} | RoleStaffName: {roleName}");
-
-            //// 只有管理员才能登录
-            //if (roleName != "管理员")
-            //{
-            //    _logger.LogWarning($"❌ 权限不足 | 用户ID: {user.WxOpenId} | 角色: {roleName}");
-            //    throw new Exception($"权限不足，仅管理员可登录，你的角色是: {roleName}");
-            
+            _logger.LogInformation($"✅ 登录成功 | 用户ID: {user.UserNo}");
 
             //仅更新最后登录时间，不存储 Token
             //user.LoginTime = DateTime.Now;
@@ -292,7 +268,7 @@ namespace WebAdminApi.Services
 
             return new LoginResponseDto
             {
-                id = user.UserNo,
+                user_no = user.UserNo,
 
                user_password = user.UserPassword,
                 //status = user.Status,
