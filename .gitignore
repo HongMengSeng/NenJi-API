@@ -38,3 +38,4 @@ packages/
 
 # 其他缓存目录
 .cache/
+/Kude-NenJi-Api/DemoAPI/WebAPI/WebAPI/Properties/launchSettings.json
