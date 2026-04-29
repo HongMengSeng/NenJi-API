@@ -7,7 +7,7 @@ namespace WebAdminApi.Controllers
     public class AdminApiControllers
     {
         [ApiController]
-        [Route("api/back-user/roles/list")]
+        [Route("api/user/roles/list")]
         public class UserListController : ControllerBase
         {
             [HttpGet]
@@ -22,7 +22,7 @@ namespace WebAdminApi.Controllers
         /// 角色管理控制器
         /// </summary>
         [ApiController]
-        [Route("api/back-user/roles/list")]
+        [Route("api/user/roles/list")]
         public class RoleController : ControllerBase
         {
             /// <summary>

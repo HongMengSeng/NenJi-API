@@ -153,43 +153,6 @@ namespace WebAdminApi.Services
         }
 
         /// <summary>
-        /// 从 Token 获取用户角色
-        /// </summary>
-        public string? GetUserRoleFromToken(string token)
-        {
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var jwtToken = tokenHandler.ReadJwtToken(token);
-
-                // ? 先尝试 ClaimTypes.Role
-                var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
-                
-                // 如果没找到，尝试自定义 "Role"
-                if (roleClaim == null)
-                {
-                    roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "Role");
-                }
-
-                var role = roleClaim?.Value;
-
-                if (string.IsNullOrEmpty(role))
-                {
-                    _logger.LogWarning($"??  Token 中未找到 Role 信息，所有 Claims: {string.Join(", ", jwtToken.Claims.Select(c => $"{c.Type}={c.Value}"))}");
-                    return null;
-                }
-
-                _logger.LogInformation($"? 从 Token 提取角色成功: {role}");
-                return role;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"? 从 Token 获取角色失败: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// 从 Token 获取用户 ID
         /// </summary>
         public string? GetUserIdFromToken(string token)

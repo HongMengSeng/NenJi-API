@@ -12,10 +12,6 @@ namespace WebAdminApi.Services
         /// </summary>
         bool ValidateToken(string token);
 
-        /// <summary>
-        /// 从Token获取用户角色
-        /// </summary>
-        string? GetUserRoleFromToken(string token);
 
         /// <summary>
         /// 从Token获取用户ID
