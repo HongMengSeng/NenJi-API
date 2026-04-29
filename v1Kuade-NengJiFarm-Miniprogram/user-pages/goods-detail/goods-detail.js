@@ -11,8 +11,10 @@ Page({
       description: '',
       weight: '',
       storage: '',
-      videoUrl: ''
+      videoUrl: '',
+      stock: 0
     },
+    cartQuantity: 0,
     swiperList: [],
     hasVideo: false,
     loading: true,
@@ -98,7 +100,8 @@ Page({
             description: data.description || '',
             weight: data.weight || '',
             storage: data.storage || '',
-            videoUrl: videoUrl
+            videoUrl: videoUrl,
+            stock: Number(data.stock || 0)
           },
           swiperList: swiperList,
           loading: false,
@@ -115,29 +118,45 @@ Page({
   },
 
   updateCartCount() {
-    const cartList = wx.getStorageSync('cartList') || [];
-    const count = cartList.reduce((sum, item) => sum + (item.count || 0), 0);
-    this.setData({ cartCount: count });
+    const cart = wx.getStorageSync('cartList') || {};
+    let count = 0;
+    for (const key in cart) {
+      count += cart[key].count || cart[key].quantity || 0;
+    }
+    
+    const goodsId = String(this.data.goods.id);
+    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
+    
+    this.setData({ cartCount: count, cartQuantity: cartQuantity });
   },
 
   addToCart() {
     const goods = this.data.goods;
-    const currentCart = wx.getStorageSync('cartList') || [];
-    const nextCart = currentCart.map(item => ({ ...item }));
+    const currentCart = wx.getStorageSync('cartList') || {};
     const targetId = String(goods.id);
-    const existingIndex = nextCart.findIndex(item => String(item.id) === targetId);
+    const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
 
-    if (existingIndex > -1) {
-      nextCart[existingIndex].count = (nextCart[existingIndex].count || 0) + 1;
+    if (goods.stock > 0 && currentQuantity >= goods.stock) {
+      wx.showToast({ title: '库存不足', icon: 'none' });
+      return;
+    }
+
+    const nextCart = { ...currentCart };
+
+    if (nextCart[targetId]) {
+      nextCart[targetId].count = currentQuantity + 1;
+      nextCart[targetId].quantity = nextCart[targetId].count;
     } else {
-      nextCart.push({
+      nextCart[targetId] = {
         id: targetId,
         name: goods.name,
         price: Number(goods.price || 0),
         image: goods.image,
         count: 1,
-        checked: true
-      });
+        quantity: 1,
+        checked: true,
+        stock: goods.stock
+      };
     }
 
     wx.setStorageSync('cartList', nextCart);
@@ -198,7 +217,8 @@ Page({
   getAddressList() {
     request({
       url: '/api/user/address',
-      method: 'GET'
+      method: 'GET',
+      showLoading: false
     })
     .then(data => {
       const addressList = data || [];
@@ -211,6 +231,7 @@ Page({
     })
     .catch(err => {
       console.error('获取地址列表失败:', err);
+      // 用户未登录时不显示错误提示，避免影响商品详情展示
     });
   },
 
@@ -219,7 +240,8 @@ Page({
     const address = this.data.addressList.find(addr => addr.id === id);
     this.setData({
       selectedAddress: id,
-      defaultAddress: address
+      defaultAddress: address,
+      showAllAddresses: false
     });
   },
 
@@ -229,7 +251,7 @@ Page({
 
   addAddress() {
     wx.navigateTo({
-      url: '/user-pages/address/address'
+      url: '/user-pages/address-edit/address-edit'
     });
   },
 
@@ -255,14 +277,18 @@ Page({
       }]
     };
 
+    wx.showLoading({ title: '创建订单中...' });
     api.order.createCommodity(payload)
     .then(data => {
+      wx.hideLoading();
       const orderId = data.orderId || data.id;
       wx.navigateTo({
         url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.totalPrice}`
       });
     })
     .catch(err => {
+      wx.hideLoading();
+      // 这里的错误提示已经在 request 封装里处理了
     });
   },
 
