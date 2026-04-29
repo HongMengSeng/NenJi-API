@@ -5,6 +5,7 @@ Page({
     categories: [],
     currentCategory: 'all',
     goodsList: [],
+    acreList: [],
     currentCategoryGoods: [],
     loading: true,
     cartCount: 0,
@@ -13,8 +14,6 @@ Page({
     showFilterDrawer: false,
     minPrice: '',
     maxPrice: '',
-    acreList: [],
-    acreLoading: false,
     loadingMore: false,
     cart: {},
     filterIconUrl: '/images/filter.png'
@@ -33,16 +32,13 @@ Page({
   getCategories: function () {
     api.farmGoods.getCategories()
       .then(categories => {
-        // 确保有全部商品和认购专区
         let finalCategories = categories || [];
         
-        // 检查是否已有全部商品
         const hasAll = finalCategories.some(c => c.id === 'all');
         if (!hasAll) {
           finalCategories.unshift({ id: 'all', name: '全部商品' });
         }
         
-        // 检查是否已有认购专区
         const hasAcre = finalCategories.some(c => c.id === 'acre');
         if (!hasAcre) {
           finalCategories.push({ id: 'acre', name: '认购专区' });
@@ -52,32 +48,41 @@ Page({
       })
       .catch(err => {
         console.error('获取分类失败:', err);
-       
-       
       });
   },
 
   getGoodsList: function () {
     this.setData({ loading: true });
     
-    // 同时获取商品列表和认购列表
-    Promise.all([
-      api.farmGoods.getList({ type: 'goods' }),
-      this.getAcreList()
-    ])
-      .then(([goodsData]) => {
-        const list = (goodsData || []).map(item => ({
+    api.farmGoods.getList({ type: 'goods' })
+      .then(goodsData => {
+        const goodsList = (goodsData || []).map(item => ({
           ...item,
           image: this.processImageUrl(item.image),
           price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
           originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice,
           tags: item.tags || []
         }));
+        
         this.setData({
-          goodsList: list,
-          currentCategoryGoods: list,
+          goodsList: goodsList,
+          currentCategoryGoods: goodsList,
           loading: false
         });
+        
+        api.acre.getList({ showLoading: false })
+          .then(acreData => {
+            const acreList = (acreData || []).map(item => ({
+              ...item,
+              image: this.processImageUrl(item.image || item.cover),
+              price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
+              tags: ['可认购']
+            }));
+            this.setData({ acreList: acreList });
+          })
+          .catch(err => {
+            console.error('获取田地列表失败:', err);
+          });
       })
       .catch(err => {
         console.error('获取商品列表失败:', err);
@@ -86,26 +91,7 @@ Page({
       });
   },
 
-  getAcreList: function () {
-    this.setData({ acreLoading: true });
-    return api.acre.getList()
-      .then(data => {
-        const list = (data || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image || item.cover)
-        }));
-        this.setData({
-          acreList: list,
-          acreLoading: false
-        });
-        return list;
-      })
-      .catch(err => {
-        console.error('获取认购列表失败:', err);
-        this.setData({ acreLoading: false });
-        return [];
-      });
-  },
+
 
   onSearchInput(e) {
     const keyword = e.detail.value;
@@ -124,16 +110,12 @@ Page({
 
   filterGoods() {
     const { currentCategory, searchKeyword, minPrice, maxPrice, goodsList, acreList } = this.data;
-    
-    // 如果是认购专区，不需要过滤商品列表
-    if (currentCategory === 'acre') {
-      this.setData({ currentCategoryGoods: [] });
-      return;
-    }
 
     let list = goodsList;
 
-    if (currentCategory !== 'all') {
+    if (currentCategory === 'acre') {
+      list = acreList;
+    } else if (currentCategory !== 'all') {
       list = list.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
     }
 
@@ -269,12 +251,7 @@ Page({
     // 触底加载逻辑
   },
 
-  navigateToAcreDetail(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: `/user-pages/acre-detail/acre-detail?id=${id}`
-    });
-  },
+
 
   processImageUrl(imageUrl) {
     const utils = require('../../utils/utils');
