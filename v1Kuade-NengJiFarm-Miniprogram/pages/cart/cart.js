@@ -41,16 +41,21 @@ Page({
   restoreCart() {
     let cartList = [];
 
-    const goodsCart = (wx.getStorageSync('cartList') || []).map(item => ({
-      ...item,
-      checked: !!item.checked,
-      count: Number(item.count || 0),
-      price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-      stock: Number(item.stock || 0),
-      type: 'goods',
-      _cartKey: 'goods_' + String(item.id),
-      image: this.processImageUrl(item.image || '')
-    }));
+    const rawCartList = wx.getStorageSync('cartList');
+    const goodsCart = (Array.isArray(rawCartList) ? rawCartList : []).map(item => {
+      const itemQuantity = Number(item.count || item.quantity || 0);
+      return {
+        ...item,
+        checked: !!item.checked,
+        count: itemQuantity,
+        quantity: itemQuantity,
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+        stock: Number(item.stock || 0),
+        type: 'goods',
+        _cartKey: 'goods_' + String(item.id),
+        image: this.processImageUrl(item.image || '')
+      };
+    });
     cartList.push(...goodsCart);
 
     const orderCart = wx.getStorageSync('orderCart') || {};
@@ -149,6 +154,7 @@ Page({
         price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
         image: item.image || '',
         count: Number(item.count || 0),
+        quantity: Number(item.count || 0),
         checked: !!item.checked,
         type: item.type || 'goods',
         stock: Number(item.stock || 0),
@@ -166,6 +172,7 @@ Page({
       price: i.price,
       image: i.image,
       count: i.count,
+      quantity: i.count,
       checked: i.checked,
       stock: i.stock
     })));
@@ -255,7 +262,6 @@ Page({
       content: `确定删除选中的 ${selectedItems.length} 件商品吗？`,
       success: (res) => {
         if (res.confirm) {
-          // 只保留未选中的商品
           const remainingItems = cartList.filter(i => !i.checked);
           this.setData({ cartList: remainingItems });
           this.groupItemsByRegion(remainingItems);
@@ -275,7 +281,6 @@ Page({
     if (index === -1) return;
 
     if (cartList[index].count <= 1) {
-      // 数量为1再减则删除
       wx.showModal({
         title: '提示',
         content: '确定删除该商品吗？',
@@ -306,7 +311,6 @@ Page({
     const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
     if (index === -1) return;
 
-    // 检查库存
     if (cartList[index].stock && cartList[index].count >= cartList[index].stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;
@@ -422,24 +426,20 @@ Page({
       return;
     }
 
-    // 检查是否有选中的点餐商品但没有桌号
     const hasFoodSelected = regions.food.items.some(i => i.checked);
     if (hasFoodSelected && !tableNumber) {
       wx.showToast({ title: '请先选择桌号', icon: 'none' });
       return;
     }
 
-    // 判断是否需要分别结算（同时选了点餐和商品）
     const hasGoodsSelected = regions.goods.items.some(i => i.checked);
     if (hasFoodSelected && hasGoodsSelected) {
       this.setData({ showSeparateSettleModal: true });
     } else if (hasFoodSelected) {
-      // 只有点餐，直接跳转确认订单
       wx.navigateTo({
         url: '/user-pages/confirm-order/confirm-order?type=food&tableNumber=' + (tableNumber || '')
       });
     } else {
-      // 只有商品，显示确认购买弹窗
       this.setData({ showModal: true });
     }
   },
@@ -451,17 +451,14 @@ Page({
     const hasGoodsSelected = regions.goods.items.some(i => i.checked);
 
     if (hasGoodsSelected && !hasFoodSelected) {
-      // 只有商品，直接创建订单
       if (!this.data.selectedAddress) {
         wx.showToast({ title: '请先选择收货地址', icon: 'none' });
         return;
       }
       this.createGoodsOrder();
     } else if (hasFoodSelected && !hasGoodsSelected) {
-      // 只有点餐，走点餐下单
       this.createOrderByType('food');
     } else {
-      // 两种都有，分别结算
       this.setData({ showModal: false, showSeparateSettleModal: true });
     }
   },
@@ -474,7 +471,6 @@ Page({
     if (items.length === 0) return;
 
     if (type === 'food') {
-      // 点餐下单，跳转到确认订单
       wx.navigateTo({
         url: '/user-pages/confirm-order/confirm-order?type=food&tableNumber=' + (tableNumber || '')
       });
@@ -492,7 +488,6 @@ Page({
 
   // ========== 商品结算（分别结算弹窗中） ==========
   settleGoods() {
-    // 检查是否选择了收货地址
     if (!this.data.selectedAddress) {
       wx.showToast({ title: '请先选择收货地址', icon: 'none' });
       return;

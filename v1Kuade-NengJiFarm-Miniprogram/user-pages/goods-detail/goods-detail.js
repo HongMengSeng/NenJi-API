@@ -52,7 +52,6 @@ Page({
 
   onShow() {
     this.updateCartCount();
-    // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
     this.getAddressList();
   },
 
@@ -67,16 +66,15 @@ Page({
       }
     })
       .then((data) => {
-        // 视频处理：兼容 videoUrl / video / video_url 字段
         const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
         let videoUrl = '';
         if (rawVideoUrl) {
           videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
         }
         const hasVideo = !!videoUrl;
-        
+
         console.log('商品详情原始数据:', JSON.stringify(data));
-        
+
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
         const apiSwiperList = (data.swiperList || []).map(item => ({
@@ -118,36 +116,37 @@ Page({
   },
 
   updateCartCount() {
-    const cart = wx.getStorageSync('cartList') || {};
+    const cartList = wx.getStorageSync('cartList') || [];
     let count = 0;
-    for (const key in cart) {
-      count += cart[key].count || cart[key].quantity || 0;
-    }
-    
+    let cartQuantity = 0;
     const goodsId = String(this.data.goods.id);
-    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
-    
+
+    if (Array.isArray(cartList)) {
+      count = cartList.reduce((sum, item) => sum + (item.count || 0), 0);
+      const cartItem = cartList.find(item => String(item.id) === goodsId);
+      cartQuantity = cartItem ? (cartItem.count || 0) : 0;
+    }
+
     this.setData({ cartCount: count, cartQuantity: cartQuantity });
   },
 
   addToCart() {
     const goods = this.data.goods;
-    const currentCart = wx.getStorageSync('cartList') || {};
+    const currentCart = wx.getStorageSync('cartList') || [];
     const targetId = String(goods.id);
-    const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
+    const existingIndex = Array.isArray(currentCart) ? currentCart.findIndex(item => String(item.id) === targetId) : -1;
+    const currentQuantity = existingIndex >= 0 ? (currentCart[existingIndex].count || 0) : 0;
 
     if (goods.stock > 0 && currentQuantity >= goods.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;
     }
 
-    const nextCart = { ...currentCart };
-
-    if (nextCart[targetId]) {
-      nextCart[targetId].count = currentQuantity + 1;
-      nextCart[targetId].quantity = nextCart[targetId].count;
+    if (existingIndex >= 0) {
+      currentCart[existingIndex].count = currentQuantity + 1;
+      currentCart[existingIndex].quantity = currentCart[existingIndex].count;
     } else {
-      nextCart[targetId] = {
+      currentCart.push({
         id: targetId,
         name: goods.name,
         price: Number(goods.price || 0),
@@ -156,10 +155,10 @@ Page({
         quantity: 1,
         checked: true,
         stock: goods.stock
-      };
+      });
     }
 
-    wx.setStorageSync('cartList', nextCart);
+    wx.setStorageSync('cartList', currentCart);
     this.updateCartCount();
     wx.showToast({
       title: '已加入购物车',
@@ -231,7 +230,6 @@ Page({
     })
     .catch(err => {
       console.error('获取地址列表失败:', err);
-      // 用户未登录时不显示错误提示，避免影响商品详情展示
     });
   },
 
@@ -288,7 +286,6 @@ Page({
     })
     .catch(err => {
       wx.hideLoading();
-      // 这里的错误提示已经在 request 封装里处理了
     });
   },
 
@@ -314,4 +311,3 @@ Page({
     wx.switchTab({ url: '/pages/cart/cart' });
   }
 });
-

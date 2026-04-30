@@ -195,9 +195,16 @@ Page({
   updateMergedGoodsList() {
     const { categories, goodsList } = this.data;
     const merged = [];
+    const seenKeys = new Set();
     categories.forEach(c => {
       merged.push({ type: 'category', id: c.id, name: c.name, uniqueKey: `cat-${c.id}` });
-      (goodsList[c.id] || []).forEach(g => merged.push({ ...g, uniqueKey: `g-${g.id}` }));
+      (goodsList[c.id] || []).forEach((g, idx) => {
+        const itemKey = `g-${g.id}-${c.id}-${idx}`;
+        if (!seenKeys.has(itemKey)) {
+          seenKeys.add(itemKey);
+          merged.push({ ...g, uniqueKey: itemKey });
+        }
+      });
     });
     this.setData({ mergedGoodsList: merged });
   },

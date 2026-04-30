@@ -191,12 +191,13 @@
     
     if (existingIndex >= 0) {
       // 如果已存在，增加数量
-      const newQuantity = cartList[existingIndex].count + 1;
+      const newQuantity = (cartList[existingIndex].count || cartList[existingIndex].quantity || 0) + 1;
       if (stock && newQuantity > stock) {
         wx.showToast({ title: '库存不足', icon: 'none' });
         return;
       }
       cartList[existingIndex].count = newQuantity;
+      cartList[existingIndex].quantity = newQuantity;
     } else {
       // 如果不存在，添加新商品
       cartList.push({
@@ -205,8 +206,9 @@
         price: Number((price || 0).toString().replace(/[¥￥]/g, '')),
         image: image,
         count: 1,
+        quantity: 1,
         type: type || 'goods', // goods: 商品, food: 点餐
-        checked: false,
+        checked: true,
         stock: stock || 999
       });
     }
@@ -223,8 +225,9 @@
 
   // 更新购物车计数
   updateCartCount() {
-    const cartList = wx.getStorageSync('cartList') || [];
-    const totalCount = cartList.reduce((sum, item) => sum + (item.count || 0), 0);
+    const rawCartList = wx.getStorageSync('cartList');
+    const cartList = Array.isArray(rawCartList) ? rawCartList : [];
+    const totalCount = cartList.reduce((sum, item) => sum + (item.count || item.quantity || 0), 0);
     this.setData({ cartCount: totalCount });
   },
 
