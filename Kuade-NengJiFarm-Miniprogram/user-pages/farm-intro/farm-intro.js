@@ -3,7 +3,7 @@ Page({
     farmInfo: null,
     loading: true,
     // 默认农场主图
-    defaultMainImage: 'http://192.168.101.47/api/file/image/farm_0000000000007.jpg'
+    defaultMainImage: 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg'
   },
 
   onLoad: function (options) {
@@ -33,21 +33,27 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 只替换 127.0.0.1:5000 为 192.168.203.56，不影响其他URL
-      if (imageUrl.includes('127.0.0.1:5000')) {
-        return imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
+      // 替换开发环境地址为生产环境地址
+      imageUrl = imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 如果URL包含 /images/farm/，转换为 /api/file/image/
+      if (imageUrl.includes('/images/farm/')) {
+        const fileName = imageUrl.split('/images/farm/')[1];
+        return 'http://192.168.203.56/api/file/image/' + fileName;
       }
-      // 如果已经是正确的URL格式，直接返回
       return imageUrl;
     }
     
-    // 如果是相对路径，添加基础 URL
-    // 确保基础 URL 后面有斜杠
-    const baseUrl = 'http://192.168.101.47';
-    // 确保图片路径以斜杠开头
-    if (!imageUrl.startsWith('/')) {
-      imageUrl = '/' + imageUrl;
+    // 如果是相对路径，使用 /api/file/image/ API
+    let fileName = imageUrl;
+    if (fileName.startsWith('/')) {
+      fileName = fileName.substring(1);
     }
-    return baseUrl + imageUrl;
+    // 如果路径包含 /images/farm/，只提取文件名
+    if (fileName.includes('/images/farm/')) {
+      fileName = fileName.split('/images/farm/')[1];
+    } else if (fileName.includes('images/farm/')) {
+      fileName = fileName.split('images/farm/')[1];
+    }
+    return 'http://192.168.203.56/api/file/image/' + fileName;
   }
 });

@@ -17,10 +17,10 @@ Page({
 
     const cleaned = String(imageUrl).replace(/[`\s]/g, '');
     if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned.replace('http://192.168.101.47', 'http://192.168.101.47');
+      return cleaned.replace('http://192.168.203.56', 'http://192.168.203.56');
     }
 
-    return 'http://192.168.101.47' + cleaned;
+    return 'http://192.168.203.56' + cleaned;
   },
 
   loadAcreDetail(id) {

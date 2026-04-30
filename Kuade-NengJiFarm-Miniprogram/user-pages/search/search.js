@@ -87,12 +87,28 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.47');
+      // 替换开发环境地址为生产环境地址
+      imageUrl = imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 如果URL包含 /images/farm/，转换为 /api/file/image/
+      if (imageUrl.includes('/images/farm/')) {
+        const fileName = imageUrl.split('/images/farm/')[1];
+        return 'http://192.168.203.56/api/file/image/' + fileName;
+      }
+      return imageUrl;
     }
     
-    // 如果是相对路径，添加基础 URL
-    return 'http://192.168.101.47' + imageUrl;
+    // 如果是相对路径，使用 /api/file/image/ API
+    let fileName = imageUrl;
+    if (fileName.startsWith('/')) {
+      fileName = fileName.substring(1);
+    }
+    // 如果路径包含 /images/farm/，只提取文件名
+    if (fileName.includes('/images/farm/')) {
+      fileName = fileName.split('/images/farm/')[1];
+    } else if (fileName.includes('images/farm/')) {
+      fileName = fileName.split('images/farm/')[1];
+    }
+    return 'http://192.168.203.56/api/file/image/' + fileName;
   },
 
   // 搜索函数

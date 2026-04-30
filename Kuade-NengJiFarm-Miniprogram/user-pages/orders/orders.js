@@ -110,17 +110,28 @@ Page({
     imageUrl = imageUrl.replace(/[`\s]/g, '');
     
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      if (imageUrl.includes('192.168.203.56')) {
-        imageUrl = imageUrl.replace('192.168.203.56', '192.168.203.56');
+      // 替换开发环境地址为生产环境地址
+      imageUrl = imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 如果URL包含 /images/farm/，转换为 /api/file/image/
+      if (imageUrl.includes('/images/farm/')) {
+        const fileName = imageUrl.split('/images/farm/')[1];
+        return 'http://192.168.203.56/api/file/image/' + fileName;
       }
       return imageUrl;
     }
     
-    const baseUrl = 'http://192.168.101.47';
-    if (!imageUrl.startsWith('/')) {
-      imageUrl = '/' + imageUrl;
+    // 如果是相对路径，使用 /api/file/image/ API
+    let fileName = imageUrl;
+    if (fileName.startsWith('/')) {
+      fileName = fileName.substring(1);
     }
-    return baseUrl + imageUrl;
+    // 如果路径包含 /images/farm/，只提取文件名
+    if (fileName.includes('/images/farm/')) {
+      fileName = fileName.split('/images/farm/')[1];
+    } else if (fileName.includes('images/farm/')) {
+      fileName = fileName.split('images/farm/')[1];
+    }
+    return 'http://192.168.203.56/api/file/image/' + fileName;
   },
 
   filterOrders: function (orders, keyword) {

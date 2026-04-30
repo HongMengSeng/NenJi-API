@@ -69,36 +69,88 @@ Page({
 
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
-    api.request({
-      url: '/api/order',
-      data: { categoryId: this.data.activeCategory, page: 1, pageSize: this.data.pageSize }
-    }).then(data => {
-      const categories = data.categories || [];
-      const currentCategory = data.currentCategory || 'vegetables';
-      const goods = this.addImageUrlsToGoods(data.goodsList || [], currentCategory);
+    // 使用正确的菜品分类接口
+    api.goods.getCategories({ type: 'food' })
+      .then(data => {
+        const categories = [
+          { id: 'all', name: '全部菜品' },
+          ...(data || []).map(cat => ({
+            id: String(cat.id),
+            name: cat.name
+          }))
+        ];
+        const currentCategory = 'all';
+        this.setData({
+          activeCategory: currentCategory,
+          categories,
+          pageMap: { [currentCategory]: 1 },
+          hasMoreMap: { [currentCategory]: true },
+          loading: false
+        });
 
-      this.setData({
-        activeCategory: currentCategory,
-        categories,
-        goodsList: { [currentCategory]: goods },
-        pageMap: { [currentCategory]: 1 },
-        hasMoreMap: { [currentCategory]: !!data.hasMore },
-        loading: false
-      });
-
-      this.updateMergedGoodsList();
-      this.loadAllCategories();
-    }).catch(() => {
-      this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
-    }).finally(() => wx.hideLoading());
+        this.updateMergedGoodsList();
+        this.loadAllCategories();
+      })
+      .catch(err => {
+        console.error('获取分类失败', err);
+        this.setData({ loading: false });
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      })
+      .finally(() => wx.hideLoading());
   },
 
-  addImageUrlsToGoods(goods, category) {
+  // 处理图片URL，使用 /api/file/image/ API
+  processImageUrl(imageUrl) {
+    if (!imageUrl) return '';
+    imageUrl = String(imageUrl).replace(/[`\s]/g, '');
+    
+    // 如果已经是完整的API URL，直接返回
+    if (imageUrl.includes('http://192.168.203.56/api/file/image/')) {
+      return imageUrl;
+    }
+    
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      imageUrl = imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      if (imageUrl.includes('/images/farm/')) {
+        const fileName = imageUrl.split('/images/farm/')[1];
+        return 'http://192.168.203.56/api/file/image/' + fileName;
+      }
+      return imageUrl;
+    }
+    
+    // 处理相对路径
+    let fileName = imageUrl;
+    
+    // 去除所有开头的斜杠
+    while (fileName.startsWith('/')) {
+      fileName = fileName.substring(1);
+    }
+    
+    // 提取文件名（去掉路径部分）
+    if (fileName.includes('/images/farm/')) {
+      fileName = fileName.split('/images/farm/')[1];
+    } else if (fileName.includes('images/farm/')) {
+      fileName = fileName.split('images/farm/')[1];
+    } else if (fileName.includes('/')) {
+      // 如果还有路径，只取最后一部分作为文件名
+      fileName = fileName.split('/').pop();
+    }
+    
+    // 如果文件名仍然包含路径分隔符，再次处理
+    if (fileName.includes('/')) {
+      fileName = fileName.split('/').pop();
+    }
+    
+    return 'http://192.168.203.56/api/file/image/' + fileName;
+  },
+
+  addImageUrlsToGoods(goods) {
     return goods.map(item => ({
       ...item,
+      image: this.processImageUrl(item.image),
       price: (item.price || '').toString().replace(/[¥￥]/g, ''),
-      category
+      stock: item.stock || 0,
+      sold: item.sold || 0
     }));
   },
 
@@ -140,20 +192,26 @@ Page({
     const nextPage = isLoadMore ? (this.data.pageMap[category] || 0) + 1 : 1;
     this.setData({ lazyLoading: isLoadMore });
 
-    api.request({
-      url: '/api/order',
-      data: { categoryId: category, page: nextPage, pageSize: this.data.pageSize }
-    }).then(data => {
-      const newGoods = this.addImageUrlsToGoods(data.goodsList || [], category);
-      const old = this.data.goodsList[category] || [];
-      this.setData({
-        [`goodsList.${category}`]: old.concat(newGoods),
-        [`pageMap.${category}`]: nextPage,
-        [`hasMoreMap.${category}`]: !!data.hasMore,
-        lazyLoading: false
+    let reqData = { type: 'food', page: nextPage, pageSize: this.data.pageSize };
+    if (category !== 'all') {
+      reqData.categoryId = category;
+    }
+
+    api.goods.getList(reqData)
+      .then(data => {
+        const newGoods = this.addImageUrlsToGoods(data || []);
+        const old = this.data.goodsList[category] || [];
+        this.setData({
+          [`goodsList.${category}`]: isLoadMore ? old.concat(newGoods) : newGoods,
+          [`pageMap.${category}`]: nextPage,
+          [`hasMoreMap.${category}`]: newGoods.length >= this.data.pageSize,
+          lazyLoading: false
+        });
+        this.updateMergedGoodsList();
+      }).catch(() => {
+        this.setData({ lazyLoading: false });
+        wx.showToast({ title: '加载失败', icon: 'none' });
       });
-      this.updateMergedGoodsList();
-    }).catch(() => this.setData({ lazyLoading: false }));
   },
 
   loadAllCategories() {

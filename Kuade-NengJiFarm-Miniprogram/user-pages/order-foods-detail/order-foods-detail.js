@@ -1,23 +1,28 @@
-const api = require('../../utils/api').api;
+const api = require('../../utils/api');
 
 Page({
   data: {
     goods: {},
-    swiperList: [],
+    food: {},
     loading: true,
-    cart: {},
+    count: 1,
     cartCount: 0,
-    totalPrice: 0,
-    showTableModal: false
+    showTableModal: false,
+    swiperList: [],
+    hasVideo: false
+  },
+
+  onLoad(options) {
+    const id = options.id;
+    if (id) {
+      this.getFoodDetail(id);
+    }
+    this.updateCartCount();
   },
 
   processImageUrl(imageUrl) {
-    if (!imageUrl) return '';
-    const cleaned = String(imageUrl).replace(/[`\s]/g, '');
-    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned;
-    }
-    return 'http://192.168.101.47' + cleaned;
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   onLoad(options) {
@@ -45,11 +50,58 @@ Page({
     this.restoreCart();
   },
 
+  getFoodDetail(id) {
+    this.setData({ loading: true });
+    const { request } = require('../../utils/api');
+    request({
+      url: `/api/goods/${id}`,
+      method: 'GET'
+    })
+      .then(data => {
+        const rawVideoUrl = data.videoUrl || data.video || data.video_url || '';
+        let videoUrl = '';
+        if (rawVideoUrl) {
+          videoUrl = String(rawVideoUrl).startsWith('http') ? String(rawVideoUrl) : this.processImageUrl(String(rawVideoUrl));
+        }
+        const hasVideo = !!videoUrl;
+        
+        const goods = {
+          ...data,
+          image: this.processImageUrl(data.image),
+          detailImage: this.processImageUrl(data.detailImage || data.image),
+          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
+          videoUrl: videoUrl
+        };
+        const swiperList = (data.swiperList || []).map((item, index) => ({
+          id: item.id || index,
+          image: this.processImageUrl(item.image)
+        }));
+        if (swiperList.length === 0) {
+          swiperList.push({ id: 0, image: goods.image });
+        }
+        this.setData({
+          goods,
+          food: goods,
+          swiperList,
+          hasVideo: hasVideo,
+          loading: false
+        });
+      })
+      .catch(err => {
+        console.error('获取菜品详情失败:', err);
+        this.setData({ loading: false });
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      });
+  },
+
   getGoodsDetail(id, goodsData = {}) {
     wx.showLoading({ title: '加载中...' });
-    const videoUrl = 'http://192.168.101.47/api/file/video/farm_intro.mp4';
-    // 调用后端API获取商品详情
-    api.goods.getDetail(id)
+    const videoUrl = 'http://192.168.203.56/api/file/video/farm_intro.mp4';
+    const { request } = require('../../utils/api');
+    request({
+      url: `/api/goods/${id}`,
+      method: 'GET'
+    })
       .then(data => {
         const goodsImage = this.processImageUrl(data.image) || '';
         const detailImage = this.processImageUrl(data.detailImage) || goodsImage;
@@ -64,7 +116,6 @@ Page({
             { id: 2, image: goodsImage }
           ];
         }
-        // 优先使用从点餐页面传递过来的已售和库存数据，确保数据一致
         const goods = {
           ...data,
           sold: goodsData.sold !== undefined ? goodsData.sold : (data.sold || data.sales || 0),
@@ -76,14 +127,15 @@ Page({
         };
         this.setData({
           goods: goods,
+          food: goods,
           swiperList: swiperList,
           loading: false
         });
       })
       .catch(err => {
         console.error('获取商品详情失败', err);
-        wx.showToast({ title: '获取商品详情失败', icon: 'none' });
         this.setData({ loading: false });
+        wx.showToast({ title: '获取商品详情失败', icon: 'none' });
       })
       .finally(() => {
         wx.hideLoading();

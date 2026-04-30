@@ -36,12 +36,29 @@ Page({
     
     // 如果是完整的 URL，替换基础 URL
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // 替换 127.0.0.1:5000 为 192.168.203.56
-      return imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.101.47');
+      // 替换开发环境地址为生产环境地址
+      imageUrl = imageUrl.replace('http://127.0.0.1:5000', 'http://192.168.203.56');
+      // 如果URL包含 /images/farm/，转换为 /api/file/image/
+      if (imageUrl.includes('/images/farm/')) {
+        const fileName = imageUrl.split('/images/farm/')[1];
+        return 'http://192.168.203.56/api/file/image/' + fileName;
+      }
+      return imageUrl;
     }
     
-    // 如果是相对路径，添加基础 URL
-    return 'http://192.168.101.47' + imageUrl;
+    // 如果是相对路径，使用 /api/file/image/ API
+    // 提取文件名
+    let fileName = imageUrl;
+    if (fileName.startsWith('/')) {
+      fileName = fileName.substring(1);
+    }
+    // 如果路径包含 /images/farm/，只提取文件名
+    if (fileName.includes('/images/farm/')) {
+      fileName = fileName.split('/images/farm/')[1];
+    } else if (fileName.includes('images/farm/')) {
+      fileName = fileName.split('images/farm/')[1];
+    }
+    return 'http://192.168.203.56/api/file/image/' + fileName;
   },
 
   // 获取首页数据
@@ -104,7 +121,7 @@ Page({
     })
 
 
-    const BASE_URL = 'http://192.168.101.47';
+    const BASE_URL = 'http://192.168.203.56';
     const videos = [{
       id: 1,
       title: '农场航拍',
@@ -275,5 +292,21 @@ Page({
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
+  },
+
+  // 图片加载失败时的处理函数
+  onImageError(e) {
+    const { type, index } = e.currentTarget.dataset;
+    const defaultImage = 'http://192.168.203.56/api/file/image/farm_0000000000009.jpg';
+    
+    if (type === 'farmGoods') {
+      const newFarmGoods = [...this.data.farmGoods];
+      newFarmGoods[index] = { ...newFarmGoods[index], image: defaultImage };
+      this.setData({ farmGoods: newFarmGoods });
+    } else if (type === 'hotDishes') {
+      const newHotDishes = [...this.data.hotDishes];
+      newHotDishes[index] = { ...newHotDishes[index], image: defaultImage };
+      this.setData({ hotDishes: newHotDishes });
+    }
   }
 })
