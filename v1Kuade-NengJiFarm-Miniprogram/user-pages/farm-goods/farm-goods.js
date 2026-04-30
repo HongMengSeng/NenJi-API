@@ -307,18 +307,6 @@ Page({
   },
 
   goToCart() {
-    wx.switchTab({ 
-      url: '/pages/cart/cart',
-      success: () => {
-        // 切换成功后，手动触发 TabBar 初始化以同步状态
-        setTimeout(() => {
-          const pages = getCurrentPages();
-          const cartPage = pages[pages.length - 1];
-          if (typeof cartPage.getTabBar === 'function' && cartPage.getTabBar()) {
-            cartPage.getTabBar().init();
-          }
-        }, 100);
-      }
-    });
+    wx.switchTab({ url: '/pages/cart/cart' });
   }
 });

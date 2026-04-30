@@ -82,12 +82,13 @@ Component({
 
       // 员工工作台在 staff-pages 里是普通页面，不能用 switchTab，用 reLaunch 切换
       if (path.includes('/staff-home/')) {
+        this.setData({ selected: index });
         wx.redirectTo({ url: path });
         return;
       }
 
+      this.setData({ selected: index });
       wx.switchTab({ url: path });
     }
   }
 });
-

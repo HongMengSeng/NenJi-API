@@ -62,7 +62,11 @@ Page({
 
   syncFromCart() {
     try {
-    } catch (e) {}
+      const cart = wx.getStorageSync('orderCart') || {};
+      this.restoreCart(cart);
+    } catch (e) {
+      console.error('syncFromCart error:', e);
+    }
   },
 
   // 核心：替换为对方的 api 接口，其他完全用你的逻辑
@@ -207,7 +211,10 @@ Page({
     if (newCart[key]) {
       if (newCart[key].quantity >= goods.stock) return wx.showToast({ title: '库存不足', icon: 'none' });
       newCart[key].quantity++;
-    } else newCart[key] = { ...goods, quantity: 1 };
+      newCart[key].count = newCart[key].quantity;
+    } else {
+      newCart[key] = { ...goods, quantity: 1, count: 1 };
+    }
     this.syncCartState(newCart);
   },
 
@@ -217,6 +224,7 @@ Page({
     if (!newCart[id]) return;
     if (newCart[id].quantity >= newCart[id].stock) return wx.showToast({ title: '库存不足', icon: 'none' });
     newCart[id].quantity++;
+    newCart[id].count = newCart[id].quantity;
     this.syncCartState(newCart);
   },
 
@@ -225,7 +233,10 @@ Page({
     const newCart = { ...this.data.cart };
     if (!newCart[id]) return;
     if (newCart[id].quantity <= 1) delete newCart[id];
-    else newCart[id].quantity--;
+    else {
+      newCart[id].quantity--;
+      newCart[id].count = newCart[id].quantity;
+    }
     this.syncCartState(newCart);
   },
 
@@ -235,8 +246,11 @@ Page({
     const goods = this.data.mergedGoodsList.find(i => i.id == id);
     if (!goods) return;
     const newCart = { ...this.data.cart };
-    if (val === 0) delete newCart[id];
-    else newCart[id] = { ...newCart[id], quantity: Math.min(val, goods.stock) };
+    const finalQty = Math.min(val, goods.stock);
+    if (finalQty === 0) delete newCart[id];
+    else {
+      newCart[id] = { ...newCart[id], quantity: finalQty, count: finalQty };
+    }
     this.syncCartState(newCart);
   },
 
@@ -244,28 +258,39 @@ Page({
     let count = 0, total = 0;
     const cartWithChecked = {};
     for (const key in newCart) {
+      const item = newCart[key];
+      const itemQuantity = item.quantity || item.count || 0;
       cartWithChecked[key] = {
-        ...newCart[key],
+        ...item,
+        id: String(item.id || key),
+        quantity: itemQuantity,
+        count: itemQuantity,
         checked: true
       };
-      count += cartWithChecked[key].quantity;
-      total += cartWithChecked[key].price * cartWithChecked[key].quantity;
+      count += itemQuantity;
+      total += (item.price || 0) * itemQuantity;
     }
-    this.setData({ cart: newCart, cartItems: Object.values(newCart), cartCount: count, totalPrice: +total.toFixed(2) });
+    this.setData({ cart: cartWithChecked, cartItems: Object.values(cartWithChecked), cartCount: count, totalPrice: +total.toFixed(2) });
     wx.setStorageSync('orderCart', cartWithChecked);
   },
 
   restoreCart(cart) {
     let count = 0, total = 0;
     const restoredCart = {};
-    Object.values(cart || {}).forEach(i => {
-      const key = String(i.id);
-      restoredCart[key] = {
-        ...i,
-        checked: i.checked !== false
+    Object.entries(cart || {}).forEach(([key, item]) => {
+      const itemQuantity = item.quantity || item.count || 0;
+      if (itemQuantity <= 0) return;
+      const itemId = String(item.id || key);
+      restoredCart[itemId] = {
+        ...item,
+        id: itemId,
+        image: this.processImageUrl(item.image || ''),
+        quantity: itemQuantity,
+        count: itemQuantity,
+        checked: item.checked !== false
       };
-      count += i.quantity || i.count || 0;
-      total += (i.price || 0) * (i.quantity || i.count || 0);
+      count += itemQuantity;
+      total += (item.price || 0) * itemQuantity;
     });
     this.setData({ cart: restoredCart, cartItems: Object.values(restoredCart), cartCount: count, totalPrice: +total.toFixed(2) });
   },

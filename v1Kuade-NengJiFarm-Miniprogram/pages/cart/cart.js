@@ -54,18 +54,22 @@ Page({
     cartList.push(...goodsCart);
 
     const orderCart = wx.getStorageSync('orderCart') || {};
-    for (const id in orderCart) {
-      const item = orderCart[id];
+    for (const key in orderCart) {
+      const item = orderCart[key];
+      const itemCount = Number(item.count || item.quantity || 0);
+      if (itemCount <= 0) continue;
+      const itemId = String(item.id || key);
       cartList.push({
-        id: String(id),
+        id: itemId,
         name: item.name || '',
         price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
         image: this.processImageUrl(item.image || ''),
-        count: Number(item.count || item.quantity || 0),
+        count: itemCount,
+        quantity: itemCount,
         checked: !!item.checked,
         type: 'food',
         stock: Number(item.stock || 0),
-        _cartKey: 'food_' + String(id)
+        _cartKey: 'food_' + itemId
       });
     }
 
@@ -168,15 +172,18 @@ Page({
 
     // 同步点餐到 Storage
     const orderCart = {};
-    foodItems.forEach(i => {
-      orderCart[i.id] = {
-        name: i.name,
-        price: i.price,
-        image: i.image,
-        count: i.count,
-        quantity: i.count,
-        stock: i.stock,
-        checked: i.checked
+    foodItems.forEach(item => {
+      const itemId = String(item.id || item._cartKey || '');
+      if (!itemId) return;
+      orderCart[itemId] = {
+        id: itemId,
+        name: item.name || '',
+        price: item.price,
+        image: item.image || '',
+        count: item.count,
+        quantity: item.count,
+        stock: item.stock || 0,
+        checked: item.checked
       };
     });
     wx.setStorageSync('orderCart', orderCart);
@@ -284,6 +291,7 @@ Page({
       });
     } else {
       cartList[index].count--;
+      cartList[index].quantity = cartList[index].count;
       this.setData({ cartList });
       this.groupItemsByRegion(cartList);
       this.calcTotal();
@@ -305,6 +313,7 @@ Page({
     }
 
     cartList[index].count++;
+    cartList[index].quantity = cartList[index].count;
     this.setData({ cartList });
     this.groupItemsByRegion(cartList);
     this.calcTotal();
@@ -556,4 +565,3 @@ Page({
     this.setData({ showSeparateSettleModal: false });
   }
 });
-
