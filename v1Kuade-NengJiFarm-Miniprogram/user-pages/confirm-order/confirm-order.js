@@ -225,7 +225,7 @@ Page({
           quantity: Number(item.count || 1)
         }))
       };
-      promise = api.order.createCommodity(payload);
+      promise = api.order.createCommodityV2(payload);
     }
 
     promise

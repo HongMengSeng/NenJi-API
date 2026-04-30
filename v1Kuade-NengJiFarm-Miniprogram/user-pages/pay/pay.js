@@ -71,14 +71,14 @@ Page({
   },
 
   ensurePayAmountAndStart: function () {
-    if (this.data.totalPrice > 0) {
-      this.startPayment();
-      return;
-    }
-
     wx.showLoading({ title: '加载订单中...' });
     api.order.getDetail(this.data.orderId)
       .then((orderData) => {
+        // 验证订单状态（只能支付待付款订单）
+        if (orderData.status !== 'pending') {
+          throw new Error('订单状态异常，无法支付');
+        }
+        
         const amount = Number((orderData.totalPrice || 0).toString().replace(/[¥￥]/g, ''));
         if (amount <= 0) {
           throw new Error('订单金额异常');
@@ -90,10 +90,10 @@ Page({
         );
       })
       .catch((err) => {
-        console.error('获取订单金额失败:', err);
+        console.error('获取订单信息失败:', err);
         this.setData({ payStatus: 'failed' });
         wx.showToast({
-          title: '订单金额获取失败',
+          title: err.message || '订单信息获取失败',
           icon: 'none'
         });
       })

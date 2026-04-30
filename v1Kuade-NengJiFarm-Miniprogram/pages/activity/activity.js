@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 
 Page({
   data: {
@@ -28,6 +28,7 @@ Page({
 
   getActivities: function() {
     wx.showLoading({ title: '加载中...', mask: true });
+    const utils = require('../../utils/utils');
 
     api.request({
       url: '/api/activity/list',
@@ -49,6 +50,12 @@ Page({
           // 更简单的结构：直接返回活动列表
           allActivities = data;
         }
+        
+        // 处理活动图片路径
+        allActivities = allActivities.map(activity => ({
+          ...activity,
+          image: utils.media.processUrl(activity.image)
+        }));
         
         // 根据 categoryName 分类
         const categorizedActivities = {
@@ -182,4 +189,3 @@ Page({
     }, 1000);
   }
 });
-

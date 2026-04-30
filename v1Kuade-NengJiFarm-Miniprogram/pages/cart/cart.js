@@ -530,7 +530,7 @@ Page({
     };
 
     const api = require('../../utils/api').api || require('../../utils/api');
-    api.order.createCommodity(payload)
+    api.order.createCommodityV2(payload)
       .then((data) => {
         const orderId = data.orderId || data.id;
         if (!orderId) {

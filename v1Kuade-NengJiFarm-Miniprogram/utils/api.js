@@ -319,6 +319,8 @@ const api = {
     create: (data) => post('/api/OrderDetails/create', data),
     // 创建商品订单 - 兼容旧接口
     createCommodity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'goods', sourceName: '商品购买' }),
+    // 创建商品订单 - 新版接口 (文档第2.2节)
+    createCommodityV2: (data) => post('/api/commodity-order/create', data),
     // 创建活动订单 - 兼容旧接口
     createActivity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'activity', sourceName: '活动报名' }),
     // 创建点餐订单 - 兼容旧接口
