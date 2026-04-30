@@ -41,15 +41,29 @@ Page({
   restoreCart() {
     let cartList = [];
 
-    const goodsCart = (wx.getStorageSync('cartList') || []).map(item => ({
-      ...item,
-      checked: !!item.checked,
-      count: Number(item.count || 0),
-      price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-      stock: Number(item.stock || 0),
-      type: 'goods',
-      _cartKey: 'goods_' + String(item.id)
-    }));
+    const rawCart = wx.getStorageSync('cartList');
+    let goodsCart = [];
+    if (Array.isArray(rawCart)) {
+      goodsCart = rawCart.map(item => ({
+        ...item,
+        checked: !!item.checked,
+        count: Number(item.count || 0),
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+        stock: Number(item.stock || 0),
+        type: 'goods',
+        _cartKey: 'goods_' + String(item.id)
+      }));
+    } else if (rawCart && typeof rawCart === 'object') {
+      goodsCart = Object.values(rawCart).map(item => ({
+        ...item,
+        checked: !!item.checked,
+        count: Number(item.count || 0),
+        price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+        stock: Number(item.stock || 0),
+        type: 'goods',
+        _cartKey: 'goods_' + String(item.id)
+      }));
+    }
     cartList.push(...goodsCart);
 
     const orderCart = wx.getStorageSync('orderCart') || {};

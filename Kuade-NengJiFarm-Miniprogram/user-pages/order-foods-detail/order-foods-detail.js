@@ -13,22 +13,8 @@ Page({
   },
 
   onLoad(options) {
-    const id = options.id;
-    if (id) {
-      this.getFoodDetail(id);
-    }
-    this.updateCartCount();
-  },
-
-  processImageUrl(imageUrl) {
-    const utils = require('../../utils/utils');
-    return utils.media.processUrl(imageUrl);
-  },
-
-  onLoad(options) {
     let goodsData = {};
-    
-    // 解析从点餐页面传递过来的参数
+
     if (options.params) {
       try {
         goodsData = JSON.parse(decodeURIComponent(options.params));
@@ -36,13 +22,17 @@ Page({
         console.error('解析参数失败', e);
       }
     }
-    
+
     const id = options.id || goodsData.id;
     if (id) {
       this.getGoodsDetail(id, goodsData);
     }
-    // 恢复购物车
     this.restoreCart();
+  },
+
+  processImageUrl(imageUrl) {
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   onShow() {
@@ -133,9 +123,20 @@ Page({
         });
       })
       .catch(err => {
-        console.error('获取商品详情失败', err);
-        this.setData({ loading: false });
-        wx.showToast({ title: '获取商品详情失败', icon: 'none' });
+        console.error('获取商品详情失败，使用本地数据', err);
+        const fallbackGoods = {
+          ...goodsData,
+          stock: goodsData.stock || 0,
+          sold: goodsData.sold || 0,
+          image: goodsData.image || '',
+          videoUrl: videoUrl
+        };
+        this.setData({
+          goods: fallbackGoods,
+          food: fallbackGoods,
+          swiperList: goodsData.image ? [{ id: 1, image: goodsData.image }] : [],
+          loading: false
+        });
       })
       .finally(() => {
         wx.hideLoading();

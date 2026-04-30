@@ -263,7 +263,13 @@ Page({
 
   // 更新购物车计数
   updateCartCount() {
-    const cartList = wx.getStorageSync('cartList') || [];
+    const rawCart = wx.getStorageSync('cartList');
+    let cartList = [];
+    if (Array.isArray(rawCart)) {
+      cartList = rawCart;
+    } else if (rawCart && typeof rawCart === 'object') {
+      cartList = Object.values(rawCart);
+    }
     const totalCount = cartList.reduce((sum, item) => sum + (item.count || 0), 0);
     this.setData({ cartCount: totalCount });
   },
