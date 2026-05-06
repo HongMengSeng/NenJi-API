@@ -121,14 +121,17 @@ Page({
   },
 
   updateCartCount() {
-    const cart = wx.getStorageSync('cartList') || {};
+    const cart = wx.getStorageSync('cartList') || [];
+    const cartArray = Array.isArray(cart) ? cart : Object.values(cart);
+    
     let count = 0;
-    for (const key in cart) {
-      count += cart[key].count || cart[key].quantity || 0;
-    }
+    cartArray.forEach(item => {
+      count += item.count || item.quantity || 0;
+    });
     
     const goodsId = String(this.data.goods.id);
-    const cartQuantity = cart[goodsId] ? (cart[goodsId].count || cart[goodsId].quantity || 0) : 0;
+    const cartItem = cartArray.find(item => String(item.id) === goodsId);
+    const cartQuantity = cartItem ? (cartItem.count || cartItem.quantity || 0) : 0;
     
     this.setData({ cartCount: count, cartQuantity: cartQuantity });
   },
@@ -136,9 +139,12 @@ Page({
   addToCart() {
     const goods = this.data.goods;
     const isFarmGood = this.data.isFarmGood;
-    const currentCart = wx.getStorageSync('cartList') || {};
+    const currentCart = wx.getStorageSync('cartList') || [];
     const targetId = String(goods.id);
-    const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
+    
+    const cartArray = Array.isArray(currentCart) ? currentCart : Object.values(currentCart);
+    const existingItem = cartArray.find(item => String(item.id) === targetId);
+    const currentQuantity = existingItem ? (existingItem.count || existingItem.quantity || 0) : 0;
 
     if (isFarmGood) {
       const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
@@ -158,23 +164,33 @@ Page({
       return;
     }
 
-    const nextCart = { ...currentCart };
-
-    if (nextCart[targetId]) {
-      nextCart[targetId].count = currentQuantity + 1;
-      nextCart[targetId].quantity = nextCart[targetId].count;
+    let nextCart;
+    if (existingItem) {
+      nextCart = cartArray.map(item => {
+        if (String(item.id) === targetId) {
+          return {
+            ...item,
+            count: currentQuantity + 1,
+            quantity: currentQuantity + 1
+          };
+        }
+        return item;
+      });
     } else {
-      nextCart[targetId] = {
-        id: targetId,
-        name: goods.name,
-        price: Number(goods.price || 0),
-        image: goods.image,
-        count: 1,
-        quantity: 1,
-        checked: true,
-        stock: goods.stock,
-        isFarmGood: isFarmGood
-      };
+      nextCart = [
+        ...cartArray,
+        {
+          id: targetId,
+          name: goods.name,
+          price: Number(goods.price || 0),
+          image: goods.image,
+          count: 1,
+          quantity: 1,
+          checked: true,
+          stock: goods.stock,
+          isFarmGood: isFarmGood
+        }
+      ];
     }
 
     wx.setStorageSync('cartList', nextCart);

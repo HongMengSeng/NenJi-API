@@ -43,17 +43,7 @@ Page({
       let cartList = [];
 
       const rawCartList = wx.getStorageSync('cartList');
-      let goodsArray = [];
-      
-      if (Array.isArray(rawCartList)) {
-        goodsArray = rawCartList;
-      } else if (rawCartList && typeof rawCartList === 'object' && rawCartList !== null) {
-        goodsArray = Object.values(rawCartList);
-      }
-      
-      if (!Array.isArray(goodsArray)) {
-        goodsArray = [];
-      }
+      const goodsArray = Array.isArray(rawCartList) ? rawCartList : Object.values(rawCartList || {});
       
       const goodsCart = goodsArray.map(item => {
         if (!item || typeof item !== 'object') {
