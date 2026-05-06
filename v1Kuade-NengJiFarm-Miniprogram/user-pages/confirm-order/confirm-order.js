@@ -35,7 +35,25 @@ Page({
     
     // 初始化页面状态
     this.initPageState();
-    this.loadCartData(orderType);
+    
+    // 检查是否有临时订单数据（从商品详情页直接购买）
+    const tempOrderData = wx.getStorageSync('tempOrderData');
+    if (tempOrderData && tempOrderData.type === 'goods' && orderType === 'goods') {
+      // 使用临时订单数据
+      this.setData({
+        orderInfo: {
+          items: tempOrderData.items,
+          totalPrice: tempOrderData.totalPrice,
+          totalCount: tempOrderData.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+        },
+        selectedAddress: tempOrderData.selectedAddress
+      });
+      // 清除临时数据
+      wx.removeStorageSync('tempOrderData');
+    } else {
+      // 使用购物车数据
+      this.loadCartData(orderType);
+    }
     
     if (orderType === 'food') {
       // 点餐：获取桌台列表
@@ -76,8 +94,10 @@ Page({
         totalCount += Number(item.quantity || 0);
       });
     } else {
-      const cartList = wx.getStorageSync('cartList') || [];
-      cartItems = cartList.filter(item => item.checked);
+      const rawCartList = wx.getStorageSync('cartList') || [];
+      // 兼容对象格式（goods-detail 存储格式）和数组格式
+      const cartList = Array.isArray(rawCartList) ? rawCartList : Object.values(rawCartList);
+      cartItems = cartList.filter(item => item && item.checked);
       cartItems.forEach(item => {
         const price = Number((item.price || 0).toString().replace(/[¥￥]/g, ''));
         totalPrice += price * Number(item.count || 0);
@@ -207,12 +227,21 @@ Page({
     
     if (orderType === 'food') {
       const tableNumber = Number(wx.getStorageSync('tableNumber') || 0);
+      // 兼容接口格式：items 用大写开头字段，后端以 sourceType='food' 识别为点餐
       const payload = {
+        sourceType: 'food',
+        sourceName: '点餐',
         tableId: tableNumber,
+        quantity: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+        totalPrice: items.reduce((sum, item) => {
+          return sum + Number((item.price || 0).toString().replace(/[¥￥]/g, '')) * Number(item.quantity || 0);
+        }, 0),
         items: items.map(item => ({
-          id: parseInt(item.id || '0'),
-          price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.quantity || 1)
+          Id: parseInt(item.id || '0'),
+          Name: item.name || '',
+          Price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
+          Quantity: Number(item.quantity || 1),
+          Image: item.image || ''
         }))
       };
       promise = api.order.createDish(payload);
@@ -222,7 +251,7 @@ Page({
         items: items.map(item => ({
           id: parseInt(item.id || '0'),
           price: Number((item.price || 0).toString().replace(/[¥￥]/g, '')),
-          quantity: Number(item.count || 1)
+          quantity: Number(item.quantity || item.count || 1)
         }))
       };
       promise = api.order.createCommodityV2(payload);
@@ -240,10 +269,13 @@ Page({
         // 下单成功，清理购物车
         this.clearCartByType(orderType);
 
-        // 跳转到订单页面
-        wx.redirectTo({
-          url: `/user-pages/orders/orders?tab=pending`
-        });
+        // 提示成功，延迟跳转到订单列表页（模仿商品详情页逻辑）
+        wx.showToast({ title: '订单创建成功', icon: 'success' });
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/user-pages/orders/orders?tab=pending`
+          });
+        }, 1500);
       })
       .catch((err) => {
         console.error('下单失败:', err);
@@ -265,10 +297,7 @@ Page({
   // 获取地址列表
   getUserAddressList: function () {
     wx.showLoading({ title: '加载中...' });
-    request({
-      url: '/api/user/address',
-      method: 'GET'
-    })
+    api.user.getAddresses()
     .then(data => {
       const addressList = data || [];
       const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);

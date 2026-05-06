@@ -190,7 +190,27 @@
 .order-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
+
+/* 订单状态文字 */
+.order-status-text {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.status-tag {
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+/* 各状态颜色 */
+.status-pending   { color: #fa8c16; }  /* 待付款 - 橙色 */
+.status-paid      { color: #1890ff; }  /* 待发货 - 蓝色 */
+.status-shipping  { color: #13c2c2; }  /* 运输中 - 青色 */
+.status-completed { color: #52c41a; }  /* 已完成 - 绿色 */
+.status-cancelled { color: #999;    }  /* 已取消 - 灰色 */
 
 .order-type {
   display: flex;

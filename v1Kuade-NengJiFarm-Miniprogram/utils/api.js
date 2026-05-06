@@ -3,18 +3,18 @@ const BASE_URL = 'http://192.168.203.56';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
-  '/api/user', 
-  '/api/orders', 
-  '/api/cart', 
-  '/api/OrderDetails', 
-  '/api/pay', 
-  '/api/acres', 
-  '/api/address', 
-  '/api/logistics', 
-  '/api/staff',
+  '/api/user',
+  '/api/orders',
+  '/api/cart',
+  '/api/OrderDetails',
+  '/api/order/create',
   '/api/commodity-order',
-  '/api/activity-order',
-  '/api/dish-order'
+  '/api/pay',
+  '/api/acres',
+  '/api/address',
+  '/api/logistics',
+  '/api/staff',
+  '/api/activity'  // 活动报名需要登录
 ];
 
 /**
@@ -247,17 +247,31 @@ const api = {
   // 首页相关
   home: {
     // 获取首页数据
-    getData: (params = {}) => get('/api/home', params)
+    getData: (params = {}) => get('/api/home', params),
+    // 首页搜索（支持商品+活动）
+    search: (keyword, params = {}) => get('/api/home/search', { keyword, ...params })
   },
-  
+
+  // 农场介绍
+  farm: {
+    // 获取农场介绍
+    getIntro: () => get('/api/farm/intro')
+  },
+
   // 文件相关
   file: {
     // 获取图片列表
     getImages: () => get('/api/file/images'),
     // 获取图片
     getImage: (name) => get(`/api/file/image/${name}`),
+    // 获取视频列表
+    getVideos: () => get('/api/file/videos'),
+    // 获取视频
+    getVideo: (name) => get(`/api/file/video/${name}`),
     // 上传文件
-    upload: (filePath, formData = {}, options = {}) => upload('/api/upload', filePath, 'file', formData, options)
+    upload: (filePath, formData = {}, options = {}) => upload('/api/file/upload', filePath, 'file', formData, options),
+    // 上传头像
+    uploadAvatar: (filePath) => upload('/api/file/upload/avatar', filePath, 'file')
   },
   
   // 活动相关
@@ -321,10 +335,10 @@ const api = {
     createCommodity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'goods', sourceName: '商品购买' }),
     // 创建商品订单 - 新版接口 (文档第2.2节)
     createCommodityV2: (data) => post('/api/commodity-order/create', data),
-    // 创建活动订单 - 兼容旧接口
-    createActivity: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'activity', sourceName: '活动报名' }),
-    // 创建点餐订单 - 兼容旧接口
-    createDish: (data) => post('/api/OrderDetails/create', { ...data, sourceType: 'food', sourceName: '点餐' }),
+    // 创建点餐订单 - 通用创建订单接口 + sourceType:'food'
+    createDish: (data) => post('/api/order/create', { ...data, sourceType: 'food', sourceName: '点餐' }),
+    // 创建活动订单 - 通用创建订单接口 + sourceType:'activity'
+    createActivity: (data) => post('/api/order/create', { ...data, sourceType: 'activity', sourceName: '活动报名' }),
     
     // 旧接口兼容方法 - 通过聚合接口实现
     getCommodityList: (params = {}) => get('/api/orders', { ...params, type: 'goods' }),
@@ -339,9 +353,11 @@ const api = {
     // 获取可用支付方式
     getMethods: () => get('/api/pay/methods'),
     // 发起微信支付 (JSAPI)
-    createJsapi: (orderId) => post('/api/pay/jsapi', { orderId }),
+    createJsapi: (data) => post('/api/pay/jsapi', data),
     // 查询支付状态
-    getStatus: (orderId) => get('/api/pay/status', { orderId })
+    getStatus: (params = {}) => get('/api/pay/status', params),
+    // 获取支付信息
+    getInfo: (params = {}) => get('/api/pay/info', params)
   },
   
   // 购物车相关
@@ -349,33 +365,33 @@ const api = {
     // 获取购物车列表
     getList: () => get('/api/cart'),
     // 添加到购物车
-    add: (data) => post('/api/cart', data),
-    // 更新购物车数量
-    update: (id, quantity) => put(`/api/cart/${id}`, { quantity }),
-    // 从购物车删除
-    remove: (id) => del(`/api/cart/${id}`),
+    add: (data) => post('/api/cart/add', data),
+    // 同步购物车（批量）
+    sync: (data) => post('/api/cart/sync', data),
+    // 更新购物车项数量
+    update: (id, quantity) => put(`/api/cart/items/${id}`, { count: quantity }),
+    // 从购物车删除单项
+    remove: (id) => del(`/api/cart/items/${id}`),
     // 清空购物车
-    clear: () => del('/api/cart/clear')
+    clear: () => del('/api/cart')
   },
   
   // 个人中心/用户相关
   user: {
-    // 获取用户信息
+    // 获取用户资料
     getProfile: () => get('/api/user/profile'),
-    // 更新用户信息
+    // 更新用户资料
     updateProfile: (data) => put('/api/user/profile', data),
-    // 获取收货地址
-    getAddresses: () => get('/api/address'),
-    // 获取默认地址
-    getDefaultAddress: () => get('/api/address/default'),
+    // 用户信息预览（无需登录）
+    getPreview: () => get('/api/user/profile-preview'),
+    // 获取收货地址列表
+    getAddresses: () => get('/api/user/address'),
     // 添加地址
-    addAddress: (data) => post('/api/address', data),
+    addAddress: (data) => post('/api/user/address', data),
     // 更新地址
-    updateAddress: (id, data) => put(`/api/address/${id}`, data),
+    updateAddress: (data) => put('/api/user/address', data),
     // 删除地址
-    deleteAddress: (id) => del(`/api/address/${id}`),
-    // 设为默认地址
-    setDefaultAddress: (id) => put(`/api/address/${id}/default`),
+    deleteAddress: (data) => { return request({ url: '/api/user/address', method: 'DELETE', data }); },
     // 获取优惠券
     getCoupons: () => get('/api/user/coupons'),
     // 领取优惠券
@@ -394,20 +410,24 @@ const api = {
   
   // 物流相关
   logistics: {
-    // 获取物流信息
-    getTrack: (orderId) => get(`/api/logistics/track/${orderId}`)
+    // 获取物流详情
+    getDetail: (orderId) => get(`/api/logistics/${orderId}`),
+    // 获取物流轨迹
+    getTrace: (orderId) => get(`/api/logistics/${orderId}/trace`),
+    // 按平台和运单号查询物流
+    getTrack: (data) => post('/api/logistics/track', data)
   },
   
   // 员工端相关
   staff: {
-    // 员工登录
-    login: (data) => post('/api/staff/login', data),
-    // 核销订单
+    // 今日核销统计
+    getTodayStats: () => get('/api/staff/today-stats'),
+    // 核销凭证
     verifyOrder: (code) => post('/api/staff/verify', { code }),
-    // 获取待核销列表
-    getPendingList: () => get('/api/staff/pending'),
-    // 获取已核销记录
-    getHistory: () => get('/api/staff/history')
+    // 凭证列表（待核销/已核销）
+    getVouchers: (params = {}) => get('/api/staff/vouchers', params),
+    // 核销历史记录
+    getHistory: (params = {}) => get('/api/staff/verify-history', params)
   }
 };
 
