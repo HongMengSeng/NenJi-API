@@ -25,7 +25,8 @@ Page({
     defaultAddress: null,
     showAllAddresses: false,
     quantity: 1,
-    totalPrice: '0'
+    totalPrice: '0',
+    isFarmGood: false
   },
 
   processImageUrl(imageUrl) {
@@ -35,6 +36,7 @@ Page({
 
   onLoad(options) {
     const goodsId = options.id;
+    const isFarmGood = options.isFarmGood === '1';
 
     if (!goodsId) {
       this.setData({ loading: false });
@@ -45,6 +47,7 @@ Page({
       return;
     }
 
+    this.setData({ isFarmGood });
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
     this.getAddressList();
@@ -132,9 +135,23 @@ Page({
 
   addToCart() {
     const goods = this.data.goods;
+    const isFarmGood = this.data.isFarmGood;
     const currentCart = wx.getStorageSync('cartList') || {};
     const targetId = String(goods.id);
     const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
+
+    if (isFarmGood) {
+      const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
+      if (purchasedFarmGoods.includes(targetId)) {
+        wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
+        return;
+      }
+    }
+
+    if (isFarmGood && currentQuantity >= 1) {
+      wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
+      return;
+    }
 
     if (goods.stock > 0 && currentQuantity >= goods.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
@@ -155,7 +172,8 @@ Page({
         count: 1,
         quantity: 1,
         checked: true,
-        stock: goods.stock
+        stock: goods.stock,
+        isFarmGood: isFarmGood
       };
     }
 

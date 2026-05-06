@@ -69,7 +69,8 @@ Page({
           stock: Number(item.stock || 0),
           type: item.type || 'goods',
           _cartKey: 'goods_' + String(item.id),
-          image: this.processImageUrl(item.image || '')
+          image: this.processImageUrl(item.image || ''),
+          isFarmGood: !!item.isFarmGood
         };
       }).filter(Boolean);
       cartList.push(...goodsCart);
@@ -183,7 +184,8 @@ Page({
         checked: !!item.checked,
         type: item.type || 'goods',
         stock: Number(item.stock || 0),
-        _cartKey: (item.type || 'goods') + '_' + String(item.id)
+        _cartKey: (item.type || 'goods') + '_' + String(item.id),
+        isFarmGood: !!item.isFarmGood
       }));
 
     // 分离 goods 和 food
@@ -199,7 +201,8 @@ Page({
       count: i.count,
       quantity: i.count,
       checked: i.checked,
-      stock: i.stock
+      stock: i.stock,
+      isFarmGood: i.isFarmGood
     })));
 
     // 同步点餐到 Storage
@@ -335,6 +338,19 @@ Page({
     const cartList = this.data.cartList;
     const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
     if (index === -1) return;
+
+    if (cartList[index].isFarmGood) {
+      const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
+      if (purchasedFarmGoods.includes(id)) {
+        wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
+        return;
+      }
+    }
+
+    if (cartList[index].isFarmGood && cartList[index].count >= 1) {
+      wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
+      return;
+    }
 
     if (cartList[index].stock && cartList[index].count >= cartList[index].stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
@@ -548,7 +564,6 @@ Page({
           wx.showToast({ title: '创建订单失败', icon: 'none' });
           return;
         }
-        this.clearOrderedGoods(items);
         wx.redirectTo({
           url: '/user-pages/orders/orders?tab=pending'
         });

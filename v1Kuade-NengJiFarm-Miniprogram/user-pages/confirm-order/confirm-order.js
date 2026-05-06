@@ -266,16 +266,11 @@ Page({
           return;
         }
 
-        // 下单成功，清理购物车
-        this.clearCartByType(orderType);
-
         // 关闭加载状态
         this.setData({ loading: false, isCreatingOrder: false });
 
         wx.showToast({ title: '订单创建成功', icon: 'success' });
         setTimeout(() => {
-          // 用 redirectTo 替换掉当前 confirm-order 页面，再 navigateTo 到订单页
-          // 这样订单页点返回时，页面栈里已经没有 confirm-order，会回到点餐页
           wx.redirectTo({
             url: `/user-pages/orders/orders?tab=pending`
           });

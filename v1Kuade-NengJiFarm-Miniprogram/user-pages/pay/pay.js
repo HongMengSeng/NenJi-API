@@ -198,6 +198,8 @@ Page({
 
   // 支付成功后的处理
   afterPaySuccess: function() {
+    this.clearCartAfterPayment();
+    
     // 如果是活动订单，跳转回活动详情并显示二维码
     if (this.data.activityId) {
       setTimeout(() => {
@@ -212,6 +214,35 @@ Page({
           url: '/user-pages/orders/orders?tab=paid'
         });
       }, 1500);
+    }
+  },
+
+  // 支付成功后清空购物车
+  clearCartAfterPayment: function() {
+    try {
+      const cartList = wx.getStorageSync('cartList') || [];
+      const remainingItems = Array.isArray(cartList) 
+        ? cartList.filter(item => !item.checked)
+        : [];
+      
+      const purchasedFarmGoods = [];
+      if (Array.isArray(cartList)) {
+        cartList.forEach(item => {
+          if (item.checked && item.isFarmGood) {
+            purchasedFarmGoods.push(String(item.id));
+          }
+        });
+      }
+      
+      const existingPurchased = wx.getStorageSync('purchasedFarmGoods') || [];
+      const allPurchased = [...new Set([...existingPurchased, ...purchasedFarmGoods])];
+      wx.setStorageSync('purchasedFarmGoods', allPurchased);
+      
+      wx.setStorageSync('cartList', remainingItems);
+      
+      wx.removeStorageSync('orderCart');
+    } catch (e) {
+      console.error('清空购物车失败', e);
     }
   },
 
