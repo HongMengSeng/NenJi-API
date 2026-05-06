@@ -54,27 +54,12 @@ Page({
 
   // 处理图片路径，确保使用正确的基础 URL
   processImageUrl: function (imageUrl) {
-    if (!imageUrl) return '';
-    
     // 检测是否为临时路径
     if (this.isTempPath(imageUrl)) {
       return imageUrl;
     }
-    
-    // 去除反引号和空格
-    imageUrl = imageUrl.replace(/[`\s]/g, '');
-    
-    // 如果是完整的 URL，替换基础 URL
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
-    }
-    
-    // 如果是相对路径，添加基础 URL
-    const baseUrl = 'http://192.168.203.56';
-    if (!imageUrl.startsWith('/')) {
-      imageUrl = '/' + imageUrl;
-    }
-    return baseUrl + imageUrl;
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   // 选择头像（使用微信官方组件）

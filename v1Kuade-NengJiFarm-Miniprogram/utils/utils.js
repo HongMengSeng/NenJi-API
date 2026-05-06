@@ -275,6 +275,14 @@ const media = {
     const baseUrl = 'http://192.168.203.56';
     let normalized = String(url).replace(/[`\s]/g, '');
 
+    // 0. 兜底处理旧格式完整 URL（如 http://192.168.203.56/Farm_14.jpg）
+    //    转换为 http://192.168.203.56/api/file/image/images/farm/Farm_14.jpg
+    if (normalized.startsWith(baseUrl + '/') && !normalized.startsWith(baseUrl + '/api/') && !normalized.startsWith(baseUrl + '/images/')) {
+      const rawPath = normalized.substring(baseUrl.length); // /Farm_14.jpg
+      const fileName = rawPath.split('/').filter(Boolean).pop() || '';
+      return `${baseUrl}/api/file/image/images/farm/${fileName}`;
+    }
+
     // 1. 如果已经是完整的 API 地址且包含 baseUrl，直接返回
     if (normalized.startsWith(baseUrl + '/api/file/')) {
       return normalized;

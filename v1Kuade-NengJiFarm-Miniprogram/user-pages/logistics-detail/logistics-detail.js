@@ -133,12 +133,8 @@ Page({
 
   // 处理图片URL
   processImageUrl: function(imageUrl) {
-    if (!imageUrl) return '';
-    imageUrl = imageUrl.replace(/[`\s]/g, '');
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl.replace('http://192.168.203.56', 'http://192.168.203.56');
-    }
-    return 'http://192.168.203.56' + imageUrl;
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   // 设置模拟物流数据

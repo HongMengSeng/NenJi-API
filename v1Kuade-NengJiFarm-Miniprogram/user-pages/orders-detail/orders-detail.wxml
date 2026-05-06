@@ -36,6 +36,40 @@
     </view>
   </view>
 
+  <!-- 退款进度卡片 -->
+  <view wx:if="{{order.hasRefund && order.refundInfo}}" class="card refund-card">
+    <view class="card-title">
+      <view class="card-title-left">
+        <view class="card-title-bar"></view>
+        <text class="card-title-text">退款进度</text>
+      </view>
+    </view>
+    <view class="card-body refund-body">
+      <view class="refund-row">
+        <text class="refund-label">退款金额</text>
+        <text class="refund-value refund-amount">¥{{order.refundInfo.refundAmount || order.totalPrice}}</text>
+      </view>
+      <view class="refund-row">
+        <text class="refund-label">退款原因</text>
+        <text class="refund-value">{{order.refundInfo.reasonText || order.refundInfo.reason}}</text>
+      </view>
+      <view class="refund-row">
+        <text class="refund-label">申请时间</text>
+        <text class="refund-value">{{order.refundInfo.createTime}}</text>
+      </view>
+      <view class="refund-row">
+        <text class="refund-label">当前状态</text>
+        <text class="refund-value refund-status {{order.refundInfo.status}}">
+          {{order.refundInfo.statusText}}
+        </text>
+      </view>
+      <view wx:if="{{order.refundInfo.adminReply}}" class="refund-row refund-admin-reply">
+        <text class="refund-label">商家回复</text>
+        <text class="refund-value">{{order.refundInfo.adminReply}}</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 物流信息 -->
   <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && (order.status === 'shipping' || order.status === 'completed')}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
@@ -195,7 +229,10 @@
   <!-- 底部操作栏（固定） -->
   <view class="bottom-bar">
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="btn btn-ghost" bindtap="markShipping">模拟发货</button>
-    <button wx:if="{{order.status === 'paid' || order.status === 'shipping'}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
+    <!-- 有退款申请时，显示退款详情按钮，不再显示申请退款 -->
+    <button wx:if="{{order.hasRefund && order.refundInfo}}" class="btn btn-ghost" bindtap="_showRefundDetail">退款详情</button>
+    <!-- 无退款申请，且订单可申请退款 -->
+    <button wx:elif="{{!order.hasRefund && (order.status === 'paid' || order.status === 'shipping')}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
     <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
     <button wx:if="{{order.status === 'cancelled'}}" class="btn btn-danger" bindtap="deleteOrder">删除订单</button>
     <button wx:if="{{order.status === 'pending'}}" class="btn btn-primary" bindtap="payOrder">立即支付</button>

@@ -834,4 +834,106 @@
   .btn-ghost:active {
     background: #333028;
   }
+
+  .refund-card {
+    background: #1e1c18;
+    border-color: #2e2c28;
+  }
+
+  .refund-row {
+    border-bottom-color: #2e2c28;
+  }
+
+  .refund-label {
+    color: #666;
+  }
+
+  .refund-value {
+    color: #ccc;
+  }
+
+  .refund-admin-reply .refund-value {
+    background: #252220;
+    color: #999;
+  }
+}
+
+/* ============================================
+   退款进度卡片
+   ============================================ */
+.refund-card {
+  margin: 24rpx 24rpx 0;
+}
+
+.refund-body {
+  padding: 8rpx 0 8rpx;
+}
+
+.refund-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.refund-row:last-child {
+  border-bottom: none;
+}
+
+.refund-label {
+  color: #888;
+  font-size: 26rpx;
+  flex-shrink: 0;
+  width: 140rpx;
+}
+
+.refund-value {
+  color: #333;
+  font-size: 26rpx;
+  text-align: right;
+  flex: 1;
+  margin-left: 16rpx;
+  word-break: break-all;
+}
+
+.refund-amount {
+  color: #e64340;
+  font-weight: 600;
+  font-size: 30rpx;
+}
+
+.refund-status.pending,
+.refund-status.approved,
+.refund-status.processing {
+  color: #ff9800;
+}
+
+.refund-status.completed {
+  color: #4caf50;
+}
+
+.refund-status.rejected,
+.refund-status.failed {
+  color: #e64340;
+}
+
+.refund-status.cancelled {
+  color: #999;
+}
+
+.refund-admin-reply {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.refund-admin-reply .refund-value {
+  margin-left: 0;
+  margin-top: 8rpx;
+  color: #666;
+  background: #f5f5f5;
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
 }

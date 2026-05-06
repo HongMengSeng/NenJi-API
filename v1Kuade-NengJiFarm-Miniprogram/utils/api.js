@@ -80,16 +80,33 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
       requestUrl = baseUrl + path;
     }
 
+    // 标记是否已隐藏 loading（防止重复调用）
+    let loadingHidden = false;
+    const hideLoadingSafe = () => {
+      if (showLoading && !loadingHidden) {
+        wx.hideLoading();
+        loadingHidden = true;
+      }
+    };
+
     // 发起请求
     wx.request({
       url: requestUrl,
       method,
       data,
       header: finalHeader,
+      timeout: 10000,
       success(res) {
         // 隐藏加载提示
-        if (showLoading) {
-          wx.hideLoading();
+        hideLoadingSafe();
+
+        // 检查 HTTP 状态码
+        if (res.statusCode !== 200) {
+          const msg = `请求失败 (${res.statusCode})`;
+          console.error('HTTP 错误:', res.statusCode, res.data);
+          wx.showToast({ title: msg, icon: 'none' });
+          reject({ code: res.statusCode, message: msg });
+          return;
         }
 
         // 处理响应
@@ -103,11 +120,10 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
       },
       fail(err) {
         // 隐藏加载提示
-        if (showLoading) {
-          wx.hideLoading();
-        }
+        hideLoadingSafe();
 
         // 处理网络错误
+        console.error('网络错误:', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
         reject(err);
       }
@@ -347,7 +363,19 @@ const api = {
     // 模拟支付 - 兼容旧接口
     pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data)
   },
-  
+
+  // 退款相关
+  refund: {
+    // 申请退款
+    apply: (orderId, data) => post(`/api/orders/${orderId}/refund`, data),
+    // 查询退款详情
+    getDetail: (orderId) => get(`/api/orders/${orderId}/refund`),
+    // 用户退款记录列表
+    getList: (params = {}) => get('/api/orders/refunds', params),
+    // 取消退款申请
+    cancel: (orderId) => put(`/api/orders/${orderId}/refund/cancel`)
+  },
+
   // 支付相关 - 新版 API
   pay: {
     // 获取可用支付方式
@@ -422,12 +450,20 @@ const api = {
   staff: {
     // 今日核销统计
     getTodayStats: () => get('/api/staff/today-stats'),
-    // 核销凭证
+    // 核销凭证（旧接口兼容）
     verifyOrder: (code) => post('/api/staff/verify', { code }),
     // 凭证列表（待核销/已核销）
     getVouchers: (params = {}) => get('/api/staff/vouchers', params),
-    // 核销历史记录
-    getHistory: (params = {}) => get('/api/staff/verify-history', params)
+    // 核销历史记录（旧接口兼容）
+    getHistory: (params = {}) => get('/api/staff/verify-history', params),
+    
+    // ========== 新核销系统 API（根据 staff-verify-api.md）==========
+    // 验证员工身份
+    verifyPermission: () => get('/api/staff-verify/permission'),
+    // 核销券类
+    verifyVoucher: (code) => post('/api/staff-verify/voucher', { code }),
+    // 获取核销历史
+    getVerifyHistory: (params = {}) => get('/api/staff-verify/history', params)
   }
 };
 

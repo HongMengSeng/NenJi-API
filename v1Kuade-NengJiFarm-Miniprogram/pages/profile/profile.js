@@ -67,21 +67,8 @@ Page({
 
   // 处理图片路径，确保使用正确的基础 URL
   processImageUrl: function (imageUrl) {
-    if (!imageUrl) return '';
-    
-    // 去除反引号和空格
-    imageUrl = imageUrl.replace(/[`\s]/g, '');
-    
-    // 如果是完整的 URL，替换基础 URL
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    
-    // 如果是相对路径，添加基础 URL
-    const baseUrl = 'http://192.168.203.56';
-    if (!imageUrl.startsWith('/')) {
-      imageUrl = '/' + imageUrl;
-    }
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
     return baseUrl + imageUrl;
   },
 

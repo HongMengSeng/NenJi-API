@@ -13,14 +13,8 @@ Page({
   },
 
   processImageUrl(imageUrl) {
-    if (!imageUrl) return '';
-
-    const cleaned = String(imageUrl).replace(/[`\s]/g, '');
-    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-      return cleaned.replace('http://192.168.203.56', 'http://192.168.203.56');
-    }
-
-    return 'http://192.168.203.56' + (cleaned.startsWith('/') ? cleaned : '/' + cleaned);
+    const utils = require('../../utils/utils');
+    return utils.media.processUrl(imageUrl);
   },
 
   loadAcreDetail(id) {

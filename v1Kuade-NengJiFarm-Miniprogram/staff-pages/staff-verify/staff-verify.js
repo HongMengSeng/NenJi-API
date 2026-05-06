@@ -161,7 +161,8 @@ Page({
    * 加载核销历史记录
    */
   loadHistory() {
-    api.api.staff.getVerifyHistory()
+    // 历史记录加载不显示 loading，避免影响主功能
+    api.api.staff.getVerifyHistory({}, { showLoading: false })
       .then(list => {
         // 格式化数据
         const historyList = (list || []).map(item => ({
@@ -177,7 +178,7 @@ Page({
       })
       .catch(err => {
         console.warn('加载核销历史失败:', err);
-        // 不影响主功能
+        // 历史记录加载失败不影响主功能，不弹提示
       });
   },
 
