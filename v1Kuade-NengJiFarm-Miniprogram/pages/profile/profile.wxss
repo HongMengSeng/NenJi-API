@@ -304,6 +304,19 @@
   letter-spacing: 0.3rpx;
 }
 
+/* 核销券类：主标题 + 副标题容器 */
+.function-text-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.function-subtext {
+  font-size: 22rpx;
+  color: #D4A76A;
+  margin-top: 4rpx;
+}
+
 .function-arrow {
   width: 28rpx;
   height: 28rpx;

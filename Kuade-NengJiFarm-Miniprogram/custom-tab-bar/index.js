@@ -26,21 +26,8 @@ const USER_TABS = [
   }
 ];
 
-// 员工 tab 配置（工作台 + 我的）
-const STAFF_TABS = [
-  {
-    path: '/staff-pages/staff-home/staff-home',
-    text: '工作台',
-    icon: '/images/rroomm.png',
-    selectedIcon: '/images/rroom.png'
-  },
-  {
-    path: '/pages/profile/profile',
-    text: '我的',
-    icon: '/images/user.png',
-    selectedIcon: '/images/user2.png'
-  }
-];
+// 员工也使用和普通用户相同的 tab 配置（首页/活动/购物车/我的）
+const STAFF_TABS = USER_TABS;
 
 Component({
   data: {
@@ -79,12 +66,6 @@ Component({
       var path = data.path;
 
       if (index === this.data.selected) return;
-
-      // 员工工作台在 staff-pages 里是普通页面，不能用 switchTab，用 reLaunch 切换
-      if (path.includes('/staff-home/')) {
-        wx.redirectTo({ url: path });
-        return;
-      }
 
       wx.switchTab({ url: path });
     }
