@@ -215,11 +215,7 @@ Page({
   },
 
   getAddressList() {
-    request({
-      url: '/api/user/address',
-      method: 'GET',
-      showLoading: false
-    })
+    api.user.getAddresses()
     .then(data => {
       const addressList = data || [];
       const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);

@@ -436,23 +436,26 @@ Page({
 
   // ========== 结算入口 ==========
   handleSettle() {
-    const { cartList, hasSelectedFood, tableNumber, regions } = this.data;
-    const selectedItems = cartList.filter(i => i.checked);
-    if (selectedItems.length === 0) {
+    const { cartList, hasSelectedFood, tableNumber, regions, selectedCount } = this.data;
+
+    // 用 selectedCount（与底部结算按钮显示一致）作为首选判断
+    // 兜底用 regions 中各区域 checked 状态二次确认
+    const hasFoodChecked = regions.food.items.some(i => i.checked);
+    const hasGoodsChecked = regions.goods.items.some(i => i.checked);
+
+    if (selectedCount <= 0 && !hasFoodChecked && !hasGoodsChecked) {
       wx.showToast({ title: '请先选择商品', icon: 'none' });
       return;
     }
 
-    const hasFoodSelected = regions.food.items.some(i => i.checked);
-    if (hasFoodSelected && !tableNumber) {
+    if (hasFoodChecked && !tableNumber) {
       wx.showToast({ title: '请先选择桌号', icon: 'none' });
       return;
     }
 
-    const hasGoodsSelected = regions.goods.items.some(i => i.checked);
-    if (hasFoodSelected && hasGoodsSelected) {
+    if (hasFoodChecked && hasGoodsChecked) {
       this.setData({ showSeparateSettleModal: true });
-    } else if (hasFoodSelected) {
+    } else if (hasFoodChecked) {
       wx.navigateTo({
         url: '/user-pages/confirm-order/confirm-order?type=food&tableNumber=' + (tableNumber || '')
       });

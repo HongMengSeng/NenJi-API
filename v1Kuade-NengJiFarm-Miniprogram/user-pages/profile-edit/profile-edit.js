@@ -6,7 +6,14 @@ Page({
       nickname: '',
       avatar: '',
       gender: '',
-      phone: ''
+      phone: '',
+      role: 'user'
+    },
+    // 角色显示文案映射
+    roleTextMap: {
+      'user': '普通用户',
+      'staff': '员工',
+      'admin': '管理员'
     }
   },
 
@@ -26,7 +33,8 @@ Page({
           nickname: data.nickname || '',
           avatar: this.processImageUrl(data.avatar || ''),
           gender: data.gender || '',
-          phone: data.phone || ''
+          phone: data.phone || '',
+          role: data.role || 'user'
         }
       });
     })
@@ -125,6 +133,20 @@ Page({
         const genders = ['男', '女'];
         this.setData({
           'userInfo.gender': genders[res.tapIndex]
+        });
+      }
+    });
+  },
+
+  // 选择角色
+  chooseRole: function () {
+    const roleOptions = ['普通用户(user)', '员工(staff)'];
+    wx.showActionSheet({
+      itemList: roleOptions,
+      success: (res) => {
+        const roles = ['user', 'staff'];
+        this.setData({
+          'userInfo.role': roles[res.tapIndex]
         });
       }
     });
