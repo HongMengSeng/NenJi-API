@@ -111,7 +111,7 @@ public class KitchenService : IKitchenService
 
             var tableNumber = await _context.DiningTables
                 .Where(t => t.DiningTableId == order.DiningTableId)
-                .Select(t => t.TableNumber)
+                .Select(t => t.TableNo)
                 .FirstOrDefaultAsync(cancellationToken);
 
             var orderStatus = await _context.DishOrderStatuses
@@ -154,7 +154,7 @@ public class KitchenService : IKitchenService
 
         var tableNumber = await _context.DiningTables
             .Where(t => t.DiningTableId == order.DiningTableId)
-            .Select(t => t.TableNumber)
+            .Select(t => t.TableNo)
             .FirstOrDefaultAsync(cancellationToken);
 
         var dishList = new List<KitchenDishDetailDto>();
@@ -168,7 +168,7 @@ public class KitchenService : IKitchenService
             {
                 DishOrderDetailsId = detail.DishOrderDetailsId,
                 DishId = detail.DishId,
-                DishName = dish?.Name ?? "未知菜品",
+                DishName = dish?.DishName ?? "未知菜品",
                 Quantity = detail.Quantity,
                 UnitPrice = detail.UnitPrice,
                 SubtotalAmount = detail.SubtotalAmount,
