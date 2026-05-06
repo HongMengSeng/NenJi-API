@@ -148,11 +148,12 @@
       <view class="address-section">
         <view class="address-header">
           <text class="address-title">收货地址</text>
+          <text class="select-more-address" bindtap="toggleAddressList" wx:if="{{addressList.length > 1}}">{{showAllAddresses ? '收起' : '选择更多地址'}}</text>
         </view>
-        <!-- 地址列表 -->
-        <view class="address-list" wx:if="{{addressList.length > 0}}">
-          <view class="address-item {{selectedAddress === item.id ? 'active' : ''}}" 
-                wx:for="{{addressList}}" 
+        <!-- 展开全部地址 -->
+        <view class="address-list" wx:if="{{showAllAddresses}}">
+          <view class="address-item {{selectedAddress === item.id ? 'active' : ''}}"
+                wx:for="{{addressList}}"
                 wx:key="id"
                 bindtap="selectAddress" data-id="{{item.id}}">
             <view class="address-info">
@@ -169,9 +170,27 @@
           </view>
           <button class="add-address-btn" bindtap="addAddress">添加或修改地址</button>
         </view>
-        <view wx:else class="no-address">
-          <text class="no-address-text">请添加收货地址</text>
-          <button class="add-address-btn" bindtap="addAddress">添加地址</button>
+        <!-- 默认只显示一条地址 -->
+        <view class="address-list" wx:else>
+          <view wx:if="{{defaultAddress}}" bindtap="toggleAddressList">
+            <view class="address-item active">
+              <view class="address-info">
+                <view class="address-top-row">
+                  <text class="address-name">{{defaultAddress.name}}</text>
+                  <text wx:if="{{defaultAddress.isDefault}}" class="default-tag">默认</text>
+                </view>
+                <text class="address-phone">{{defaultAddress.phone}}</text>
+                <text class="address-detail">{{defaultAddress.address}}</text>
+              </view>
+              <view class="address-check-container">
+                <text class="address-check">✓</text>
+              </view>
+            </view>
+          </view>
+          <view wx:else class="no-address">
+            <text class="no-address-text">请添加收货地址</text>
+            <button class="add-address-btn" bindtap="addAddress">添加地址</button>
+          </view>
         </view>
       </view>
       
