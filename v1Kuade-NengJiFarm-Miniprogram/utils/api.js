@@ -114,8 +114,8 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
           resolve(res.data.data);
         } else {
           const msg = res.data && res.data.message ? res.data.message : '请求出错';
-          // 错误提示由调用方处理，不在全局显示
-          reject({ ...res.data, message: msg });
+          wx.showToast({ title: msg, icon: 'none' });
+          reject(res.data);
         }
       },
       fail(err) {
@@ -380,10 +380,12 @@ const api = {
   pay: {
     // 获取可用支付方式
     getMethods: () => get('/api/pay/methods'),
-    // 发起微信支付 (JSAPI)
+    // 发起微信支付 (JSAPI) — 请求体: { orderId, id, orderNo, type, description }
     createJsapi: (data) => post('/api/pay/jsapi', data),
     // 查询支付状态
     getStatus: (params = {}) => get('/api/pay/status', params),
+    // 主动查询并更新支付状态（微信侧查询）
+    queryStatus: (data) => post('/api/pay/query-payment-status', data),
     // 获取支付信息
     getInfo: (params = {}) => get('/api/pay/info', params)
   },

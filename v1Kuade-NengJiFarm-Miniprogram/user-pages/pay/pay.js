@@ -4,6 +4,8 @@ Page({
   data: {
     // 订单ID
     orderId: '',
+    // 订单类型 (goods/food/activity)
+    orderType: '',
     // 支付金额
     totalPrice: 0,
     // 加载状态
@@ -11,18 +13,18 @@ Page({
     // 支付状态
     payStatus: 'pending', // pending, success, failed
     activityId: '',
-    source: '',
     clearCartList: false
   },
 
   onLoad: function (options) {
     // 初始化页面状态
     this.initPageState();
-    // 获取订单ID和支付金额
+
     const orderId = options.orderId || '';
     const totalPrice = Number(options.totalPrice || 0);
     const activityId = options.activityId || '';
-    const source = options.source || '';
+    // 订单类型：从参数获取，默认自动识别
+    const orderType = options.type || '';
     const clearCartList = options.clearCartList === '1';
 
     if (!orderId) {
@@ -38,27 +40,12 @@ Page({
       orderId,
       totalPrice,
       activityId,
-      source,
+      orderType,
       clearCartList
     });
 
     // 自动开始支付
     this.ensurePayAmountAndStart();
-  },
-
-  onShow: function () {
-    // 每次显示页面时确保状态正常
-    console.log('Pay page onShow');
-  },
-
-  onHide: function () {
-    // 页面隐藏时清理临时状态
-    console.log('Pay page onHide');
-  },
-
-  onUnload: function () {
-    // 页面卸载时清理
-    console.log('Pay page onUnload');
   },
 
   // 初始化页面状态
@@ -67,21 +54,28 @@ Page({
       loading: false,
       payStatus: 'pending'
     });
-    console.log('Pay page state initialized');
   },
 
+  // 验证订单信息并开始支付
   ensurePayAmountAndStart: function () {
     wx.showLoading({ title: '加载订单中...' });
+
     api.order.getDetail(this.data.orderId)
       .then((orderData) => {
         // 验证订单状态（只能支付待付款订单）
         if (orderData.status !== 'pending') {
           throw new Error('订单状态异常，无法支付');
         }
-        
-        const amount = Number((orderData.totalPrice || 0).toString().replace(/[¥￥]/g, ''));
+
+        // 从订单数据中提取金额
+        const amount = Number(orderData.totalPrice || orderData.totalAmount || 0);
         if (amount <= 0) {
           throw new Error('订单金额异常');
+        }
+
+        // 如果未指定类型，从订单数据中获取
+        if (!this.data.orderType && orderData.type) {
+          this.setData({ orderType: orderData.type });
         }
 
         this.setData(
@@ -105,23 +99,19 @@ Page({
   // 开始支付
   startPayment: function () {
     if (!this.data.orderId) {
-      this.setData({
-        loading: false,
-        payStatus: 'failed'
-      });
-      wx.showToast({
-        title: '支付参数错误',
-        icon: 'none'
-      });
+      this.setData({ loading: false, payStatus: 'failed' });
+      wx.showToast({ title: '支付参数错误', icon: 'none' });
       return;
     }
 
     this.setData({ loading: true });
 
-    const self = this;
-
-    // 先尝试调用新的微信支付 API
-    api.pay.createJsapi(this.data.orderId)
+    // 调用后端 JSAPI 支付接口
+    api.pay.createJsapi({
+      orderId: this.data.orderId,
+      id: this.data.orderId,
+      type: this.data.orderType || undefined
+    })
       .then((payParams) => {
         // 检查是否返回了微信支付参数
         if (payParams && payParams.timeStamp && payParams.nonceStr && payParams.package && payParams.paySign) {
@@ -130,42 +120,37 @@ Page({
             timeStamp: payParams.timeStamp,
             nonceStr: payParams.nonceStr,
             package: payParams.package,
-            signType: payParams.signType || 'MD5',
+            signType: payParams.signType || 'HMAC-SHA256',
             paySign: payParams.paySign,
             success: () => {
-              // 支付成功
-              self.handlePaySuccess();
+              this.handlePaySuccess();
             },
             fail: (err) => {
-              // 支付失败或取消
               console.error('微信支付失败:', err);
-              self.handlePayFail(err);
+              this.handlePayFail(err);
             }
           });
         } else {
-          // 如果没有返回支付参数，可能是已支付或其他情况
-          self.handlePaySuccess();
+          // 没有返回支付参数（已支付等情况）
+          this.handlePaySuccess();
         }
       })
       .catch((err) => {
-        console.error('获取支付参数失败，尝试模拟支付:', err);
-        // 降级处理：使用旧的模拟支付接口
-        self.startPaymentLegacy();
+        console.error('获取支付参数失败:', err);
+        // 降级：尝试模拟支付（仅开发环境）
+        this.startPaymentLegacy();
       });
   },
 
-  // 旧接口兼容 - 模拟支付
+  // 降级处理 - 模拟支付（开发环境使用）
   startPaymentLegacy: function () {
-    const self = this;
-    api.order.pay(this.data.orderId, {
-      paymentMethod: 'wechat'
-    })
-      .then((data) => {
-        self.handlePaySuccess();
+    api.order.pay(this.data.orderId, { paymentMethod: 'wechat' })
+      .then(() => {
+        this.handlePaySuccess();
       })
       .catch((err) => {
         console.error('支付失败:', err);
-        self.handlePayFail(err);
+        this.handlePayFail(err);
       });
   },
 
@@ -198,8 +183,6 @@ Page({
 
   // 支付成功后的处理
   afterPaySuccess: function() {
-    this.clearCartAfterPayment();
-    
     // 如果是活动订单，跳转回活动详情并显示二维码
     if (this.data.activityId) {
       setTimeout(() => {
@@ -217,33 +200,11 @@ Page({
     }
   },
 
-  // 支付成功后清空购物车
-  clearCartAfterPayment: function() {
-    try {
-      const cartList = wx.getStorageSync('cartList') || [];
-      const remainingItems = Array.isArray(cartList) 
-        ? cartList.filter(item => !item.checked)
-        : [];
-      
-      const purchasedFarmGoods = [];
-      if (Array.isArray(cartList)) {
-        cartList.forEach(item => {
-          if (item.checked && item.isFarmGood) {
-            purchasedFarmGoods.push(String(item.id));
-          }
-        });
-      }
-      
-      const existingPurchased = wx.getStorageSync('purchasedFarmGoods') || [];
-      const allPurchased = [...new Set([...existingPurchased, ...purchasedFarmGoods])];
-      wx.setStorageSync('purchasedFarmGoods', allPurchased);
-      
-      wx.setStorageSync('cartList', remainingItems);
-      
-      wx.removeStorageSync('orderCart');
-    } catch (e) {
-      console.error('清空购物车失败', e);
-    }
+  // 查看订单列表（支付成功后）
+  goOrders: function () {
+    wx.redirectTo({
+      url: '/user-pages/orders/orders?tab=paid'
+    });
   },
 
   // 返回上一页或订单列表

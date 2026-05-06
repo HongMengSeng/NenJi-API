@@ -97,6 +97,7 @@
                   class="action-btn primary-btn"
                   catchtap="payOrder"
                   data-order-id="{{item.id}}"
+                  data-type="{{item.type}}"
                 >
                   去支付
                 </button>
