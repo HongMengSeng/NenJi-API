@@ -364,8 +364,7 @@ Page({
     const selectedAddressInfo = this.data.addressList.find(item => item.id === id);
     this.setData({
       selectedAddress: id,
-      defaultAddress: selectedAddressInfo || this.data.defaultAddress,
-      showAllAddresses: false
+      defaultAddress: selectedAddressInfo || this.data.defaultAddress
     });
   },
 
