@@ -84,7 +84,9 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
     let loadingHidden = false;
     const hideLoadingSafe = () => {
       if (showLoading && !loadingHidden) {
-        wx.hideLoading();
+        wx.hideLoading({
+          fail: () => {} // 忽略未配对警告
+        });
         loadingHidden = true;
       }
     };

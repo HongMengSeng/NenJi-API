@@ -270,9 +270,14 @@ Page({
         this.setData({ loading: false, isCreatingOrder: false });
 
         wx.showToast({ title: '订单创建成功', icon: 'success' });
+        
+        // 清理购物车
+        this.clearCartByType(orderType);
+        
         setTimeout(() => {
+          // 跳转到支付页面
           wx.redirectTo({
-            url: `/user-pages/orders/orders?tab=pending`
+            url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}`
           });
         }, 1500);
       })
