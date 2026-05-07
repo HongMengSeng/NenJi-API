@@ -56,10 +56,6 @@
   <!-- 活动信息 -->
   <view class="activity-info">
     <view class="activity-title">{{activity.title}}</view>
-    <view class="activity-meta">
-      <view class="activity-price">￥{{activity.price}}</view>
-      <view class="activity-date">{{activity.date}}</view>
-    </view>
     <view class="activity-description">{{activity.description}}</view>
   </view>
   

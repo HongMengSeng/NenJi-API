@@ -125,7 +125,7 @@
               <view class="address-info" bindtap="selectAddress" data-id="{{item.id}}">
                 <view class="address-name">{{item.name}}</view>
                 <view class="address-phone">{{item.phone}}</view>
-                <view class="address-detail">{{item.address}}</view>
+                <view class="address-detail">{{item.address}} {{item.detail}}</view>
               </view>
               <view class="address-actions">
                 <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
@@ -140,7 +140,7 @@
                 <view class="address-info">
                   <view class="address-name">{{defaultAddress.name}}</view>
                   <view class="address-phone">{{defaultAddress.phone}}</view>
-                  <view class="address-detail">{{defaultAddress.address}}</view>
+                  <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
                 </view>
                 <view class="address-actions">
                   <view class="address-check">✓</view>

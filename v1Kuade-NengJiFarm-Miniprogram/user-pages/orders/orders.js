@@ -255,7 +255,7 @@ Page({
   // 加载下一页
   loadNextPage() {
     const nextPage = this.data.currentPage + 1;
-    if (this.data.isRequesting) return;
+    if (this.data.isRequesting || !this.data.hasMore) return;
     this.setData({ loadingMore: true, isRequesting: true });
 
     let params = { page: nextPage, pageSize: PAGE_SIZE };
@@ -294,8 +294,6 @@ Page({
           loadingMore: false,
           isRequesting: false
         });
-
-        wx.pageScrollTo({ scrollTop: 0, duration: 200 });
       })
       .catch((err) => {
         console.error('加载下一页失败:', err);
@@ -486,16 +484,6 @@ Page({
       }
     });
   },
-
-  deleteOrder(e) {
-    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    api.order.delete(id).then(() => {
-      wx.showToast({ title: '已删除', icon: 'success' });
-      this.getOrders();
-    }).catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }));
-  },
-
-  deleteCancelledOrder(e) { this.deleteOrder(e); },
 
   viewLogistics(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;

@@ -523,6 +523,34 @@
 }
 
 /* ============================================
+   查看官方物流详情按钮
+   ============================================ */
+.plugin-btn-wrap {
+  padding: 20rpx 0 40rpx;
+}
+
+.plugin-btn {
+  background: linear-gradient(135deg, #d4a76a 0%, #c99a5a 100%);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 500;
+  border-radius: 14rpx;
+  border: none;
+  margin: 0 20rpx;
+  padding: 24rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(212, 167, 106, 0.3);
+}
+
+.plugin-btn:active {
+  background: linear-gradient(135deg, #c99a5a 0%, #b8894a 100%);
+  transform: scale(0.98);
+}
+
+.plugin-btn::after {
+  border: none;
+}
+
+/* ============================================
    客服悬浮按钮
    ============================================ */
 .service-btn {

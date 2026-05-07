@@ -196,9 +196,9 @@ Page({
               wx.showToast({ title: '创建订单失败', icon: 'none' });
               return;
             }
-            // 跳转到订单页面或支付页面
+            // 跳转到支付页面
             wx.redirectTo({
-              url: '/user-pages/orders/orders?tab=pending'
+              url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice}&type=acre`
             });
           })
           .catch((err) => {

@@ -137,6 +137,12 @@ Page({
       return;
     }
 
+    // 防止重复调用
+    if (this.data.loading) {
+      console.log('支付正在进行中，忽略重复调用');
+      return;
+    }
+
     this.setData({ loading: true });
 
     // 调用后端 JSAPI 支付接口
@@ -156,45 +162,64 @@ Page({
             signType: payParams.signType || 'HMAC-SHA256',
             paySign: payParams.paySign,
             success: () => {
-              // 微信支付成功，先通知后端更新订单状态
-              // 因为开发环境 notify_url 无法回调到本地服务器
-              api.order.pay(this.data.orderId, { paymentMethod: 'wechat' })
+              // 微信支付成功，查询支付状态并更新订单
+              api.pay.queryStatus({ orderId: this.data.orderId })
                 .then(() => {
-                  console.log('后端订单状态更新成功');
+                  console.log('支付状态查询成功');
                   this.handlePaySuccess();
                 })
                 .catch((err) => {
-                  console.error('后端订单状态更新失败:', err);
-                  // 即使后端更新失败，也视为支付成功（用户已付款）
+                  console.error('支付状态查询失败:', err);
+                  // 即使查询失败，也视为支付成功（用户已付款）
                   this.handlePaySuccess();
                 });
             },
             fail: (err) => {
               console.error('微信支付失败:', err);
-              this.handlePayFail(err);
+
+              // 用户取消支付时，保持"待支付"状态
+              if (err && (err.errMsg === 'requestPayment:fail cancel' || err.errMsg === 'requestPayment:fail user cancel')) {
+                console.log('用户取消支付');
+
+                this.setData({
+                  loading: false,
+                  payStatus: 'failed',
+                  failReason: '支付已取消'
+                });
+                wx.showToast({ title: '支付已取消', icon: 'none' });
+              } else {
+                // 其他支付失败情况
+                this.handlePayFail(err);
+              }
             }
           });
         } else {
           // 没有返回支付参数（已支付等情况）
-          this.handlePaySuccess();
+          console.log('没有返回支付参数，订单可能已支付');
+          this.setData({
+            loading: false,
+            payStatus: 'failed',
+            failReason: '订单可能已支付成功'
+          });
+          wx.showToast({ title: '订单可能已支付成功', icon: 'none' });
         }
       })
       .catch((err) => {
         console.error('获取支付参数失败:', err);
-        // 降级：尝试模拟支付（仅开发环境）
-        this.startPaymentLegacy();
-      });
-  },
 
-  // 降级处理 - 模拟支付（开发环境使用）
-  startPaymentLegacy: function () {
-    api.order.pay(this.data.orderId, { paymentMethod: 'wechat' })
-      .then(() => {
-        this.handlePaySuccess();
-      })
-      .catch((err) => {
-        console.error('支付失败:', err);
-        this.handlePayFail(err);
+        // 如果是"订单正在支付中"错误，直接提示用户
+        if (err && err.code === 400 && err.message && err.message.includes('支付中')) {
+          console.log('订单正在支付中');
+
+          this.setData({
+            loading: false,
+            payStatus: 'failed',
+            failReason: '订单正在支付中，请稍后重试'
+          });
+          wx.showToast({ title: '订单正在支付中，请稍后重试', icon: 'none' });
+        } else {
+          this.handlePayFail(err);
+        }
       });
   },
 
@@ -208,19 +233,21 @@ Page({
       title: '支付成功',
       icon: 'success'
     });
-    
+
     // 支付成功后的逻辑
     this.afterPaySuccess();
   },
 
   // 处理支付失败
   handlePayFail: function (err) {
+    const failReason = err && err.message ? err.message : '支付失败';
     this.setData({
       loading: false,
-      payStatus: 'failed'
+      payStatus: 'failed',
+      failReason: failReason
     });
     wx.showToast({
-      title: err && err.message ? err.message : '支付失败',
+      title: failReason,
       icon: 'none'
     });
   },
@@ -303,6 +330,12 @@ Page({
 
   // 重新支付
   retryPay: function () {
+    // 防止重复调用
+    if (this.data.loading) {
+      console.log('支付正在进行中，忽略重复调用');
+      return;
+    }
+
     this.setData({ payStatus: 'pending' });
     this.startPayment();
   },

@@ -41,8 +41,8 @@ Page({
                         addressInfo: {
                             name: defaultAddress.name,
                             phone: defaultAddress.phone,
-                            detail: defaultAddress.address,
-                            door: defaultAddress.door || '',
+                            detail: defaultAddress.address + ' ' + (defaultAddress.detail || ''),
+                            door: defaultAddress.door || defaultAddress.detail || '',
                             pickupTime: ''
                         },
                         hasAddress: true

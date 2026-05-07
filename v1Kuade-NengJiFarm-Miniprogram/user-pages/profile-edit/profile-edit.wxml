@@ -28,9 +28,7 @@
     <!-- 手机号码 -->
     <view class="form-item">
       <view class="form-label">*手机号码</view>
-      <button class="phone-button" open-type="getPhoneNumber" bind:getphonenumber="onGetPhoneNumber">
-        <input class="form-input" value="{{userInfo.phone}}" bindinput="onPhoneChange" placeholder="点击获取手机号或手动输入" type="number" disabled="{{false}}" />
-      </button>
+      <view class="form-text">{{userInfo.phone || '未绑定'}}</view>
     </view>
     
     <!-- 角色切换（测试用） -->

@@ -33,7 +33,7 @@
     <view wx:for="{{addressList}}" wx:key="id" class="address-item {{selectedAddressId === item.id ? 'active' : ''}}" bindtap="selectAddress" data-id="{{item.id}}">
       <view class="address-info">
         <text class="address-name">{{item.name}} {{item.phone}}</text>
-        <text class="address-detail">{{item.address}} {{item.door}}</text>
+        <text class="address-detail">{{item.address}} {{item.detail}}</text>
       </view>
       <view class="address-select {{selectedAddressId === item.id ? 'selected' : ''}}">
         <text class="select-icon">✓</text>

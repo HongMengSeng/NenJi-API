@@ -144,52 +144,6 @@ Page({
     });
   },
 
-  // 获取手机号
-  onGetPhoneNumber: function (e) {
-    console.log('获取手机号回调', e);
-
-    if (!e.detail.code) {
-      wx.showToast({ title: '您取消了授权', icon: 'none' });
-      return;
-    }
-
-    const phoneCode = e.detail.code;
-    wx.showLoading({ title: '获取手机号中...' });
-
-    wx.login({
-      success: (loginRes) => {
-        if (!loginRes.code) {
-          wx.hideLoading();
-          wx.showToast({ title: '登录凭证获取失败', icon: 'none' });
-          return;
-        }
-
-        api.auth.phoneLogin({
-          code: loginRes.code,
-          phoneCode: phoneCode
-        })
-        .then((data) => {
-          console.log('手机号获取成功', data);
-          const phone = data.phone_number || '';
-          this.setData({
-            'userInfo.phone': phone
-          });
-          wx.hideLoading();
-          wx.showToast({ title: '手机号获取成功', icon: 'success' });
-        })
-        .catch((err) => {
-          console.error('获取手机号失败', err);
-          wx.hideLoading();
-          wx.showToast({ title: err.message || '获取失败', icon: 'none' });
-        });
-      },
-      fail: () => {
-        wx.hideLoading();
-        wx.showToast({ title: '微信登录失败', icon: 'none' });
-      }
-    });
-  },
-
   // 保存个人资料
   saveProfile: function () {
     const { userInfo } = this.data;

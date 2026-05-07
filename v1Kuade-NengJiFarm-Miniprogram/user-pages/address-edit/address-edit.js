@@ -47,6 +47,9 @@ Page({
       method: 'GET'
     })
     .then(data => {
+      // 构建省市区地址（只包含省市区，不包含详细地址）
+      const regionAddress = (data.province || '') + (data.city || '') + (data.district || '');
+
       this.setData({
         formData: {
           name: data.name,
@@ -54,8 +57,8 @@ Page({
           province: data.province,
           city: data.city,
           district: data.district,
-          address: data.address || (data.province + data.city + data.district),
-          detail: data.address,
+          address: regionAddress,
+          detail: data.detail || data.address || '',
           isDefault: data.isDefault
         }
       });
@@ -196,12 +199,15 @@ Page({
         };
 
         const parsed = parseAddress(res.address, res.name);
-        
+
+        // 构建省市区地址（只包含省市区，不包含详细地址）
+        const regionAddress = (parsed.province || '') + (parsed.city || '') + (parsed.district || '');
+
         that.setData({
           'formData.province': parsed.province,
           'formData.city': parsed.city,
           'formData.district': parsed.district,
-          'formData.address': res.address
+          'formData.address': regionAddress
         });
       }
     });

@@ -139,6 +139,18 @@
       </view>
     </view>
 
+    <!-- 查看官方物流详情按钮 -->
+    <view wx:if="{{logisticsInfo.waybillNo}}" class="plugin-btn-wrap">
+      <button
+        class="plugin-btn"
+        bindtap="viewLogisticsPlugin"
+        loading="{{pluginLoading}}"
+        disabled="{{pluginLoading}}"
+      >
+        {{pluginLoading ? '加载中...' : '查看官方物流详情'}}
+      </button>
+    </view>
+
   </view>
 
   <!-- 客服悬浮按钮 -->

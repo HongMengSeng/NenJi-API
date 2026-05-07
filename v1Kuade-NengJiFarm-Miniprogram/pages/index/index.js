@@ -58,12 +58,22 @@ Page({
           ...item,
           image: this.processImageUrl(item.image)
         })),
-        farmGoods: (data.farmGoods || []).map(item => ({
-          ...item,
-          image: this.processImageUrl(item.image),
-          price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
-          originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice
-        })),
+        farmGoods: [
+          ...(data.farmGoods || []).map(item => ({
+            ...item,
+            image: this.processImageUrl(item.image),
+            price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
+            originalPrice: typeof item.originalPrice === 'string' ? item.originalPrice.replace(/[¥￥]/g, '') : item.originalPrice,
+            isAcre: false
+          })),
+          ...(data.acreProjects || []).map(item => ({
+            ...item,
+            image: this.processImageUrl(item.image),
+            price: typeof item.price === 'string' ? item.price.replace(/[¥￥]/g, '') : item.price,
+            isAcre: true,
+            tags: ['可认购']
+          }))
+        ],
         hotDishes: (data.hotDishes || []).map(item => ({
           ...item,
           image: this.processImageUrl(item.image),
@@ -193,9 +203,19 @@ Page({
   // 跳转到商品详情页面
   navigateToGoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
-    });
+    // 检查是否为认购商品（通过数据中的isAcre字段判断）
+    const farmGoods = this.data.farmGoods || [];
+    const isAcre = farmGoods.some(item => String(item.id) === String(id) && item.isAcre);
+
+    if (isAcre) {
+      wx.navigateTo({
+        url: '/user-pages/acre-detail/acre-detail?id=' + id
+      });
+    } else {
+      wx.navigateTo({
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + '&isFarmGood=1'
+      });
+    }
   },
 
   // 跳转到菜品详情页面

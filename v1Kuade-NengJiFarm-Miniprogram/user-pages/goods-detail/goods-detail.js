@@ -195,6 +195,11 @@ Page({
   },
 
   increaseQuantity() {
+    const stock = this.data.goods.stock;
+    if (this.data.quantity >= stock) {
+      wx.showToast({ title: `库存仅剩 ${stock} 件`, icon: 'none' });
+      return;
+    }
     this.setData({ quantity: this.data.quantity + 1 }, () => {
       this.calculateTotalPrice();
     });
@@ -218,6 +223,8 @@ Page({
     if (val === '') return;
     let num = parseInt(val);
     if (isNaN(num)) num = 1;
+    const stock = this.data.goods.stock;
+    if (num > stock) num = stock;
     this.setData({ quantity: num }, () => {
       this.calculateTotalPrice();
     });
@@ -282,6 +289,54 @@ Page({
       return;
     }
 
+    // 检查是否有待支付的订单包含该商品
+    this.checkPendingOrder().then(hasPending => {
+      if (hasPending) {
+        wx.showModal({
+          title: '提示',
+          content: '您有待支付的订单包含此商品，请先完成支付或取消订单后再购买',
+          showCancel: false,
+          confirmText: '查看订单',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/user-pages/orders/orders?tab=pending'
+              });
+            }
+          }
+        });
+        return;
+      }
+
+      this.createOrder();
+    });
+  },
+
+  // 检查是否有待支付的订单包含该商品
+  checkPendingOrder() {
+    return new Promise((resolve) => {
+      api.order.getList({ status: 'pending', page: 1, pageSize: 10 })
+        .then(data => {
+          const orders = data.orders || data.data || data || [];
+          const goodsId = String(this.data.goods.id);
+
+          // 检查待支付订单中是否包含该商品
+          const hasPending = orders.some(order => {
+            const items = order.items || [];
+            return items.some(item => String(item.id) === goodsId);
+          });
+
+          resolve(hasPending);
+        })
+        .catch(() => {
+          // 如果获取订单失败，允许继续购买
+          resolve(false);
+        });
+    });
+  },
+
+  // 创建订单
+  createOrder() {
     const payload = {
       addressId: this.data.selectedAddress,
       items: [{
@@ -296,13 +351,20 @@ Page({
     .then(data => {
       wx.hideLoading();
       const orderId = data.orderId || data.id;
+      if (!orderId) {
+        wx.showToast({ title: '创建订单失败', icon: 'none' });
+        return;
+      }
       wx.showToast({ title: '订单创建成功', icon: 'success' });
       // 关闭购买弹窗
       this.setData({ showBuyModal: false });
-      // 延迟跳转到订单列表页面
+      // 跳转到支付页面
       setTimeout(() => {
-        wx.navigateTo({ url: '/user-pages/orders/orders?tab=pending' });
-      }, 1500);
+        const totalPrice = (this.data.goods.price * this.data.quantity).toFixed(2);
+        wx.navigateTo({
+          url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice}&type=goods`
+        });
+      }, 500);
     })
     .catch(err => {
       wx.hideLoading();

@@ -1,4 +1,6 @@
 ﻿const { api } = require('../../utils/api');
+// 引入物流查询插件
+const plugin = requirePlugin("logisticsPlugin");
 
 Page({
   data: {
@@ -9,7 +11,13 @@ Page({
     shippingAddress: null,
     orderItems: [],
     statusIcon: '🚚',
-    statusHint: '您的包裹正在运输中'
+    statusHint: '您的包裹正在运输中',
+    // 物流插件所需数据
+    waybillId: '',
+    deliveryId: '',
+    deliveryName: '',
+    transId: '',
+    pluginLoading: false
   },
 
   onLoad(options) {
@@ -255,5 +263,65 @@ Page({
 
   goBack() {
     wx.navigateBack();
+  },
+
+  // 查看物流详情（调用微信官方物流插件）
+  viewLogisticsPlugin() {
+    const { logisticsInfo, orderId } = this.data;
+
+    // 检查是否有物流单号
+    if (!logisticsInfo.waybillNo) {
+      wx.showToast({ title: '暂无物流信息', icon: 'none' });
+      return;
+    }
+
+    this.setData({ pluginLoading: true });
+
+    // 获取openId
+    const openId = wx.getStorageSync('openid') || wx.getStorageSync('openId') || '';
+
+    // 调用后端接口获取waybill_token
+    wx.request({
+      url: 'http://192.168.203.56/api/logistics/waybill-token',
+      method: 'POST',
+      data: {
+        openId: openId,
+        waybillId: logisticsInfo.waybillNo,
+        deliveryId: logisticsInfo.companyCode || 'SF', // 快递公司代码，默认顺丰
+        receiverPhone: logisticsInfo.shippingAddress?.phone || '13800138000',
+        transId: this.data.transId || '',
+        goodsName: '能记农场商品',
+        goodsImgUrl: logisticsInfo.items?.[0]?.image || ''
+      },
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.code === 0) {
+          const waybillToken = res.data.data?.waybillToken || res.data.waybillToken;
+          if (waybillToken) {
+            // 调用微信官方插件打开物流详情页
+            plugin.openWaybillTracking({
+              waybillToken: waybillToken,
+              success: () => {
+                console.log('打开物流详情成功');
+              },
+              fail: (err) => {
+                console.error('打开物流详情失败：', err);
+                wx.showToast({ title: '打开失败', icon: 'none' });
+              }
+            });
+          } else {
+            wx.showToast({ title: '获取物流信息失败', icon: 'none' });
+          }
+        } else {
+          wx.showToast({ title: res.data.message || '获取物流信息失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('请求异常：', err);
+        wx.showToast({ title: '网络异常', icon: 'none' });
+      },
+      complete: () => {
+        this.setData({ pluginLoading: false });
+      }
+    });
   }
 });

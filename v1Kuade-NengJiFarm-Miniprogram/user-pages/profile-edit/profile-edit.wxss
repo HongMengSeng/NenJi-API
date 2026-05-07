@@ -42,6 +42,15 @@
   padding-right: 10rpx;
 }
 
+/* 只读文本样式 */
+.form-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #999;
+  text-align: right;
+  padding-right: 10rpx;
+}
+
 /* 头像按钮 */
 .avatar-button {
   width: 100rpx;

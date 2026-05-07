@@ -16,10 +16,7 @@
       title: '加载中...',
     });
 
-    api.request({
-      url: '/api/acres/index',
-      method: 'GET'
-    })
+    api.acre.getList()
       .then(res => {
         wx.hideLoading();
         // 清理价格中的符号

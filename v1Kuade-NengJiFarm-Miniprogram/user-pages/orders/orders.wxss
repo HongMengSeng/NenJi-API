@@ -540,3 +540,42 @@
   font-size: 24rpx;
   color: #999;
 }
+
+/* ========== 加载更多提示栏 ========== */
+.load-more-bar {
+  padding: 24rpx 0 60rpx;
+  text-align: center;
+}
+
+.loading-more-hint {
+  padding: 16rpx 0;
+}
+
+.loading-more-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.no-more-hint {
+  padding: 16rpx 0;
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+.pull-hint {
+  padding: 16rpx 0;
+}
+
+.pull-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 取消订单按钮样式 */
+.cancel-btn {
+  background-color: #fff5f5;
+  color: #ff4d4f;
+}

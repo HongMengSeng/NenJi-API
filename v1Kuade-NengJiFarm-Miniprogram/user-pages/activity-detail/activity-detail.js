@@ -109,10 +109,7 @@ Page({
       return;
     }
 
-    api.request({
-      url: `/api/orders/${targetOrderId}/qrcode`,
-      method: 'GET'
-    })
+    api.order.getQrcode(targetOrderId)
       .then(data => {
         this.setData({
           qrCodeUrl: data.qrCodeUrl || '',
@@ -146,6 +143,56 @@ Page({
       return;
     }
 
+    // 检查是否有待支付的订单包含该活动
+    this.checkPendingOrder().then(hasPending => {
+      if (hasPending) {
+        wx.showModal({
+          title: '提示',
+          content: '您有待支付的订单包含此活动，请先完成支付或取消订单后再报名',
+          showCancel: false,
+          confirmText: '查看订单',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/user-pages/orders/orders?tab=pending'
+              });
+            }
+          }
+        });
+        return;
+      }
+
+      this.showRegisterModal(remainingSlots);
+    });
+  },
+
+  // 检查是否有待支付的订单包含该活动
+  checkPendingOrder() {
+    return new Promise((resolve) => {
+      api.order.getList({ status: 'pending', page: 1, pageSize: 10 })
+        .then(data => {
+          const orders = data.orders || data.data || data || [];
+          const activityId = String(this.data.activity.id);
+
+          // 检查待支付订单中是否包含该活动
+          const hasPending = orders.some(order => {
+            // 活动订单的 type 是 'activity'
+            if (order.type !== 'activity') return false;
+            // 检查订单ID是否匹配
+            return String(order.id) === activityId || String(order.activityId) === activityId;
+          });
+
+          resolve(hasPending);
+        })
+        .catch(() => {
+          // 如果获取订单失败，允许继续报名
+          resolve(false);
+        });
+    });
+  },
+
+  // 显示报名弹窗
+  showRegisterModal: function (remainingSlots) {
     const priceText = this.data.activity.price || '0';
     const that = this;
     wx.showModal({
@@ -193,7 +240,7 @@ Page({
         }
 
         wx.showLoading({ title: '下单中...', mask: true })
-        
+
         api.request({
           url: `/api/activity/${that.data.activity.id}/register`,
           method: 'POST',
