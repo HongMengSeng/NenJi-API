@@ -378,6 +378,8 @@
 
 		.modal-body{
 			padding: 20px 24px;
+			max-height: 500px;
+			overflow-y: auto;
 		}
 
 		.modal-actions{
@@ -481,7 +483,7 @@
 											type="text"
 											class="search-input"
 											v-model.trim="couponSearchKeyword"
-											placeholder="订单ID/券名称/用户搜索"
+											placeholder="订单ID搜索"
 											@keyup.enter="searchCouponOrders"
 										/>
 										<button class="btn btn-primary" @click="searchCouponOrders">搜索</button>
@@ -577,8 +579,14 @@
 							<div class="detail-value">{{ activeCouponOrder.amount }}</div>
 						</div>
 						<div class="detail-item">
-							<div class="detail-label">券类共多少</div>
+							<div class="detail-label">购买数量</div>
 							<div class="detail-value">{{ activeCouponOrder.quantity || 1 }} 张</div>
+						</div>
+						<div class="detail-item full" style="text-align: center; background: #ffffff; border: 1px dashed #cbd5e1;">
+							<div class="detail-label" style="margin-bottom: 12px;">核销二维码</div>
+							<div style="display: inline-block; padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+								<img :src="generateQRCode(activeCouponOrder.orderId)" :alt="'订单' + activeCouponOrder.orderId + '核销码'" style="width: 160px; height: 160px;" />
+							</div>
 						</div>
 						<div class="detail-item">
 							<div class="detail-label">状态</div>
@@ -769,10 +777,7 @@
 					}
 
 					return this.couponAllOrders.filter(order =>
-						String(order.orderId).toLowerCase().includes(keyword) ||
-						String(order.couponName).toLowerCase().includes(keyword) ||
-						String(order.userName).toLowerCase().includes(keyword) ||
-						String(order.phone).toLowerCase().includes(keyword)
+						String(order.orderId).toLowerCase().includes(keyword)
 					);
 				},
 				couponTotalOrders() {
@@ -912,6 +917,11 @@
 						return '待核销';
 					}
 					return order.orderStatus || order.paymentStatus || '未知';
+				},
+				generateQRCode(orderId) {
+					if (!orderId) return '';
+					const qrContent = encodeURIComponent('coupon://verify/' + orderId);
+					return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrContent}`;
 				}
 			}
 		}).mount('#app');

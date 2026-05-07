@@ -325,6 +325,12 @@
 			color: #166534;
 		}
 
+		/* 厨师标签样式。 */
+		.role-tag.chef {
+			background: #fff3e0;
+			color: #8b4513;
+		}
+
 		/* 操作列容器：用于排列编辑等表格行内按钮。 */
 		.table-actions {
 			display: flex;
@@ -510,6 +516,9 @@
 							>
 							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
 								<option value="">全部用户</option>
+								<option value="普通用户">普通用户</option>
+								<option value="工作人员">工作人员</option>
+								<option value="厨师">厨师</option>
 							</select>
 							<button class="btn btn-primary" @click="searchUsers">搜索</button>
 						</div>
@@ -538,7 +547,7 @@
 										<td>{{ user.wxOpenid || '无' }}</td>
 										<td>{{ user.phone || '无' }}</td>
 										<td class="is-center">
-											<span :class="['role-tag', user.role === '普通用户' ? 'user' : 'employee']">{{ user.roleText }}</span>
+											<span :class="['role-tag', user.role === '普通用户' ? 'user' : (user.role === '厨师' ? 'chef' : 'employee')]">{{ user.roleText }}</span>
 										</td>
 										<td class="is-center">
 											<div class="table-actions">

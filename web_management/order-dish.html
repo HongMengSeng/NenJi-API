@@ -857,8 +857,6 @@
 											<tr>
 												<th>订单ID</th>
 												<th>餐桌号</th>
-												<th>支付状态</th>
-												<th>后厨状态</th>
 												<th>订单状态</th>
 												<th>操作</th>
 											</tr>
@@ -867,12 +865,6 @@
 											<tr v-for="order in dishOrders" :key="order.orderId">
 												<td>{{ order.orderId }}</td>
 												<td>{{ order.tableNo }}</td>
-												<td>
-													<span :class="['status-tag', getPaymentStatusClass(order.paymentStatus)]">{{ order.paymentStatus }}</span>
-												</td>
-												<td>
-													<span :class="['status-tag', getDishKitchenStatusClass(order.kitchenStatus)]">{{ order.kitchenStatus }}</span>
-												</td>
 												<td>
 													<span :class="['status-tag', getDishOrderStatusClass(order.orderStatus)]">{{ order.orderStatus }}</span>
 												</td>
