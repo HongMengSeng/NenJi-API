@@ -105,7 +105,7 @@ public class KitchenController : ControllerBase
     /// 获取订单详情
     /// </summary>
     [HttpGet("order/detail")]
-    [Authorize]
+    //[Authorize]
     public async Task<ActionResult<ApiResult>> GetOrderDetail(
         [FromQuery] long orderId,
         CancellationToken cancellationToken)

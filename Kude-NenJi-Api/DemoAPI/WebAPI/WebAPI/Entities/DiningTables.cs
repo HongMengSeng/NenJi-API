@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAPI.Entities
 {
+    [Table("dining_table")]
     public class DiningTables
     {
         [Key]

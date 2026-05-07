@@ -6,7 +6,9 @@ public class KitchenOrderListItemDto
     /// <summary>
     /// 订单号（前端用 id）
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public long Id { get; set; }
+
+    public string No { get; set; } = string.Empty;
 
     /// <summary>
     /// 下单时间（ISO 8601格式，前端自行格式化）

@@ -149,7 +149,8 @@ public class KitchenService : IKitchenService
 
             result.Add(new KitchenOrderListItemDto
             {
-                Id = order.OrderNo,
+                Id = order.OrderId,
+                No = order.OrderNo,
                 Time = order.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 Table = tableNumber ?? string.Empty,
                 Items = items,
