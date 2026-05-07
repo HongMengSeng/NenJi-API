@@ -13,30 +13,29 @@
 .nav-back {
   position: fixed;
   top: 88rpx;
-  left: 24rpx;
+  left: 20rpx;
   z-index: 200;
   width: 72rpx;
   height: 72rpx;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
 }
 
 .nav-back:active {
-  background: #f0ece4;
+  background: rgba(0, 0, 0, 0.8);
   transform: scale(0.94);
 }
 
 .back-icon {
-  font-size: 56rpx;
-  color: #2a2a2a;
+  font-size: 40rpx;
+  color: #fff;
   line-height: 1;
   margin-top: -4rpx;
-  margin-left: -6rpx;
+  margin-left: -2rpx;
   font-weight: 300;
 }
 
@@ -216,6 +215,11 @@
   font-size: 24rpx;
   color: #c99a5a;
   font-weight: 400;
+  padding: 8rpx 0 8rpx 16rpx;
+}
+
+.card-title-arrow:active {
+  opacity: 0.6;
 }
 
 .card-title-sub {
@@ -241,6 +245,157 @@
 /* ============================================
    物流信息
    ============================================ */
+
+/* 物流卡片 */
+.logistics-card-body {
+  padding: 24rpx 32rpx;
+}
+
+/* 物流基础信息（快递公司 + 运单号） */
+.logistics-basic {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: #f9f6f1;
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.logistics-basic-icon {
+  font-size: 36rpx;
+  flex-shrink: 0;
+}
+
+.logistics-basic-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.logistics-basic-company {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.logistics-basic-no {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 物流预览（未发货/无轨迹时显示） */
+.logistics-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  background: #f9f6f1;
+  border-radius: 12rpx;
+  padding: 20rpx 16rpx;
+}
+
+.logistics-preview-icon {
+  font-size: 44rpx;
+  flex-shrink: 0;
+  margin-top: 2rpx;
+}
+
+.logistics-preview-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.logistics-preview-status {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 8rpx;
+}
+
+.logistics-preview-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 物流时间线（订单详情页直接显示轨迹） */
+.logistics-timeline {
+  padding-left: 8rpx;
+}
+
+.logistics-timeline-item {
+  display: flex;
+  gap: 20rpx;
+  padding-bottom: 32rpx;
+  position: relative;
+}
+
+.logistics-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.logistics-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 9rpx;
+  top: 20rpx;
+  bottom: 0;
+  width: 2rpx;
+  background: #ede8de;
+}
+
+.logistics-timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: #d8d0c4;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-dot.active {
+  background: #c99a5a;
+  width: 22rpx;
+  height: 22rpx;
+  margin-top: 2rpx;
+  box-shadow: 0 0 0 6rpx rgba(201, 154, 90, 0.18);
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-desc {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 6rpx;
+}
+
+.logistics-timeline-item.latest .timeline-desc {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.timeline-time {
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+.logistics-timeline-item.latest .timeline-time {
+  color: #999;
+}
+
+/* 物流列表（物流详情页显示） */
 .logistics-list {
   padding-left: 4rpx;
 }
@@ -672,16 +827,16 @@
   }
 
   .nav-back {
-    background: rgba(40, 38, 34, 0.92);
+    background: rgba(0, 0, 0, 0.6);
     box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.4);
   }
 
   .nav-back:active {
-    background: #2e2a24;
+    background: rgba(0, 0, 0, 0.8);
   }
 
   .back-icon {
-    color: #e0d8cc;
+    color: #fff;
   }
 
   .status-banner {
@@ -707,6 +862,18 @@
 
   .card-title-sub {
     color: #555;
+  }
+
+  .logistics-preview {
+    background: #2a2824;
+  }
+
+  .logistics-preview-status {
+    color: #e8e0d4;
+  }
+
+  .logistics-preview-time {
+    color: #666;
   }
 
   .logistics-item::before {

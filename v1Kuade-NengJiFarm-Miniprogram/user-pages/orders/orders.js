@@ -208,11 +208,15 @@ Page({
       else if (order.type === 'acre') typeText = '认购订单';
     }
 
+    // 处理桌号：兼容多种后端字段名
+    const tableNo = order.diningTableNo || order.tableNumber || order.tableNo || order.dining_table_no || '';
+
     return {
       ...order,
       id: order.id || order.orderId,
       orderNumber: order.orderNumber || order.orderNo,
       typeText: typeText,
+      tableNo: tableNo,
       totalPrice: (order.totalPrice || order.totalAmount || 0).toString().replace(/[¥￥]/g, ''),
       statusText: this.mapStatusToText(order),
       items: (order.items || []).map(item => ({

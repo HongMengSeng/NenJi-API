@@ -12,6 +12,7 @@ Page({
       shippingTime: null,
       completeTime: null,
       totalPrice: 0,
+      diningTableNo: '',
       shippingAddress: {
         name: '',
         phone: '',
@@ -128,12 +129,50 @@ Page({
         // 处理订单金额
         orderData.totalPrice = orderData.totalPrice ? orderData.totalPrice.toString().replace(/[¥￥]/g, '') : orderData.totalPrice;
         
+        // 处理点餐订单桌号：兼容后端字段名
+        orderData.diningTableNo = orderData.diningTableNo || orderData.tableNumber || orderData.tableNo || orderData.dining_table_no || '';
+        
         // 标记订单类型
         orderData.isActivityOrder = orderData.type === 'activity';
         orderData.isAcreOrder = orderData.type === 'acre';
         orderData.isFoodOrder = orderData.type === 'food';
         orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
+
+        // 处理物流信息 - 兼容多种字段名
+        console.log('原始物流数据:', {
+          logistics: orderData.logistics,
+          logisticsInfo: orderData.logisticsInfo,
+          logisticsTrace: orderData.logisticsTrace,
+          expressInfo: orderData.expressInfo,
+          logisticsCompany: orderData.logisticsCompany,
+          expressCompany: orderData.expressCompany,
+          trackingNumber: orderData.trackingNumber,
+          expressNo: orderData.expressNo
+        });
+        
+        if (!orderData.logistics || orderData.logistics.length === 0) {
+          // 尝试从其他字段获取物流信息
+          if (orderData.logisticsInfo) {
+            orderData.logistics = Array.isArray(orderData.logisticsInfo) ? orderData.logisticsInfo : [orderData.logisticsInfo];
+          } else if (orderData.logisticsTrace) {
+            orderData.logistics = Array.isArray(orderData.logisticsTrace) ? orderData.logisticsTrace : [orderData.logisticsTrace];
+          } else if (orderData.expressInfo) {
+            orderData.logistics = Array.isArray(orderData.expressInfo) ? orderData.expressInfo : [orderData.expressInfo];
+          }
+        }
+        
+        // 确保 logistics 是数组，并标准化字段
+        orderData.logistics = (orderData.logistics || []).map(item => ({
+          desc: item.desc || item.description || item.content || item.detail || item.status || '物流状态更新',
+          time: item.time || item.createTime || item.datetime || item.timestamp || item.date || ''
+        }));
+        
+        console.log('标准化后的物流数据:', orderData.logistics);
+        
+        // 提取物流公司和运单号
+        orderData.logisticsCompany = orderData.logisticsCompany || orderData.expressCompany || orderData.courierCompany || '';
+        orderData.trackingNumber = orderData.trackingNumber || orderData.expressNo || orderData.waybillNo || orderData.logisticsNo || '';
 
         // 已取消订单：获取取消时间
         if (orderData.isCancelledOrder) {
@@ -150,6 +189,7 @@ Page({
           }
         }
 
+        // 先设置基本数据（包含物流信息）
         this.setData({ order: orderData, loading: false });
 
         if (orderData.status === 'pending') {
@@ -171,6 +211,13 @@ Page({
         const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending'];
         if (refundableStatuses.includes(orderData.status)) {
           this._loadRefundInfo(orderId);
+        }
+
+        // 加载物流信息（商品订单且非取消状态）- 异步加载补充数据
+        if (orderData.isGoodsOrder && !orderData.isCancelledOrder &&
+            (orderData.status === 'paid' || orderData.status === 'shipping' || orderData.status === 'completed')) {
+          // 始终加载物流轨迹，确保显示最新数据
+          this._loadLogisticsInfo(orderId);
         }
       })
       .catch((err) => {
@@ -263,8 +310,83 @@ Page({
     });
   },
 
+  // 保存活动二维码到本地
+  saveQrcode() {
+    const { order } = this.data;
+    if (!order.qrcode) {
+      wx.showToast({ title: '暂无二维码', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: '保存中...' });
+    wx.downloadFile({
+      url: order.qrcode,
+      success: (res) => {
+        wx.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => {
+            wx.hideLoading();
+            wx.showToast({ title: '已保存到相册', icon: 'success' });
+          },
+          fail: (err) => {
+            wx.hideLoading();
+            if (err.errMsg && err.errMsg.includes('auth deny')) {
+              wx.showModal({
+                title: '需要授权',
+                content: '请允许保存图片到相册',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    wx.openSetting();
+                  }
+                }
+              });
+            } else {
+              wx.showToast({ title: '保存失败', icon: 'none' });
+            }
+          }
+        });
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '下载失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 模拟发货
+  markShipping() {
+    const { order } = this.data;
+    wx.showModal({
+      title: '确认发货',
+      content: `确定要标记此订单为已发货吗？\n收货地址：${order.shippingAddress ? order.shippingAddress.name + ' ' + order.shippingAddress.phone + ' ' + order.shippingAddress.address : '未设置'}`,
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '发货中...' });
+          api.order.updateStatus(order.id, 'shipped')
+            .then(() => {
+              wx.hideLoading();
+              wx.showToast({ title: '发货成功', icon: 'success' });
+              this.getOrderDetail(order.id);
+            })
+            .catch((err) => {
+              wx.hideLoading();
+              wx.showToast({ title: err.message || '发货失败', icon: 'none' });
+            });
+        }
+      }
+    });
+  },
+
   goToOrders() {
     wx.navigateTo({ url: '/user-pages/orders/orders' });
+  },
+
+  // 跳转到物流详情
+  goToLogisticsDetail() {
+    const { order } = this.data;
+    if (!order || !order.id) return;
+    wx.navigateTo({
+      url: `/user-pages/logistics-detail/logistics-detail?orderId=${order.id}`
+    });
   },
 
   goBack() {
@@ -315,6 +437,81 @@ Page({
         }
       }
     });
+  },
+
+  // 加载物流信息
+  _loadLogisticsInfo(orderId) {
+    console.log('开始加载物流信息，订单ID:', orderId);
+    
+    // 获取物流详情（公司、运单号等）
+    api.logistics.getDetail(orderId)
+      .then((logisticsData) => {
+        console.log('物流详情数据:', logisticsData);
+        if (logisticsData) {
+          const updates = {};
+          
+          // 更新物流公司和运单号 - 兼容多种字段名
+          const company = logisticsData.companyName || logisticsData.courierCompany || logisticsData.expressCompany || logisticsData.logisticsCompany;
+          if (company) {
+            updates['order.logisticsCompany'] = company;
+          }
+          
+          const waybill = logisticsData.waybillNo || logisticsData.expressNo || logisticsData.trackingNumber || logisticsData.logisticsNo || logisticsData.waybillNumber;
+          if (waybill) {
+            updates['order.trackingNumber'] = waybill;
+          }
+          
+          // 更新物流状态
+          if (logisticsData.status) {
+            updates['order.logisticsStatus'] = logisticsData.status;
+          }
+          
+          console.log('物流详情更新:', updates);
+          this.setData(updates);
+        }
+      })
+      .catch((err) => {
+        console.error('获取物流详情失败:', err);
+      });
+
+    // 获取物流轨迹
+    api.logistics.getTrace(orderId)
+      .then((traceData) => {
+        console.log('物流轨迹数据:', traceData);
+        let trace = [];
+        
+        // 解析多种返回格式
+        if (Array.isArray(traceData)) {
+          trace = traceData;
+        } else if (traceData && Array.isArray(traceData.trace)) {
+          trace = traceData.trace;
+        } else if (traceData && Array.isArray(traceData.logistics)) {
+          trace = traceData.logistics;
+        } else if (traceData && Array.isArray(traceData.traces)) {
+          trace = traceData.traces;
+        } else if (traceData && Array.isArray(traceData.list)) {
+          trace = traceData.list;
+        } else if (traceData && traceData.data && Array.isArray(traceData.data)) {
+          trace = traceData.data;
+        }
+        
+        // 标准化物流轨迹数据格式
+        trace = trace.map(item => ({
+          desc: item.desc || item.description || item.content || item.detail || item.status || '物流状态更新',
+          time: item.time || item.createTime || item.datetime || item.timestamp || item.date || ''
+        }));
+        
+        console.log('解析后的物流轨迹:', trace);
+        
+        if (trace.length > 0) {
+          this.setData({
+            'order.logistics': trace
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('获取物流轨迹失败:', err);
+      });
   },
 
   // 加载退款信息

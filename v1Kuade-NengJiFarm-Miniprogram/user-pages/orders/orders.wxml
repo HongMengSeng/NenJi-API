@@ -61,10 +61,17 @@
         <view class="order-card" wx:for="{{orders}}" wx:key="id">
           <view class="order-header" bindtap="viewOrderDetail" data-order-id="{{item.id}}">
             <view class="order-top">
-              <view class="order-type" wx:if="{{item.type}}">
-                <text class="type-tag">{{item.typeText}}</text>
+              <view class="order-type-id">
+                <view class="order-type" wx:if="{{item.type}}">
+                  <text class="type-tag">{{item.typeText}}</text>
+                </view>
+                <view class="order-id-wrap">
+                  <view class="table-badge" wx:if="{{item.type === 'food' && item.tableNo}}">
+                    <text class="table-badge-text">{{item.tableNo}}</text>
+                  </view>
+                  <view class="order-id">{{item.orderNumber}}</view>
+                </view>
               </view>
-              <view class="order-id">订单号：{{item.orderNumber}}</view>
               <view class="order-status-text" wx:if="{{item.statusText}}">
                 <text class="status-tag status-{{item.status}}">{{item.statusText}}</text>
               </view>

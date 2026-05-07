@@ -106,7 +106,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
         if (res.statusCode !== 200) {
           const msg = `请求失败 (${res.statusCode})`;
           console.error('HTTP 错误:', res.statusCode, res.data);
-          wx.showToast({ title: msg, icon: 'none' });
           reject({ code: res.statusCode, message: msg });
           return;
         }
@@ -116,7 +115,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
           resolve(res.data.data);
         } else {
           const msg = res.data && res.data.message ? res.data.message : '请求出错';
-          wx.showToast({ title: msg, icon: 'none' });
           reject(res.data);
         }
       },
@@ -126,7 +124,6 @@ function request({ url, method = 'GET', data = {}, header = {}, showLoading = tr
 
         // 处理网络错误
         console.error('网络错误:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
         reject(err);
       }
     });

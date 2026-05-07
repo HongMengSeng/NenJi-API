@@ -8,7 +8,8 @@ Page({
     logisticsTrace: [],
     shippingAddress: null,
     orderItems: [],
-    statusIcon: '🚚'
+    statusIcon: '🚚',
+    statusHint: '您的包裹正在运输中'
   },
 
   onLoad(options) {
@@ -88,16 +89,27 @@ Page({
       });
   },
 
+  // 根据状态获取图标和提示语
+  _getStatusMeta(status) {
+    const map = {
+      'pending':      { icon: '📦', hint: '商家正在准备发货' },
+      'paid':         { icon: '📦', hint: '商家正在准备发货' },
+      'picked':       { icon: '📦', hint: '快递员已揽收' },
+      'shipping':     { icon: '🚚', hint: '您的包裹正在运输中' },
+      'transporting': { icon: '🚚', hint: '您的包裹正在运输中' },
+      'delivering':   { icon: '🚚', hint: '快递员正在派送中' },
+      'delivered':    { icon: '✅', hint: '包裹已签收' },
+      'completed':    { icon: '✅', hint: '包裹已签收' },
+      'signed':       { icon: '✅', hint: '包裹已签收' }
+    };
+    return map[status] || { icon: '🚚', hint: '物流信息更新中' };
+  },
+
   // 设置物流数据
   setLogisticsData(data) {
-    let statusIcon = '🚚';
-    if (data.status === 'delivered' || data.status === 'completed') {
-      statusIcon = '✅';
-    } else if (data.status === 'shipping' || data.status === 'transporting') {
-      statusIcon = '🚚';
-    } else if (data.status === 'picked') {
-      statusIcon = '📦';
-    }
+    const meta = this._getStatusMeta(data.status);
+    const statusIcon = meta.icon;
+    const statusHint = meta.hint;
 
     // 处理商品图片
     let processedItems = [];
@@ -113,6 +125,7 @@ Page({
       shippingAddress: data.shippingAddress || null,
       orderItems: processedItems,
       statusIcon: statusIcon,
+      statusHint: statusHint,
       loading: false
     });
   },
@@ -150,11 +163,29 @@ Page({
       }));
     }
     
+    // 判断订单状态
+    const orderStatus = orderData ? orderData.status : '';
+    const isPaidOnly = orderStatus === 'paid';
+    
+    // 确定状态
+    let status = 'shipping';
+    let statusText = '运输中';
+    if (isPaidOnly) {
+      status = 'pending';
+      statusText = '待发货';
+    } else if (orderData && (orderData.status === 'completed' || orderData.status === 'delivered')) {
+      status = 'delivered';
+      statusText = '已签收';
+    }
+
+    const meta = this._getStatusMeta(status);
+
     const logisticsData = {
-      companyName: '顺丰速运',
-      waybillNo: orderId,
-      status: 'shipping',
-      statusText: '运输中',
+      companyName: isPaidOnly ? '' : '顺丰速运',
+      companyPhone: isPaidOnly ? '' : '95338',
+      waybillNo: isPaidOnly ? '' : orderId,
+      status: status,
+      statusText: statusText,
       shippingAddress: orderData ? orderData.shippingAddress : {
         name: '收货人',
         phone: '13800138000',
@@ -163,18 +194,12 @@ Page({
       items: processedItems
     };
 
-    let statusIcon = '🚚';
-    if (orderData && (orderData.status === 'completed' || orderData.status === 'delivered')) {
-      statusIcon = '✅';
-      logisticsData.status = 'delivered';
-      logisticsData.statusText = '已签收';
-    }
-
     this.setData({
       logisticsInfo: logisticsData,
       shippingAddress: logisticsData.shippingAddress,
       orderItems: logisticsData.items,
-      statusIcon: statusIcon,
+      statusIcon: meta.icon,
+      statusHint: meta.hint,
       loading: false
     });
   },
@@ -222,8 +247,9 @@ Page({
   },
 
   callCompany() {
+    const phone = this.data.logisticsInfo.companyPhone || '95338';
     wx.makePhoneCall({
-      phoneNumber: '95338' // 顺丰客服
+      phoneNumber: phone
     });
   },
 
@@ -231,4 +257,3 @@ Page({
     wx.navigateBack();
   }
 });
-
