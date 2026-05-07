@@ -168,7 +168,7 @@
               <text wx:if="{{selectedAddress === item.id}}" class="address-check">✓</text>
             </view>
           </view>
-          <button class="add-address-btn" bindtap="addAddress">添加或修改地址</button>
+          <button class="add-address-btn" bindtap="addAddress">添加更多地址</button>
         </view>
         <!-- 默认只显示一条地址 -->
         <view class="address-list" wx:else>

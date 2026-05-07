@@ -1,4 +1,4 @@
-﻿const api = require('../../utils/api');
+const api = require('../../utils/api');
 const QQMapWX = require('../../utils/qqmap-wx-jssdk.min.js');
 
 Page({
@@ -166,7 +166,7 @@ Page({
         
         // 解析逻辑封装
         const parseAddress = (fullAddress, name) => {
-          let province = '', city = '', district = '', detail = name || '';
+          let province = '', city = '', district = '', detail = '';
           
           // 1. 提取省份/直辖市
           const pMatch = fullAddress.match(/^(.+?省|.+?自治区|北京市|天津市|上海市|重庆市)/);
@@ -201,8 +201,7 @@ Page({
           'formData.province': parsed.province,
           'formData.city': parsed.city,
           'formData.district': parsed.district,
-          'formData.address': res.address,
-          'formData.detail': res.name
+          'formData.address': res.address
         });
       }
     });
