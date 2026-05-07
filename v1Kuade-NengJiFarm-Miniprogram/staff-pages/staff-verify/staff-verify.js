@@ -41,7 +41,6 @@ Page({
    */
   scanCode() {
     wx.scanCode({
-      onlyFromCamera: true,
       scanType: ['qrCode'],
       success: (res) => {
         console.log('扫码结果:', res.result);

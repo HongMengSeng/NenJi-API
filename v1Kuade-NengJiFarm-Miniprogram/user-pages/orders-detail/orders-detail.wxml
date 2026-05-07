@@ -73,14 +73,14 @@
     </view>
   </view>
 
-  <!-- 物流信息 -->
-  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed')}}" class="card">
+  <!-- 物流信息（整张卡片可点击跳转到物流详情） -->
+  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed')}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
         <text class="card-title-text">物流信息</text>
       </view>
-      <text class="card-title-arrow" bindtap="goToLogisticsDetail">查看详情 ›</text>
+      <text class="card-title-arrow">查看详情 ›</text>
     </view>
     <view class="card-body logistics-card-body">
       <!-- 快递公司和运单号（基础物流信息） -->

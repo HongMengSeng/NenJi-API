@@ -158,14 +158,25 @@
       </block>
     </block>
 
-    <!-- 上拉加载状态 -->
-    <view class="load-more-tip" wx:if="{{orders.length > 0}}">
-      <view wx:if="{{loadingMore}}">
-        <view class="loading-spinner small"></view>
-        <text class="load-more-text">加载中...</text>
+    <!-- 分页导航 -->
+    <view wx:if="{{orders.length > 0 && !searchKeyword}}" class="pagination-bar">
+      <view class="pagination-controls">
+        <view class="pagination-btn {{currentPage <= 1 ? 'disabled' : ''}}" bindtap="loadPrevPage">
+          <text class="pagination-arrow">‹</text>
+          <text class="pagination-btn-text">上一页</text>
+        </view>
+        <view class="pagination-info">
+          <text class="pagination-page">第 {{currentPage}} 页</text>
+          <text class="pagination-divider">/</text>
+          <text class="pagination-total" wx:if="{{totalOrders > 0}}">共 {{totalOrders}} 单</text>
+        </view>
+        <view class="pagination-btn {{!hasMore ? 'disabled' : ''}}" bindtap="loadNextPage">
+          <text class="pagination-btn-text">下一页</text>
+          <text class="pagination-arrow">›</text>
+        </view>
       </view>
-      <view wx:elif="{{!hasMore}}">
-        <text class="load-more-text">— 没有更多了 —</text>
+      <view wx:if="{{loadingMore}}" class="pagination-loading-hint">
+        <text class="pagination-loading-text">加载中...</text>
       </view>
     </view>
   </view>
