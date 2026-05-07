@@ -360,6 +360,43 @@
   color: #666;
 }
 
+/* 订单备注 */
+.remark-section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.remark-input-wrapper {
+  position: relative;
+  padding: 0 8rpx;
+}
+
+.remark-input {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 20rpx;
+  background-color: #FAF6F0;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #333;
+  box-sizing: border-box;
+  border: 2rpx solid transparent;
+}
+
+.remark-input:focus {
+  border-color: #D4A76A;
+}
+
+.remark-count {
+  position: absolute;
+  bottom: 16rpx;
+  right: 24rpx;
+  font-size: 22rpx;
+  color: #999;
+}
+
 /* 支付方式 */
 .payment-section {
   background-color: white;

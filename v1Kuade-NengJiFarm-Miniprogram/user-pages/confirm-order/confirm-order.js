@@ -20,7 +20,9 @@ Page({
     addressList: [],
     selectedAddress: null,
     defaultAddress: null,
-    showAllAddresses: false
+    showAllAddresses: false,
+    remark: '',
+    remarkMaxLength: 200
   },
 
   onLoad: function (options) {
@@ -143,10 +145,13 @@ Page({
 
   // 获取桌台列表
   getTableList: function () {
-    console.log('获取桌台列表');
-    // 与点餐页面保持一致，8个桌子
-    this.setData({ tableList: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ id: String(i), name: `桌台${i}` })) });
-    console.log('桌台列表已设置', this.data.tableList);
+    api.table.getList()
+      .then(data => {
+        this.setData({ tableList: (data || []).map(t => ({ id: String(t.id), name: t.name })) });
+      })
+      .catch(() => {
+        this.setData({ tableList: [] });
+      });
   },
 
   // 显示桌台选择弹窗
@@ -181,6 +186,11 @@ Page({
       icon: 'success',
       duration: 1500
     });
+  },
+
+  // 备注输入
+  onRemarkInput: function (e) {
+    this.setData({ remark: e.detail.value });
   },
 
   // 确认订单
@@ -232,6 +242,7 @@ Page({
         sourceType: 'food',
         sourceName: '点餐',
         tableId: tableNumber,
+        remark: this.data.remark,
         quantity: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
         totalPrice: items.reduce((sum, item) => {
           return sum + Number((item.price || 0).toString().replace(/[¥￥]/g, '')) * Number(item.quantity || 0);

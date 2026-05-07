@@ -358,7 +358,15 @@ const api = {
     // 旧接口兼容方法 - 通过聚合接口实现
     getCommodityList: (params = {}) => get('/api/orders', { ...params, type: 'goods' }),
     getActivityList: (params = {}) => get('/api/orders', { ...params, type: 'activity' }),
-    getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' })
+    getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' }),
+    // 模拟支付 - 兼容旧接口
+    pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data)
+  },
+
+  // 桌台相关
+  table: {
+    // 获取桌台列表
+    getList: () => get('/api/order/tables')
   },
 
   // 退款相关

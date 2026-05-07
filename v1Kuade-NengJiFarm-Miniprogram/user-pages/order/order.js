@@ -59,6 +59,10 @@ Page({
       const tableNumber = wx.getStorageSync('tableNumber');
       if (tableNumber) this.setData({ tableNumber });
       this.syncFromCart();
+      // 刷新菜品库存，确保返回时仅剩数量是最新的
+      if (this.data.categories.length > 0) {
+        this.refreshStock();
+      }
     } catch (e) {}
   },
 
@@ -194,6 +198,25 @@ Page({
     });
   },
 
+  // 后台刷新所有分类的菜品库存（不显示loading）
+  refreshStock() {
+    this.data.categories.forEach(c => {
+      let reqData = { type: 'food', pageSize: 100 };
+      if (c.id !== 'all') {
+        reqData.categoryId = c.id;
+      }
+      api.goods.getList(reqData)
+        .then(data => {
+          let refreshedGoods = this.addImageUrlsToGoods(data || []);
+          this.setData({
+            [`goodsList.${c.id}`]: refreshedGoods
+          });
+          this.updateMergedGoodsList();
+        })
+        .catch(() => {});
+    });
+  },
+
   updateMergedGoodsList() {
     const { categories, goodsList } = this.data;
     const merged = [];
@@ -220,6 +243,7 @@ Page({
       newCart[key].quantity++;
       newCart[key].count = newCart[key].quantity;
     } else {
+      if (goods.stock <= 0) return wx.showToast({ title: '库存不足', icon: 'none' });
       newCart[key] = { ...goods, quantity: 1, count: 1 };
     }
     this.syncCartState(newCart);
@@ -354,16 +378,13 @@ Page({
   },
 
   getTableList() {
-    this.setData({
-      tableList: [
-        { id: '1', name: '1号桌' },
-        { id: '2', name: '2号桌' },
-        { id: '3', name: '3号桌' },
-        { id: '5', name: '5号桌' },
-        { id: '6', name: '6号桌' },
-        { id: '8', name: '8号桌' }
-      ]
-    });
+    api.table.getList()
+      .then(data => {
+        this.setData({ tableList: (data || []).map(t => ({ id: String(t.id), name: t.name })) });
+      })
+      .catch(() => {
+        this.setData({ tableList: [] });
+      });
   },
 
   stopPropagation() { return false },
