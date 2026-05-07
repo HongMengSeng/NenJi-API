@@ -150,5 +150,16 @@
         </view>
       </block>
     </block>
+
+    <!-- 上拉加载状态 -->
+    <view class="load-more-tip" wx:if="{{orders.length > 0}}">
+      <view wx:if="{{loadingMore}}">
+        <view class="loading-spinner small"></view>
+        <text class="load-more-text">加载中...</text>
+      </view>
+      <view wx:elif="{{!hasMore}}">
+        <text class="load-more-text">— 没有更多了 —</text>
+      </view>
+    </view>
   </view>
 </view>

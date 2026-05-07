@@ -23,11 +23,14 @@
           <text>订单已取消</text>
         </view>
         <view wx:elif="{{order.status === 'paid'}}" class="status-sub-text">支付成功，等待商家处理</view>
+        <view wx:elif="{{order.status === 'ordered'}}" class="status-sub-text">已支付，等待厨房制作</view>
+        <view wx:elif="{{order.status === 'verify_pending'}}" class="status-sub-text">已支付，请到场核销</view>
+        <view wx:elif="{{order.status === 'verified'}}" class="status-sub-text">已核销，感谢参与</view>
       </view>
     </view>
 
     <!-- 活动核销二维码 -->
-    <view wx:if="{{order.isActivityOrder && order.status !== 'pending' && order.status !== 'cancelled'}}" class="qrcode-area">
+    <view wx:if="{{order.isActivityOrder && (order.status === 'verify_pending' || order.status === 'verified')}}" class="qrcode-area">
       <view class="qrcode-divider"></view>
       <view class="qrcode-title">活动核销二维码</view>
       <image class="qrcode-img" src="{{order.qrcode}}" mode="aspectFit" />
@@ -139,7 +142,7 @@
         <view class="addr-content">
           <view class="addr-row">
             <text class="addr-name">桌号</text>
-            <text class="addr-phone">{{order.tableNumber || '-'}}</text>
+            <text class="addr-phone">{{order.diningTableNo || '-'}}</text>
           </view>
         </view>
       </view>
@@ -249,12 +252,12 @@
 
   <!-- 底部操作栏（固定） -->
   <view class="bottom-bar">
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'paid'}}" class="btn btn-ghost" bindtap="markShipping">模拟发货</button>
+    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'paid'}}" class="btn btn-ghost" bindtap="markShipping">模拟发货</button>
     <!-- 有退款申请时，显示退款详情按钮，不再显示申请退款 -->
     <button wx:if="{{order.hasRefund && order.refundInfo}}" class="btn btn-ghost" bindtap="_showRefundDetail">退款详情</button>
-    <!-- 无退款申请，且订单可申请退款 -->
-    <button wx:elif="{{!order.hasRefund && (order.status === 'paid' || order.status === 'shipping')}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
-    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
+    <!-- 无退款申请，且订单可申请退款：商品(paid/shipping)、点餐(ordered)、活动(verify_pending) -->
+    <button wx:elif="{{!order.hasRefund && (order.status === 'paid' || order.status === 'shipping' || order.status === 'ordered' || order.status === 'verify_pending')}}" class="btn btn-ghost" bindtap="applyRefund">申请退款</button>
+    <button wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isFoodOrder && order.status === 'shipping'}}" class="btn btn-ghost" bindtap="confirmReceipt">确认收货</button>
     <button wx:if="{{order.status === 'cancelled'}}" class="btn btn-danger" bindtap="deleteOrder">删除订单</button>
     <button wx:if="{{order.status === 'pending'}}" class="btn btn-primary" bindtap="payOrder">立即支付</button>
   </view>

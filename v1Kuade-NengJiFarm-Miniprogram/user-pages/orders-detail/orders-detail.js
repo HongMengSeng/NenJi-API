@@ -162,12 +162,14 @@ Page({
           this.setData({ countdownText: '', remainingTime: 0 });
         }
 
-        if (orderData.isActivityOrder && orderData.status !== 'pending' && orderData.status !== 'cancelled') {
+        // 活动订单：待核销/已核销状态加载二维码
+        if (orderData.isActivityOrder && (orderData.status === 'verify_pending' || orderData.status === 'verified')) {
           this.getActivityOrderQrcode(orderId, orderData);
         }
 
-        // 加载退款信息（仅 paid/shipping 状态需要查询）
-        if (orderData.status === 'paid' || orderData.status === 'shipping') {
+        // 加载退款信息（商品: paid/shipping, 点餐: ordered, 活动: verify_pending）
+        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending'];
+        if (refundableStatuses.includes(orderData.status)) {
           this._loadRefundInfo(orderId);
         }
       })
@@ -255,7 +257,10 @@ Page({
   },
 
   payOrder() {
-    wx.navigateTo({ url: `/user-pages/pay/pay?orderId=${this.data.order.id}` });
+    const order = this.data.order;
+    wx.navigateTo({
+      url: `/user-pages/pay/pay?orderId=${order.id}&type=${order.type || 'goods'}`
+    });
   },
 
   goToOrders() {

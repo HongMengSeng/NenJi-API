@@ -1,8 +1,12 @@
 ﻿const apiModule = require('./api');
 const api = apiModule.api;
 
-const ORDER_TIMEOUT_MINUTES = 1;
+const ORDER_TIMEOUT_MINUTES = 30;
 const ORDER_TIMEOUT_MS = ORDER_TIMEOUT_MINUTES * 60 * 1000;
+
+// 注意：修改超时时间后，需要清除本地存储的已取消订单记录
+// 否则之前已标记为取消的订单不会重新触发超时
+// 清除方法：wx.removeStorageSync('order_cancelled_timers')
 
 
 class OrderTimer {
@@ -41,17 +45,26 @@ class OrderTimer {
       return createTime;
     }
     
-    let date = new Date(createTime);
+    // iOS 兼容性处理：将 "yyyy-MM-dd HH:mm:ss" 转换为 "yyyy/MM/dd HH:mm:ss"
+    let dateStr = createTime;
+    if (typeof createTime === 'string') {
+      dateStr = createTime.replace(/-/g, '/');
+    }
+    
+    const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
-      // 只有当是字符串时才尝试 match
-      if (typeof createTime === 'string') {
-        const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
-        if (parts) {
-          date = new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]);
-        }
+      return date.getTime();
+    }
+    
+    // 兜底：尝试用正则解析
+    if (typeof createTime === 'string') {
+      const parts = createTime.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+      if (parts) {
+        return new Date(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6]).getTime();
       }
     }
-    return date.getTime();
+    
+    return Date.now();
   }
 
   getRemainingTime(createTime) {

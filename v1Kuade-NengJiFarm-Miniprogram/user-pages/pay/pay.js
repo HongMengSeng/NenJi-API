@@ -12,6 +12,10 @@ Page({
     loading: false,
     // 支付状态
     payStatus: 'pending', // pending, success, failed
+    // 失败原因（用于显示友好提示）
+    failReason: '',
+    // 失败详情
+    failDetail: '',
     activityId: '',
     clearCartList: false
   },
@@ -62,20 +66,43 @@ Page({
 
     api.order.getDetail(this.data.orderId)
       .then((orderData) => {
+        console.log('[支付页] 订单详情:', orderData);
+
+        // 兼容响应包装：如果返回 { code, data } 结构，取 data
+        const order = orderData.data || orderData;
+        console.log('[支付页] 解析后订单:', order, 'status:', order.status, 'type:', order.type);
+
         // 验证订单状态（只能支付待付款订单）
-        if (orderData.status !== 'pending') {
-          throw new Error('订单状态异常，无法支付');
+        // 兼容数字和字符串状态：1/'pending' 都视为待付款
+        const pendingStatuses = ['pending', 1, '1'];
+        if (!pendingStatuses.includes(order.status)) {
+          // 根据状态设置友好提示
+          const statusTips = {
+            'cancelled': '订单已取消，请重新下单',
+            'paid': '订单已支付，无需重复支付',
+            'ordered': '订单已支付，无需重复支付',
+            'shipping': '订单已发货，无法支付',
+            'completed': '订单已完成，无法支付',
+            'refunding': '订单退款中，无法支付',
+            'refunded': '订单已退款，请重新下单'
+          };
+          const tip = statusTips[order.status] || `订单状态异常(${order.status})，无法支付`;
+          this.setData({
+            failReason: tip,
+            failDetail: `当前状态：${order.status}`
+          });
+          throw new Error(tip);
         }
 
         // 从订单数据中提取金额
-        const amount = Number(orderData.totalPrice || orderData.totalAmount || 0);
+        const amount = Number(order.totalPrice || order.totalAmount || 0);
         if (amount <= 0) {
           throw new Error('订单金额异常');
         }
 
         // 如果未指定类型，从订单数据中获取
-        if (!this.data.orderType && orderData.type) {
-          this.setData({ orderType: orderData.type });
+        if (!this.data.orderType && order.type) {
+          this.setData({ orderType: order.type });
         }
 
         this.setData(
@@ -85,10 +112,16 @@ Page({
       })
       .catch((err) => {
         console.error('获取订单信息失败:', err);
+        const reason = err.message || '订单信息获取失败';
+        // 如果还没有设置 failReason（状态异常时已设置），则使用错误消息
+        if (!this.data.failReason) {
+          this.setData({ failReason: reason });
+        }
         this.setData({ payStatus: 'failed' });
         wx.showToast({
-          title: err.message || '订单信息获取失败',
-          icon: 'none'
+          title: reason,
+          icon: 'none',
+          duration: 3000
         });
       })
       .finally(() => {
@@ -123,7 +156,18 @@ Page({
             signType: payParams.signType || 'HMAC-SHA256',
             paySign: payParams.paySign,
             success: () => {
-              this.handlePaySuccess();
+              // 微信支付成功，先通知后端更新订单状态
+              // 因为开发环境 notify_url 无法回调到本地服务器
+              api.order.pay(this.data.orderId, { paymentMethod: 'wechat' })
+                .then(() => {
+                  console.log('后端订单状态更新成功');
+                  this.handlePaySuccess();
+                })
+                .catch((err) => {
+                  console.error('后端订单状态更新失败:', err);
+                  // 即使后端更新失败，也视为支付成功（用户已付款）
+                  this.handlePaySuccess();
+                });
             },
             fail: (err) => {
               console.error('微信支付失败:', err);
@@ -222,6 +266,13 @@ Page({
   retryPay: function () {
     this.setData({ payStatus: 'pending' });
     this.startPayment();
+  },
+
+  // 重新下单
+  goOrderAgain: function () {
+    wx.switchTab({
+      url: '/pages/index/index'
+    });
   }
 });
 

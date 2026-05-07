@@ -419,3 +419,24 @@
   font-size: 24rpx;
   color: #999;
 }
+
+/* 上拉加载状态提示 */
+.load-more-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx 0 60rpx;
+  text-align: center;
+}
+
+.load-more-tip .loading-spinner.small {
+  width: 32rpx;
+  height: 32rpx;
+  border-width: 3rpx;
+  margin-bottom: 16rpx;
+}
+
+.load-more-text {
+  font-size: 24rpx;
+  color: #999;
+}
