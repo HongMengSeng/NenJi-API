@@ -36,6 +36,19 @@ Page({
     this.restoreCart();
     this.getUserAddressList();
     this.loadTableNumber();
+    
+    // 检查是否有从地址选择页面返回的选中地址
+    const selectedAddressId = wx.getStorageSync('selectedAddressId');
+    if (selectedAddressId) {
+      wx.removeStorageSync('selectedAddressId');
+      // 更新选中的地址
+      this.setData({
+        selectedAddress: selectedAddressId
+      });
+      // 刷新地址列表以更新默认地址显示
+      this.getUserAddressList();
+    }
+    
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().init();
     }
@@ -393,16 +406,34 @@ Page({
         name: address.name || '',
         phone: address.phone || '',
         address: address.address || '',
+        detail: address.detail || '',
         isDefault: address.isDefault || false
       }));
 
       const defaultAddress = processedAddressList.find(item => item.isDefault) || (processedAddressList.length > 0 ? processedAddressList[0] : null);
-      const selectedAddress = defaultAddress ? defaultAddress.id : null;
+      
+      // 优先使用已选中的地址，如果没有选中的地址则使用默认地址
+      let selectedAddress = this.data.selectedAddress;
+      if (!selectedAddress && defaultAddress) {
+        selectedAddress = defaultAddress.id;
+      }
+      
+      // 确保选中的地址存在于地址列表中
+      const isValidAddress = processedAddressList.some(item => item.id === selectedAddress);
+      if (!isValidAddress && defaultAddress) {
+        selectedAddress = defaultAddress.id;
+      }
+
+      // 更新默认地址显示为选中的地址
+      let displayAddress = defaultAddress;
+      if (selectedAddress) {
+        displayAddress = processedAddressList.find(item => item.id === selectedAddress) || defaultAddress;
+      }
 
       this.setData({
         addressList: processedAddressList,
         selectedAddress,
-        defaultAddress
+        defaultAddress: displayAddress
       });
     }).catch((err) => {
       console.error('获取地址列表失败:', err);
@@ -441,10 +472,10 @@ Page({
     this.setData({ addressList, selectedAddress: id, defaultAddress });
   },
 
-  // ========== 跳转到地址管理页面 ==========
+  // ========== 跳转到地址选择页面 ==========
   goToAddress() {
     wx.navigateTo({
-      url: '/user-pages/address/address'
+      url: '/user-pages/address/address?from=buy'
     });
   },
 
@@ -639,10 +670,11 @@ Page({
     // 保存当前购物车状态，确保选中状态不会丢失
     this.syncCart(this.data.cartList);
     
-    // 关闭分别结算弹窗，显示确认购买弹窗
-    this.setData({ showSeparateSettleModal: false }, () => {
-      this.setData({ showModal: true });
-    });
+    // 关闭分别结算弹窗
+    this.setData({ showSeparateSettleModal: false });
+    
+    // 直接创建订单并拉起支付
+    this.createGoodsOrder();
   },
 
   // ========== 创建商品订单 ==========

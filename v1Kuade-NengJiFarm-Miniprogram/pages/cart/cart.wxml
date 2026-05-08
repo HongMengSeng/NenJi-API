@@ -145,22 +145,20 @@
     </view>
     <view class="modal-body">
       <!-- 收货地址 -->
-      <view class="address-section">
-        <view class="address-header">
-          <text class="address-title">收货地址</text>
+      <view class="buy-address-section">
+        <view class="buy-section-title">
+          <text>收货地址</text>
         </view>
-        <!-- 显示默认地址，点击跳转到地址管理页面 -->
-        <view class="address-list">
-          <view wx:if="{{defaultAddress}}" bindtap="goToAddress">
-            <view class="address-item active">
-              <view class="address-info">
-                <view class="address-top-row">
-                  <text class="address-name">{{defaultAddress.name}}</text>
-                  <text wx:if="{{defaultAddress.isDefault}}" class="default-tag">默认</text>
-                </view>
-                <text class="address-phone">{{defaultAddress.phone}}</text>
-                <text class="address-detail">{{defaultAddress.address}}</text>
-              </view>
+        <view class="buy-address-list">
+          <view wx:if="{{defaultAddress}}" class="buy-address-item active" bindtap="goToAddress">
+            <view class="address-info">
+              <view class="address-name">{{defaultAddress.name}}</view>
+              <view class="address-phone">{{defaultAddress.phone}}</view>
+              <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
+            </view>
+            <view class="address-actions">
+              <view class="address-check">✓</view>
+              <view class="address-arrow">›</view>
             </view>
           </view>
           <view wx:else class="no-address">
