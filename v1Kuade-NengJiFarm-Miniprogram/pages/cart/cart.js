@@ -647,9 +647,6 @@ Page({
 
   // ========== 创建商品订单 ==========
   createGoodsOrder() {
-    // 先同步保存当前购物车状态，确保数据一致
-    this.syncCart(this.data.cartList);
-    
     const { cartList, selectedAddress } = this.data;
     const items = cartList.filter(i => i.checked && i.type === 'goods');
     
@@ -677,13 +674,20 @@ Page({
           return;
         }
         
+        // 创建订单成功后，移除已选中的商品
+        const remainingItems = cartList.filter(i => !(i.checked && i.type === 'goods'));
+        this.setData({ cartList: remainingItems });
+        this.groupItemsByRegion(remainingItems);
+        this.calcTotal();
+        this.syncCart(remainingItems);
+        
         // 计算订单金额
         const totalPrice = items.reduce((sum, item) => {
           return sum + Number(item.price || 0) * Number(item.count || 1);
         }, 0);
         
-        // 创建订单成功后，保存购物车状态（不清空），然后跳转到支付页面
-        this.syncCart(this.data.cartList);
+        // 关闭弹窗并跳转到支付页面
+        this.setData({ showModal: false });
         wx.redirectTo({
           url: `/user-pages/pay/pay?orderId=${orderId}&type=goods&totalPrice=${totalPrice}`
         });
