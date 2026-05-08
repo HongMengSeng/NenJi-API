@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s --connect-timeout 3 http://192.168.203.56/api/order/table-qrcodes)",
+      "Bash(curl -s -I -X OPTIONS http://192.168.203.56/api/order/table-qrcodes -H \"Origin: http://127.0.0.1:5500\" -H \"Access-Control-Request-Method: GET\")"
+    ]
+  }
+}

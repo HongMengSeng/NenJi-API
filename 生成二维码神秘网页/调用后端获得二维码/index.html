@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>桌台二维码管理</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" onerror="window._qrLibFailed=true"></script>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>桌台二维码管理系统</h1>
+  <p>生成 / 查看各桌台微信小程序二维码，扫码即可绑定桌台号进入点餐</p>
+</div>
+
+<div class="config-bar">
+  <label>API 地址：</label>
+  <input id="apiBase" value="http://192.168.203.56/api/order" placeholder="例如 http://192.168.203.56/api/order" />
+  <button class="btn btn-outline btn-sm" id="btnConnect">连接</button>
+  <button class="btn btn-outline btn-sm" id="btnLocalMode">离线生成</button>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn btn-primary" id="btnLoadApi">从 API 加载</button>
+    <button class="btn btn-outline" id="btnGenerateAll">本地生成全部</button>
+    <button class="btn btn-outline" id="btnPrint">打印 / PDF</button>
+  </div>
+  <div class="toolbar-right">
+    <span id="tableCount">共 0 张桌台</span>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="status-dot offline" id="statusDot"></span>
+  <span id="statusText">未连接</span>
+  <span id="modeText">离线模式</span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
