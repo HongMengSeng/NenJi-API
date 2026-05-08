@@ -543,7 +543,7 @@
 								<tbody>
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
-										<td>{{ user.id || '-' }}</td>
+										<td>{{ user.guid || '-' }}</td>
 										<td>{{ user.wxOpenid || '无' }}</td>
 										<td>{{ user.phone || '无' }}</td>
 										<td class="is-center">
@@ -680,9 +680,9 @@
 				},
 				normalizeUser(item) {
 					return {
-						id: item.id || item.userId || '',
-						userId: item.userId || item.id || '',
-						uniqueKey: item.id ? `user-${item.id}` : `user-${item.phone || Math.random()}`,
+						guid: item.guid || item.userId || '',
+						userId: item.userId || item.guid || '',
+						uniqueKey: item.guid ? `user-${item.guid}` : `user-${item.phone || Math.random()}`,
 						wxOpenid: item.wxOpenid || '',
 						phone: item.phone || '无',
 						gender: item.gender,
@@ -846,8 +846,8 @@
 					}
 
 					const targetUser = user && (user.role === '工作人员' || user.role === '厨师') ? user : null;
-					if (targetUser && targetUser.id) {
-						window.location.href = 'user-edit.html?id=' + encodeURIComponent(targetUser.id);
+					if (targetUser && targetUser.guid) {
+						window.location.href = 'user-edit.html?guid=' + encodeURIComponent(targetUser.guid);
 						return;
 					}
 				},
@@ -880,7 +880,7 @@
 						return;
 					}
 
-					const targetIds = this.pendingDeleteUsers.map(user => user.id).filter(Boolean);
+					const targetIds = this.pendingDeleteUsers.map(user => user.guid).filter(Boolean);
 					if (!targetIds.length) {
 						this.cancelDelete();
 						alert('未找到用户ID');

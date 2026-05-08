@@ -241,7 +241,7 @@
 				return {
 					submitting: false,
 					form: {
-						id: '',
+						guid: '',
 						phone: '',
 						realName: '',
 						gender: '',
@@ -262,13 +262,13 @@
 				}
 
 				const urlParams = new URLSearchParams(window.location.search);
-				const userId = urlParams.get('id');
+				const userId = urlParams.get('guid');
 				if (!userId) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
-				this.form.id = userId;
+				this.form.guid = userId;
 				this.loadUserData(userId);
 			},
 			methods: {
@@ -305,7 +305,7 @@
 						const records = Array.isArray(data?.data?.records)
 							? data.data.records
 							: (Array.isArray(data?.data) ? data.data : []);
-						const user = records.find(item => String(item.id) === String(id));
+						const user = records.find(item => String(item.guid) === String(id));
 
 						if (!user) {
 							this.form.errormsg = '用户不存在';
@@ -322,7 +322,7 @@
 					}
 				},
 				async updateUser() {
-					if (!this.form.id) {
+					if (!this.form.guid) {
 						this.form.errormsg = '缺少用户 ID';
 						return;
 					}
@@ -347,7 +347,7 @@
 
 					try {
 						const bodyData = {
-							id: this.form.id,
+							guid: this.form.guid,
 							phone: this.form.phone,
 							realName: this.form.realName,
 							gender: this.form.gender,
