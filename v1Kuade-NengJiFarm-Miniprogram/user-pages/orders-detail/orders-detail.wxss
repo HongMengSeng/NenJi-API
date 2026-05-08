@@ -527,6 +527,22 @@
 }
 
 /* ============================================
+   订单备注
+   ============================================ */
+.remark-body {
+  padding: 24rpx 32rpx;
+  background: #fdf9f3;
+  border-radius: 0 0 24rpx 24rpx;
+}
+
+.remark-text {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/* ============================================
    商品信息
    ============================================ */
 .goods-body {
@@ -1022,6 +1038,14 @@
   .refund-admin-reply .refund-value {
     background: #252220;
     color: #999;
+  }
+
+  .remark-body {
+    background: #1a1810;
+  }
+
+  .remark-text {
+    color: #aaa;
   }
 }
 

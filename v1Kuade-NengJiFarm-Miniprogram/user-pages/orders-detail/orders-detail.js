@@ -21,7 +21,8 @@ Page({
       items: [],
       paymentMethod: null,
       transactionId: null,
-      logistics: []
+      logistics: [],
+      remark: ''  // 订单备注
     },
     loading: true,
     countdownText: '',

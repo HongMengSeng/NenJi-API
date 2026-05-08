@@ -165,6 +165,19 @@
       </view>
     </view>
 
+    <!-- 订单备注（点餐订单） -->
+    <view wx:if="{{order.isFoodOrder && order.remark}}" class="card">
+      <view class="card-title">
+        <view class="card-title-left">
+          <view class="card-title-bar"></view>
+          <text class="card-title-text">订单备注</text>
+        </view>
+      </view>
+      <view class="card-body remark-body">
+        <text class="remark-text">{{order.remark}}</text>
+      </view>
+    </view>
+
     <!-- 商品信息 -->
     <view class="card">
       <view class="card-title">
