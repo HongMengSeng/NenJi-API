@@ -57,6 +57,16 @@ Page({
     this.updateCartCount();
     // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
     this.getAddressList();
+
+    // 检查是否有从地址选择页面返回的选中地址
+    const selectedAddressId = wx.getStorageSync('selectedAddressId');
+    if (selectedAddressId) {
+      wx.removeStorageSync('selectedAddressId');
+      // 更新选中的地址
+      this.setData({
+        selectedAddress: selectedAddressId
+      });
+    }
   },
 
   getGoodsDetail(goodsId) {
@@ -244,10 +254,25 @@ Page({
     .then(data => {
       const addressList = data || [];
       const defaultAddress = addressList.find(addr => addr.isDefault) || (addressList.length > 0 ? addressList[0] : null);
+
+      // 如果有选中的地址ID，优先使用选中的地址
+      let selectedAddressId = this.data.selectedAddress;
+      let selectedAddress = null;
+
+      if (selectedAddressId) {
+        selectedAddress = addressList.find(addr => addr.id === selectedAddressId);
+      }
+
+      // 如果没有选中的地址或选中的地址不存在，使用默认地址
+      if (!selectedAddress && defaultAddress) {
+        selectedAddressId = defaultAddress.id;
+        selectedAddress = defaultAddress;
+      }
+
       this.setData({
         addressList,
-        selectedAddress: defaultAddress ? defaultAddress.id : null,
-        defaultAddress
+        selectedAddress: selectedAddressId,
+        defaultAddress: selectedAddress || defaultAddress
       });
     })
     .catch(err => {
@@ -280,6 +305,13 @@ Page({
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
       url: `/user-pages/address-edit/address-edit?id=${id}`
+    });
+  },
+
+  // 跳转到地址选择页面
+  goToAddressSelect() {
+    wx.navigateTo({
+      url: '/user-pages/address/address?from=buy'
     });
   },
 

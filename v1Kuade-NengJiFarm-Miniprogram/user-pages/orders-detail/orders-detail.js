@@ -107,6 +107,11 @@ Page({
         // 统一订单ID字段
         orderData.id = orderData.id || orderData.orderNumber || orderId;
         orderData.orderId = orderData.orderId || orderData.id;
+
+        // 确保订单编号存在（用于显示）
+        if (!orderData.orderNumber) {
+          orderData.orderNumber = orderData.id;
+        }
         
         // 统一类型文本
         if (!orderData.typeText) {

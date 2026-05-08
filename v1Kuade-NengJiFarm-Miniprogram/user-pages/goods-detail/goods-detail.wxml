@@ -116,36 +116,17 @@
         <view class="buy-address-section">
           <view class="buy-section-title">
             <text>收货地址</text>
-            <text class="select-more-address" bindtap="toggleAddressList" wx:if="{{addressList.length > 0}}">选择更多地址</text>
           </view>
-          <view class="buy-address-list" wx:if="{{showAllAddresses}}">
-            <view class="buy-address-item {{selectedAddress === item.id ? 'active' : ''}}" 
-                  wx:for="{{addressList}}" 
-                  wx:key="id">
-              <view class="address-info" bindtap="selectAddress" data-id="{{item.id}}">
-                <view class="address-name">{{item.name}}</view>
-                <view class="address-phone">{{item.phone}}</view>
-                <view class="address-detail">{{item.address}} {{item.detail}}</view>
+          <view class="buy-address-list">
+            <view wx:if="{{defaultAddress}}" class="buy-address-item active" bindtap="goToAddressSelect">
+              <view class="address-info">
+                <view class="address-name">{{defaultAddress.name}}</view>
+                <view class="address-phone">{{defaultAddress.phone}}</view>
+                <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
               </view>
               <view class="address-actions">
-                <view class="address-check" wx:if="{{selectedAddress === item.id}}">✓</view>
-                <view class="address-edit" bindtap="editAddress" data-id="{{item.id}}">编辑</view>
-              </view>
-            </view>
-            <button class="add-address-btn" bindtap="addAddress">添加地址</button>
-          </view>
-          <view class="buy-address-list" wx:else>
-            <view wx:if="{{defaultAddress}}">
-              <view class="buy-address-item active">
-                <view class="address-info">
-                  <view class="address-name">{{defaultAddress.name}}</view>
-                  <view class="address-phone">{{defaultAddress.phone}}</view>
-                  <view class="address-detail">{{defaultAddress.address}} {{defaultAddress.detail}}</view>
-                </view>
-                <view class="address-actions">
-                  <view class="address-check">✓</view>
-                  <view class="address-edit" bindtap="editAddress" data-id="{{defaultAddress.id}}">编辑</view>
-                </view>
+                <view class="address-check">✓</view>
+                <view class="address-arrow">›</view>
               </view>
             </view>
             <view wx:else class="no-address">

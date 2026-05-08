@@ -40,19 +40,13 @@ Page({
 
   selectAddress: function (e) {
     const addressId = e.currentTarget.dataset.id;
-    
+
     // 如果是从购买页面跳转过来的，选择地址后返回购买页
     if (this.data.from === 'buy') {
+      // 将选中的地址ID存储到storage，供上一个页面读取
+      wx.setStorageSync('selectedAddressId', addressId);
       wx.navigateBack({
-        delta: 1,
-        success: () => {
-          // 触发上一个页面的地址选择事件
-          const pages = getCurrentPages();
-          const prevPage = pages[pages.length - 2];
-          if (prevPage) {
-            prevPage.setData({ selectedAddress: addressId });
-          }
-        }
+        delta: 1
       });
     } else {
       // 否则跳转到编辑页

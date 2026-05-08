@@ -237,18 +237,53 @@
         </view>
       </view>
       <view class="card-body rows">
-        <view class="row" wx:if="{{order.orderNumber || order.id}}">
+        <!-- 订单编号（所有订单类型都显示） -->
+        <view class="row">
           <text class="row-lbl">订单编号</text>
           <text class="row-val row-val-sm">{{order.orderNumber || order.id}}</text>
         </view>
-        <!-- 已取消订单只显示订单编号和取消时间 -->
+
+        <!-- 已取消订单：只显示订单编号和取消时间 -->
         <block wx:if="{{order.isCancelledOrder}}">
           <view class="row" wx:if="{{order.cancelTime}}">
             <text class="row-lbl">取消时间</text>
             <text class="row-val">{{order.cancelTime}}</text>
           </view>
         </block>
-        <!-- 其他状态显示完整订单信息 -->
+
+        <!-- 待支付订单：只显示订单编号和下单时间 -->
+        <block wx:elif="{{order.status === 'pending'}}">
+          <view class="row" wx:if="{{order.createTime}}">
+            <text class="row-lbl">下单时间</text>
+            <text class="row-val">{{order.createTime}}</text>
+          </view>
+        </block>
+
+        <!-- 已完成订单：显示完整信息包括交易流水号 -->
+        <block wx:elif="{{order.status === 'completed'}}">
+          <view class="row" wx:if="{{order.createTime}}">
+            <text class="row-lbl">下单时间</text>
+            <text class="row-val">{{order.createTime}}</text>
+          </view>
+          <view class="row" wx:if="{{order.paymentTime}}">
+            <text class="row-lbl">支付时间</text>
+            <text class="row-val">{{order.paymentTime}}</text>
+          </view>
+          <view class="row" wx:if="{{order.completeTime}}">
+            <text class="row-lbl">完成时间</text>
+            <text class="row-val">{{order.completeTime}}</text>
+          </view>
+          <view class="row" wx:if="{{order.paymentMethod}}">
+            <text class="row-lbl">支付方式</text>
+            <text class="row-val">{{order.paymentMethod}}</text>
+          </view>
+          <view class="row" wx:if="{{order.transactionId}}">
+            <text class="row-lbl">交易流水号</text>
+            <text class="row-val row-val-sm">{{order.transactionId}}</text>
+          </view>
+        </block>
+
+        <!-- 其他状态（支付中、配送中等）：显示基本信息 -->
         <block wx:else>
           <view class="row" wx:if="{{order.createTime}}">
             <text class="row-lbl">下单时间</text>
@@ -262,17 +297,9 @@
             <text class="row-lbl">发货时间</text>
             <text class="row-val">{{order.shippingTime}}</text>
           </view>
-          <view class="row" wx:if="{{order.completeTime}}">
-            <text class="row-lbl">完成时间</text>
-            <text class="row-val">{{order.completeTime}}</text>
-          </view>
           <view class="row" wx:if="{{order.paymentMethod}}">
             <text class="row-lbl">支付方式</text>
             <text class="row-val">{{order.paymentMethod}}</text>
-          </view>
-          <view class="row" wx:if="{{order.transactionId}}">
-            <text class="row-lbl">交易流水号</text>
-            <text class="row-val row-val-sm">{{order.transactionId}}</text>
           </view>
         </block>
       </view>
