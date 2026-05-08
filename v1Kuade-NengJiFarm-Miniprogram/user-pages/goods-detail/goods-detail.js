@@ -57,6 +57,10 @@ Page({
     this.updateCartCount();
     // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
     this.getAddressList();
+    // 重新获取商品详情，刷新最新库存
+    if (this.data.goods.id) {
+      this.getGoodsDetail(this.data.goods.id);
+    }
 
     // 检查是否有从地址选择页面返回的选中地址
     const selectedAddressId = wx.getStorageSync('selectedAddressId');
@@ -150,7 +154,12 @@ Page({
     const targetId = String(goods.id);
     const currentQuantity = currentCart[targetId] ? (currentCart[targetId].count || currentCart[targetId].quantity || 0) : 0;
 
-    if (goods.stock > 0 && currentQuantity >= goods.stock) {
+    if (goods.stock <= 0) {
+      wx.showToast({ title: '库存不足', icon: 'none' });
+      return;
+    }
+
+    if (currentQuantity >= goods.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;
     }
@@ -183,6 +192,11 @@ Page({
   },
 
   buyNow() {
+    if (this.data.goods.stock <= 0) {
+      wx.showToast({ title: '库存不足', icon: 'none' });
+      return;
+    }
+
     // 从购物车获取当前数量
     const cart = wx.getStorageSync('cartList') || {};
     const goodsId = String(this.data.goods.id);
@@ -320,50 +334,17 @@ Page({
       return;
     }
 
-    // 检查是否有待支付的订单包含该商品
-    this.checkPendingOrder().then(hasPending => {
-      if (hasPending) {
-        wx.showModal({
-          title: '提示',
-          content: '您有待支付的订单包含此商品，请先完成支付或取消订单后再购买',
-          showCancel: false,
-          confirmText: '查看订单',
-          success: (res) => {
-            if (res.confirm) {
-              wx.navigateTo({
-                url: '/user-pages/orders/orders?tab=pending'
-              });
-            }
-          }
-        });
-        return;
-      }
+    // 下单前校验库存
+    if (this.data.goods.stock <= 0) {
+      wx.showToast({ title: '库存不足', icon: 'none' });
+      return;
+    }
+    if (this.data.quantity > this.data.goods.stock) {
+      wx.showToast({ title: `库存仅剩 ${this.data.goods.stock} 件`, icon: 'none' });
+      return;
+    }
 
-      this.createOrder();
-    });
-  },
-
-  // 检查是否有待支付的订单包含该商品
-  checkPendingOrder() {
-    return new Promise((resolve) => {
-      api.order.getList({ status: 'pending', page: 1, pageSize: 10 })
-        .then(data => {
-          const orders = data.orders || data.data || data || [];
-          const goodsId = String(this.data.goods.id);
-
-          // 检查待支付订单中是否包含该商品
-          const hasPending = orders.some(order => {
-            const items = order.items || [];
-            return items.some(item => String(item.id) === goodsId);
-          });
-
-          resolve(hasPending);
-        })
-        .catch(() => {
-          // 如果获取订单失败，允许继续购买
-          resolve(false);
-        });
-    });
+    this.createOrder();
   },
 
   // 创建订单
@@ -388,6 +369,10 @@ Page({
       }
       wx.showToast({ title: '订单创建成功', icon: 'success' });
 
+      // 本地库存扣减，防止重复下单
+      const newStock = Math.max(0, this.data.goods.stock - this.data.quantity);
+      this.setData({ 'goods.stock': newStock });
+
       // 从购物车中移除已购买的商品
       const cart = wx.getStorageSync('cartList') || {};
       const goodsId = String(this.data.goods.id);
@@ -410,7 +395,14 @@ Page({
     .catch(err => {
       wx.hideLoading();
       console.error('创建订单失败:', err);
-      wx.showToast({ title: '创建订单失败', icon: 'none' });
+      const msg = (err && err.message) || '';
+      if (msg.includes('库存') || msg.includes('stock') || (err && err.code === 409)) {
+        wx.showToast({ title: '库存不足', icon: 'none' });
+        // 刷新库存
+        this.getGoodsDetail(this.data.goods.id);
+      } else {
+        wx.showToast({ title: '创建订单失败', icon: 'none' });
+      }
     });
   },
 

@@ -250,21 +250,8 @@ Page({
     
     // 查找是否已存在该商品
     const existingIndex = cartList.findIndex(item => String(item.id) === String(id));
-    
+
     if (existingIndex >= 0) {
-      // 如果是农场优选商品，限购一份
-      if (isFarmGood) {
-        const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
-        if (purchasedFarmGoods.includes(String(id))) {
-          wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-          return;
-        }
-        if ((cartList[existingIndex].count || cartList[existingIndex].quantity || 0) >= 1) {
-          wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-          return;
-        }
-      }
-      
       // 如果已存在，增加数量
       const newQuantity = (cartList[existingIndex].count || cartList[existingIndex].quantity || 0) + 1;
       if (stock && newQuantity > stock) {
@@ -274,15 +261,6 @@ Page({
       cartList[existingIndex].count = newQuantity;
       cartList[existingIndex].quantity = newQuantity;
     } else {
-      // 如果是农场优选商品，检查是否已购买
-      if (isFarmGood) {
-        const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
-        if (purchasedFarmGoods.includes(String(id))) {
-          wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-          return;
-        }
-      }
-      
       // 如果不存在，添加新商品
       cartList.push({
         id: String(id),

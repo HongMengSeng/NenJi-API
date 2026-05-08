@@ -7,7 +7,7 @@
       <input
         class="search-input"
         type="text"
-        placeholder="搜索核销码/用户名"
+        placeholder="搜索活核销码/用户名"
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
       />
@@ -20,18 +20,17 @@
         data-type="all"
         bindtap="onFilterChange"
       >全部</text>
+    
       <text
-        class="filter-tag {{filterType === 'pick' ? 'active' : ''}}"
-        data-type="pick"
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="filter-tag {{filterType === item.id ? 'active' : ''}}"
+        data-type="{{item.id}}"
         bindtap="onFilterChange"
-      >采摘券</text>
-      <text
-        class="filter-tag {{filterType === 'activity' ? 'active' : ''}}"
-        data-type="activity"
-        bindtap="onFilterChange"
-      >活动券</text>
-      <text class="filter-tag date-tag" bindtap="selectDateRange">
-        📅 {{dateRange.startDate || '选择日期'}}
+      >{{item.name}}</text>
+      <text class="filter-tag date-tag {{dateRange.startDate ? 'active' : ''}}" bindtap="selectDateRange">
+        <text class="date-icon">📅</text>
+        <text class="date-text">{{dateRange.startDate || '选择日期'}}</text>
       </text>
     </view>
   </view>
@@ -59,7 +58,7 @@
         data-item="{{item}}"
       >
         <view class="history-left">
-          <text class="history-type {{item.voucherType === 'pick' ? 'pick-tag' : 'activity-tag'}}">
+          <text class="history-type activity-tag">
             {{item.typeName}}
           </text>
           <view class="history-detail">
@@ -82,7 +81,11 @@
     </view>
 
     <!-- 加载更多 -->
-    <view wx:if="{{hasMore && historyList.length > 0}}" class="load-more">
+    <view wx:if="{{loading && historyList.length > 0}}" class="load-more">
+      <view class="loading-ring small"></view>
+      <text class="load-more-text">加载中...</text>
+    </view>
+    <view wx:elif="{{hasMore && historyList.length > 0}}" class="load-more">
       <text class="load-more-text">上拉加载更多</text>
     </view>
 

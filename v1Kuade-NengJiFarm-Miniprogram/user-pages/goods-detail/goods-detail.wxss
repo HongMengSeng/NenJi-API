@@ -69,6 +69,18 @@ page {
   margin-bottom: 10rpx;
 }
 
+.stock-empty {
+  font-size: 24rpx;
+  color: #e64340;
+  margin-top: 8rpx;
+}
+
+.stock-low {
+  font-size: 24rpx;
+  color: #ff9900;
+  margin-top: 8rpx;
+}
+
 .goods-tags {
   display: flex;
   gap: 10rpx;
@@ -305,6 +317,11 @@ page {
 
 .buy-btn::after {
   border: none;
+}
+
+.disabled-btn {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* 客服按钮 */

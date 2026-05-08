@@ -319,16 +319,6 @@ page {
   flex: 1;
 }
 
-.pick-tag {
-  font-size: 22rpx;
-  color: #D4A76A;
-  background-color: #fff9e6;
-  padding: 4rpx 14rpx;
-  border-radius: 8rpx;
-  margin-right: 18rpx;
-  white-space: nowrap;
-}
-
 .activity-tag {
   font-size: 22rpx;
   color: #5b8c00;

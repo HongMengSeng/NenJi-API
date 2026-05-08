@@ -37,7 +37,7 @@
 
 
   <!-- 订单列表 -->
-  <view class="order-list">
+  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100">
     <!-- 加载中 -->
     <view wx:if="{{loading}}" class="loading">
       <view class="loading-spinner"></view>
@@ -114,8 +114,27 @@
                   catchtap="payOrder"
                   data-order-id="{{item.id}}"
                 >
-                  待支付
+                  去支付
                 </button>
+                <!-- 可申请退款：已付款/配送中/已下单/待核销，且无退款记录 -->
+                <button
+                  wx:if="{{!item.hasRefund && (item.status === 'paid' || item.status === 'shipping' || item.status === 'ordered' || item.status === 'verify_pending')}}"
+                  class="action-btn secondary-btn"
+                  catchtap="applyRefund"
+                  data-order-id="{{item.id}}"
+                >
+                  申请退款
+                </button>
+                <!-- 退款中/已退款：显示退款详情 -->
+                <button
+                  wx:if="{{item.hasRefund || item.status === 'refund' || item.status === 'refunded'}}"
+                  class="action-btn secondary-btn"
+                  catchtap="viewOrderDetail"
+                  data-order-id="{{item.id}}"
+                >
+                  退款详情
+                </button>
+                <!-- 已取消 -->
                 <button
                   wx:if="{{item.status === 'cancelled'}}"
                   class="action-btn secondary-btn"
@@ -124,8 +143,9 @@
                 >
                   查看详情
                 </button>
+                <!-- 已完成等其他状态 -->
                 <button
-                  wx:if="{{item.status !== 'pending' && item.status !== 'cancelled'}}"
+                  wx:if="{{item.status !== 'pending' && item.status !== 'cancelled' && item.status !== 'paid' && item.status !== 'shipping' && item.status !== 'ordered' && item.status !== 'verify_pending' && item.status !== 'refund' && item.status !== 'refunded'}}"
                   class="action-btn secondary-btn"
                   catchtap="viewOrderDetail"
                   data-order-id="{{item.id}}"
@@ -162,5 +182,5 @@
         <text class="pull-text">上拉加载更多</text>
       </view>
     </view>
-  </view>
+  </scroll-view>
 </view>

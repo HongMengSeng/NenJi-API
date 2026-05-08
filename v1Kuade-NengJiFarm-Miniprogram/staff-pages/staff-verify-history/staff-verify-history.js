@@ -6,10 +6,11 @@ Page({
     loading: true,
     hasMore: true,
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 10,
     total: 0,
     searchKeyword: '',
-    filterType: 'all', // all/pick/activity
+    filterType: 'all', // all/pick/activity + dynamic categories
+    categories: [], // 动态分类列表
     dateRange: {
       startDate: '',
       endDate: ''
@@ -19,6 +20,8 @@ Page({
   onLoad() {
     // 验证员工权限
     this.verifyPermission();
+    // 加载活动分类
+    this.loadCategories();
   },
 
   /**
@@ -63,6 +66,44 @@ Page({
   },
 
   /**
+   * 加载活动分类（与活动页面保持一致）
+   */
+  loadCategories() {
+    api.request({
+      url: '/api/activity/list',
+      method: 'GET',
+      showLoading: false
+    })
+      .then(data => {
+        let allActivities = [];
+        if (data.activities && data.activities.all) {
+          allActivities = data.activities.all;
+        } else if (Array.isArray(data.activities)) {
+          allActivities = data.activities;
+        } else if (Array.isArray(data)) {
+          allActivities = data;
+        }
+
+        const categorySet = new Set();
+        allActivities.forEach(activity => {
+          if (activity.categoryName) {
+            categorySet.add(activity.categoryName);
+          }
+        });
+
+        const categories = Array.from(categorySet).map(name => ({
+          id: name,
+          name: name
+        }));
+
+        this.setData({ categories });
+      })
+      .catch(err => {
+        console.error('加载活动分类失败:', err);
+      });
+  },
+
+  /**
    * 加载核销历史记录
    */
   loadHistory() {
@@ -75,11 +116,19 @@ Page({
 
     // 添加筛选条件
     if (this.data.filterType !== 'all') {
-      params.voucherType = this.data.filterType;
+      // 检查是否为动态分类（活动分类）
+      const isDynamicCategory = this.data.categories.some(c => c.id === this.data.filterType);
+      if (isDynamicCategory) {
+        params.categoryName = this.data.filterType;
+      } else {
+        params.voucherType = this.data.filterType;
+      }
     }
 
     if (this.data.searchKeyword) {
       params.keyword = this.data.searchKeyword;
+      // 同时搜索活动名称（后端支持activityName参数）
+      params.activityName = this.data.searchKeyword;
     }
 
     if (this.data.dateRange.startDate) {
@@ -97,15 +146,15 @@ Page({
 
         const historyList = list.map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || item.type || 'pick',
-          typeName: item.typeName || (item.voucherType === 'pick' || item.type === 'pick' ? '采摘券' : '活动券'),
-          userName: item.userName || item.userName || '未知用户',
+          voucherType: 'activity',
+          typeName: item.categoryName || item.typeName || '活动券',
+          userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
           content: item.content || item.description || '-',
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),
           status: item.status || '已核销',
-          verified: item.verified || true,  // 核销记录默认已核销
+          verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id
         }));
 
@@ -148,7 +197,7 @@ Page({
   },
 
   /**
-   * 搜索
+   * 搜索 - 支持活动名称/核销码/用户名模糊搜索
    */
   onSearchInput(e) {
     const keyword = e.detail.value.trim();

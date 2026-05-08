@@ -362,19 +362,6 @@ Page({
     const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
     if (index === -1) return;
 
-    if (cartList[index].isFarmGood) {
-      const purchasedFarmGoods = wx.getStorageSync('purchasedFarmGoods') || [];
-      if (purchasedFarmGoods.includes(id)) {
-        wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-        return;
-      }
-    }
-
-    if (cartList[index].isFarmGood && cartList[index].count >= 1) {
-      wx.showToast({ title: '该商品每人限购一份', icon: 'none' });
-      return;
-    }
-
     if (cartList[index].stock && cartList[index].count >= cartList[index].stock) {
       wx.showToast({ title: '库存不足', icon: 'none' });
       return;

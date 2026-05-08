@@ -92,7 +92,7 @@ Page({
 
         // 构建券信息展示
         const voucherInfo = {
-          typeName: (data.voucherType === 'pick') ? '采摘券' : '活动券',
+          typeName: data.typeName||'活动卷',
           userName: data.userName || '未知用户',
           content: data.content || '-',
           useTime: this.formatTime(new Date())
@@ -166,8 +166,8 @@ Page({
         // 格式化数据
         const historyList = (list || []).map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: item.voucherType || 'pick',
-          typeName: item.typeName || (item.voucherType === 'pick' ? '采摘券' : '活动券'),
+          voucherType: 'activity',
+          typeName: item.typeName || '活动券',
           userName: item.userName || '未知',
           time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
           status: '已核销'

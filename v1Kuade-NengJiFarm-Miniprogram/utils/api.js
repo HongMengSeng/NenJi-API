@@ -354,7 +354,7 @@ const api = {
     // 模拟支付
     pay: (id, data) => post(`/api/orders/${id}/mock-pay`, data),
 
-    // 获取活动/采摘核销码
+    // 获取活动核销码
     getQrcode: (id) => get(`/api/orders/${id}/qrcode`),
 
     // ========== 订单详情聚合 API ==========

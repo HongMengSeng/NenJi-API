@@ -184,6 +184,22 @@ Page({
           }
         }
 
+        // 如果订单处于退款状态但还没有 refundInfo，先初始化一个占位对象
+        // 避免退款进度卡片因 refundInfo 为空而不显示
+        if ((orderData.status === 'refund' || orderData.status === 'refunded' || orderData.hasRefund) && !orderData.refundInfo) {
+          orderData.refundInfo = {
+            status: orderData.status === 'refunded' ? 'completed' : 'pending',
+            statusText: orderData.status === 'refunded' ? '退款已完成' : '等待商家处理',
+            reason: '',
+            reasonText: '',
+            refundAmount: orderData.totalPrice || 0,
+            description: '',
+            images: [],
+            createTime: '',
+            adminReply: ''
+          };
+        }
+
         // 先设置基本数据（包含物流信息）
         this.setData({ order: orderData, loading: false });
 
@@ -202,9 +218,9 @@ Page({
           this.getActivityOrderQrcode(orderId, orderData);
         }
 
-        // 加载退款信息（商品: paid/shipping, 点餐: ordered, 活动: verify_pending）
-        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending'];
-        if (refundableStatuses.includes(orderData.status)) {
+        // 加载退款信息：可申请退款状态 + 退款中/已退款状态
+        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending', 'refund', 'refunded'];
+        if (refundableStatuses.includes(orderData.status) || orderData.hasRefund) {
           this._loadRefundInfo(orderId);
         }
 
@@ -641,6 +657,8 @@ Page({
             // 更新订单数据中的退款信息
             this.setData({
               'order.hasRefund': true,
+              'order.status': 'refund',
+              'order.statusText': '退款中',
               'order.refundInfo': {
                 refundId: refundData.refundId,
                 status: 'pending',
@@ -652,6 +670,9 @@ Page({
                 statusText: '等待商家处理'
               }
             });
+
+            // 刷新订单详情以同步后端最新状态
+            this.getOrderDetail(orderId);
           })
           .catch((err) => {
             wx.hideLoading();
@@ -699,6 +720,13 @@ Page({
 
   // 取消退款申请
   _cancelRefund(orderId) {
+    // 兼容从 wxml 点击事件传入（此时 orderId 可能是 event 对象）
+    const id = typeof orderId === 'string' ? orderId : this.data.order.id;
+    if (!id) {
+      wx.showToast({ title: '订单ID异常', icon: 'none' });
+      return;
+    }
+
     wx.showModal({
       title: '确认取消',
       content: '确定要取消退款申请吗？',
@@ -706,15 +734,19 @@ Page({
         if (!res.confirm) return;
 
         wx.showLoading({ title: '取消中...' });
-        api.refund.cancel(orderId)
+        api.refund.cancel(id)
           .then(() => {
             wx.hideLoading();
             wx.showToast({ title: '已取消退款申请', icon: 'success' });
+            // 取消退款后订单状态恢复为 paid
             this.setData({
               'order.hasRefund': false,
+              'order.status': 'paid',
+              'order.statusText': '已付款',
               'order.refundInfo': null
             });
-            this.getOrderDetail(orderId);
+            // 刷新订单详情以同步后端最新状态
+            this.getOrderDetail(id);
           })
           .catch(() => {
             wx.hideLoading();

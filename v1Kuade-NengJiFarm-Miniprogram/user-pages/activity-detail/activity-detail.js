@@ -52,12 +52,18 @@ Page({
       showLoading: false
     })
       .then(data => {
-        // 处理活动图片路径
+        // 处理活动图片路径和日期格式
+        let dateStr = data.date || '';
+        if (dateStr && !/\d{4}/.test(dateStr)) {
+          const year = new Date().getFullYear();
+        }
+
         const processedActivity = {
           ...data,
           image: this.processImageUrl(data.image),
           images: (data.images || []).map(image => this.processImageUrl(image)),
-          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price // 清理价格符号
+          price: typeof data.price === 'string' ? data.price.replace(/[¥￥]/g, '') : data.price,
+          date: dateStr
         };
 
         // 视频处理
@@ -125,14 +131,6 @@ Page({
       });
   },
 
-  contactService: function () {
-    wx.showModal({
-      title: '能记家庭农场客服',
-      content: '手机号：15876534944\n     微信号：njjtnc15876534944',
-      showCancel: false
-    });
-  },
-
   registerActivity: function () {
     const remainingSlots = this.data.activity.remainingSlots || 0;
     if (remainingSlots <= 0) {
@@ -143,52 +141,7 @@ Page({
       return;
     }
 
-    // 检查是否有待支付的订单包含该活动
-    this.checkPendingOrder().then(hasPending => {
-      if (hasPending) {
-        wx.showModal({
-          title: '提示',
-          content: '您有待支付的订单包含此活动，请先完成支付或取消订单后再报名',
-          showCancel: false,
-          confirmText: '查看订单',
-          success: (res) => {
-            if (res.confirm) {
-              wx.navigateTo({
-                url: '/user-pages/orders/orders?tab=pending'
-              });
-            }
-          }
-        });
-        return;
-      }
-
-      this.showRegisterModal(remainingSlots);
-    });
-  },
-
-  // 检查是否有待支付的订单包含该活动
-  checkPendingOrder() {
-    return new Promise((resolve) => {
-      api.order.getList({ status: 'pending', page: 1, pageSize: 10 })
-        .then(data => {
-          const orders = data.orders || data.data || data || [];
-          const activityId = String(this.data.activity.id);
-
-          // 检查待支付订单中是否包含该活动
-          const hasPending = orders.some(order => {
-            // 活动订单的 type 是 'activity'
-            if (order.type !== 'activity') return false;
-            // 检查订单ID是否匹配
-            return String(order.id) === activityId || String(order.activityId) === activityId;
-          });
-
-          resolve(hasPending);
-        })
-        .catch(() => {
-          // 如果获取订单失败，允许继续报名
-          resolve(false);
-        });
-    });
+    this.showRegisterModal(remainingSlots);
   },
 
   // 显示报名弹窗

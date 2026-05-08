@@ -23,10 +23,11 @@ Page({
     // 状态标签
     statusTabs: [
       { key: 'all', name: '全部' },
-      { key: 'pending', name: '待付款' },
-      { key: 'paid', name: '待发货' },
+      { key: 'pending', name: '待支付' },
+      { key: 'paid', name: '待发货/待出餐' },
       { key: 'shipping', name: '待收货' },
-      { key: 'cancelled', name: '已取消' }
+      { key: 'cancelled', name: '已取消' },
+      { key: 'completed', name: '已完成' }
     ],
     // 订单类型标签
     typeTabs: [
@@ -501,8 +502,16 @@ Page({
 
         self.initOrderCountdowns(allOrders);
 
-        // 如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
-        const hasMore = allOrders.length >= PAGE_SIZE;
+        // 判断是否有更多数据：
+        // 1. 如果后端返回了 total，使用 total 判断
+        // 2. 否则，如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
+        // 3. 如果返回的订单数小于 PAGE_SIZE，肯定没有更多数据了
+        let hasMore = false;
+        if (total > 0) {
+          hasMore = allOrders.length < total;
+        } else {
+          hasMore = allOrders.length >= PAGE_SIZE;
+        }
 
         self.setData({
           allOrders: allOrders,
@@ -604,10 +613,15 @@ Page({
         const newAllOrders = [...self.data.allOrders, ...newOrders];
         newAllOrders.sort((a, b) => safeDate(b.createTime) - safeDate(a.createTime));
 
-        // 如果返回的订单数小于 PAGE_SIZE，说明没有更多数据了
-        // 如果返回的订单数等于 PAGE_SIZE，可能还有更多数据
-        // 使用 > 而不是 >=，因为如果正好返回 PAGE_SIZE 条，可能还有更多数据
-        const hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
+        // 判断是否有更多数据：
+        // 1. 如果后端返回了 total，使用 total 判断
+        // 2. 否则，如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
+        let hasMore = false;
+        if (total > 0) {
+          hasMore = newAllOrders.length < total;
+        } else {
+          hasMore = rawOrders.length > 0 && rawOrders.length >= PAGE_SIZE;
+        }
         console.log('loadNextPage - 新订单数:', newOrders.length, '总订单数:', newAllOrders.length, 'hasMore:', hasMore);
 
         self.initOrderCountdowns(newAllOrders);
@@ -655,7 +669,13 @@ Page({
   },
 
   // 触底自动加载（只触发下一页，不触发上一页）
+  // 同时支持页面触底和 scroll-view 触底
   onReachBottom() {
+    this.loadMoreOrders();
+  },
+
+  // scroll-view 触底事件
+  loadMoreOrders() {
     console.log('触底加载触发:', {
       hasMore: this.data.hasMore,
       isRequesting: this.data.isRequesting,
@@ -860,6 +880,56 @@ Page({
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
+  },
+
+  applyRefund(e) {
+    const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
+    const order = this.data.orders.find(o => o.id === id);
+    if (!order) {
+      wx.showToast({ title: '订单不存在', icon: 'none' });
+      return;
+    }
+
+    const reasons = [
+      { value: 'wrong_item', label: '收到的商品与描述不符' },
+      { value: 'damaged', label: '商品损坏/腐烂' },
+      { value: 'not_as_expected', label: '不想要了' },
+      { value: 'delayed_delivery', label: '长时间未发货' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+
+    wx.showActionSheet({
+      itemList: reasons.map(r => r.label),
+      success: (res) => {
+        const selectedReason = reasons[res.tapIndex];
+        wx.showModal({
+          title: `退款原因：${selectedReason.label}`,
+          content: '如有补充说明请在下方填写（选填）',
+          editable: true,
+          placeholderText: '补充说明（选填，最多200字）',
+          success: (modalRes) => {
+            if (!modalRes.confirm) return;
+            const description = (modalRes.content || '').trim().substring(0, 200);
+            wx.showLoading({ title: '提交中...' });
+            api.refund.apply(id, {
+              reason: selectedReason.value,
+              description
+            })
+              .then(() => {
+                wx.hideLoading();
+                wx.showToast({ title: '退款申请已提交', icon: 'success' });
+                this.getOrders();
+              })
+              .catch((err) => {
+                wx.hideLoading();
+                const msg = err && err.message ? err.message : '提交失败，请重试';
+                wx.showToast({ title: msg, icon: 'none' });
+              });
+          }
+        });
+      }
+    });
   },
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },

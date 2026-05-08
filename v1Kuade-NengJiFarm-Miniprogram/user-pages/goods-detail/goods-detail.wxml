@@ -44,6 +44,8 @@
   <view class="goods-info">
     <view class="goods-price">￥{{goods.price}}</view>
     <view class="goods-name">{{goods.name}}</view>
+    <view wx:if="{{goods.stock <= 0}}" class="stock-empty">库存不足</view>
+    <view wx:elif="{{goods.stock <= 5}}" class="stock-low">仅剩 {{goods.stock}} 件</view>
    
     <view class="goods-description">
       {{goods.description}}
@@ -154,8 +156,8 @@
       <view wx:if="{{cartCount > 0}}" class="cart-badge">{{cartCount}}</view>
     </view>
     <view class="btn-container">
-      <button class="add-cart-btn" bindtap="addToCart">加入购物车</button>
-      <button class="buy-btn" bindtap="buyNow">立即购买</button>
+      <button class="add-cart-btn {{goods.stock <= 0 ? 'disabled-btn' : ''}}" bindtap="addToCart">加入购物车</button>
+      <button class="buy-btn {{goods.stock <= 0 ? 'disabled-btn' : ''}}" bindtap="buyNow">立即购买</button>
     </view>
   </view>
 
