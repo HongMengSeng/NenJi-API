@@ -677,14 +677,20 @@ Page({
           return;
         }
         
-        // 创建订单成功后，保存购物车状态（不清空），然后跳转
+        // 计算订单金额
+        const totalPrice = items.reduce((sum, item) => {
+          return sum + Number(item.price || 0) * Number(item.count || 1);
+        }, 0);
+        
+        // 创建订单成功后，保存购物车状态（不清空），然后跳转到支付页面
         this.syncCart(this.data.cartList);
         wx.redirectTo({
-          url: '/user-pages/orders/orders?tab=pending'
+          url: `/user-pages/pay/pay?orderId=${orderId}&type=goods&totalPrice=${totalPrice}`
         });
       })
       .catch((err) => {
         console.error('[cart] 创建订单失败:', err);
+        wx.showToast({ title: '创建订单失败', icon: 'none' });
       });
   },
 
