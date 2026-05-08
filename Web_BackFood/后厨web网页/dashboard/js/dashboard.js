@@ -120,6 +120,17 @@ function renderOrders(orders) {
         return;
     }
 
+    // 已出餐按完成时间倒序，最新完成的排在前面
+    if (currentTab === 'completed') {
+        orders = [...orders].sort((a, b) => {
+            const timeA = localStorage.getItem('order_completed_at_' + a.id);
+            const timeB = localStorage.getItem('order_completed_at_' + b.id);
+            const dateA = timeA ? parseInt(timeA) : new Date(a.time).getTime();
+            const dateB = timeB ? parseInt(timeB) : new Date(b.time).getTime();
+            return dateB - dateA;
+        });
+    }
+
     orderList.innerHTML = orders.map(order => {
         // items 是简要菜品列表，统计出餐进度
         const items = order.items || [];

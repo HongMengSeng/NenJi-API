@@ -1,5 +1,5 @@
 // ==============================
-// 订单详情页 - order-detail.js
+// 后厨订单详情页 - order-detail.js
 // API:
 //   GET  /api/Kitchen/order/detail?orderId={id}
 //   POST /api/Kitchen/dish/finish  { dishOrderDetailsId }
@@ -195,6 +195,10 @@ async function markDishFinished(dishOrderDetailsId, btn) {
 
         // 全部出餐提示
         if (data && data.allFinished === true) {
+            // 记录完成时间到本地，用于已出餐列表按完成时间排序
+            try {
+                localStorage.setItem('order_completed_at_' + currentOrder.orderId, Date.now().toString());
+            } catch (e) {}
             setTimeout(() => {
                 alert(`🎉 订单所有菜品已全部出餐！（${data.finishDish}/${data.totalDish}）`);
             }, 200);
