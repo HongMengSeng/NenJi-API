@@ -115,17 +115,22 @@ Page({
       })
       .catch(err => {
         console.error('核销失败:', err);
-        
+
         let title = '❌ 核销失败';
         let msg = (err && err.message) || '该券无效或已被使用';
-        
+
         // 如果是后端返回的错误信息，友好展示
         if (err && err.code === 404) {
           msg = '未找到该券信息，请确认二维码是否正确';
         } else if (err && err.code === 409) {
           msg = '该券已被使用，不能重复核销';
         } else if (err && err.code === 403) {
-          msg = '该券已过期，无法核销';
+          // 优化过期错误提示：显示具体过期时间
+          if (err.message && err.message.includes('有效期至')) {
+            msg = err.message; // 后端返回的完整提示，如 "该券已过期，有效期至 2026-05-15 23:59:59"
+          } else {
+            msg = '该券已过期，无法核销';
+          }
         }
 
         this.setData({

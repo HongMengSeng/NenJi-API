@@ -1128,3 +1128,54 @@
   font-size: 24rpx;
   line-height: 1.5;
 }
+
+/* ============================================
+   有效期卡片
+   ============================================ */
+.validity-card {
+  margin: 24rpx 24rpx 0;
+}
+
+.validity-status {
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
+}
+
+.validity-status.valid {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.validity-status.expired {
+  background: #ffebee;
+  color: #e64340;
+}
+
+.validity-status.pending {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.validity-body {
+  padding: 20rpx 32rpx 28rpx;
+}
+
+.validity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.validity-label {
+  font-size: 26rpx;
+  color: #888;
+}
+
+.validity-value {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}

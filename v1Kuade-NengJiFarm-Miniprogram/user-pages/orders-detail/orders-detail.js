@@ -145,6 +145,14 @@ Page({
         orderData.isGoodsOrder = orderData.type === 'goods';
         orderData.isCancelledOrder = orderData.status === 'cancelled';
 
+        // 处理有效期字段（仅活动订单）
+        if (orderData.validity) {
+          orderData.validity.startTime = orderData.validity.startTime || '';
+          orderData.validity.endTime = orderData.validity.endTime || '';
+          orderData.validity.isValid = orderData.validity.isValid || false;
+          orderData.validity.expired = orderData.validity.expired || false;
+        }
+
         // 处理物流信息 - 兼容多种字段名
         console.log('原始物流数据:', {
           logistics: orderData.logistics,

@@ -34,7 +34,8 @@ Page({
     noSearchResult: false,
     isRequesting: false,
     isPageVisible: false,
-    orderCountdowns: {}
+    orderCountdowns: {},
+    hasLoaded: false  // 标记是否已加载过数据
   },
 
   searchTimer: null,
@@ -54,9 +55,15 @@ Page({
     this.setData({ isPageVisible: true });
     this.startCountdownUpdate();
     this.startOrderRefresh();
-    if (this.data.orders.length > 0) {
-      if (!this.data.isRequesting) this.refreshOrders();
+
+    // 使用 hasLoaded 标志位避免重复请求
+    if (this.data.hasLoaded) {
+      // 已加载过数据，只刷新不重新请求
+      if (this.data.orders.length > 0 && !this.data.isRequesting) {
+        this.refreshOrders();
+      }
     } else {
+      // 首次加载
       this.getOrders();
     }
   },
@@ -133,31 +140,91 @@ Page({
   _normalizeOrderList(data) {
     if (!data) return { orders: [], total: 0, totalPages: 0 };
     if (Array.isArray(data)) return { orders: data, total: data.length, totalPages: 1 };
+
+    // 支持多种字段名：orders、list、records、items
+    let orders = null;
+    let total = 0;
+    let page = 1;
+    let pageSize = PAGE_SIZE;
+    let totalPages = 0;
+
+    // 优先级1: data.orders
     if (data.orders && Array.isArray(data.orders)) {
-      const total = data.total !== undefined && data.total !== null ? data.total : data.orders.length;
-      const totalPages = data.totalPages !== undefined && data.totalPages !== null
+      orders = data.orders;
+      total = data.total !== undefined && data.total !== null ? data.total : data.orders.length;
+      page = data.page || 1;
+      pageSize = data.pageSize || PAGE_SIZE;
+      totalPages = data.totalPages !== undefined && data.totalPages !== null
         ? data.totalPages
-        : Math.max(Math.ceil(total / (data.pageSize || PAGE_SIZE)) || 1, 1);
-      return {
-        orders: data.orders,
-        total,
-        page: data.page || 1,
-        pageSize: data.pageSize || PAGE_SIZE,
-        totalPages
-      };
+        : Math.max(Math.ceil(total / pageSize) || 1, 1);
     }
-    if (data.data && Array.isArray(data.data)) return { orders: data.data, total: data.data.length, totalPages: 1 };
-    if (data.data && data.data.orders && Array.isArray(data.data.orders)) {
-      const total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.orders.length;
-      const pageSize = data.data.pageSize || PAGE_SIZE;
-      return {
-        orders: data.data.orders,
-        total,
-        page: data.data.page || 1,
-        pageSize,
-        totalPages: data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1)
-      };
+    // 优先级2: data.list
+    else if (data.list && Array.isArray(data.list)) {
+      orders = data.list;
+      total = data.total !== undefined && data.total !== null ? data.total : data.list.length;
+      page = data.page || 1;
+      pageSize = data.pageSize || PAGE_SIZE;
+      totalPages = data.totalPages !== undefined && data.totalPages !== null
+        ? data.totalPages
+        : Math.max(Math.ceil(total / pageSize) || 1, 1);
     }
+    // 优先级3: data.records
+    else if (data.records && Array.isArray(data.records)) {
+      orders = data.records;
+      total = data.total !== undefined && data.total !== null ? data.total : data.records.length;
+      page = data.page || 1;
+      pageSize = data.pageSize || PAGE_SIZE;
+      totalPages = data.totalPages !== undefined && data.totalPages !== null
+        ? data.totalPages
+        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+    }
+    // 优先级4: data.items
+    else if (data.items && Array.isArray(data.items)) {
+      orders = data.items;
+      total = data.total !== undefined && data.total !== null ? data.total : data.items.length;
+      page = data.page || 1;
+      pageSize = data.pageSize || PAGE_SIZE;
+      totalPages = data.totalPages !== undefined && data.totalPages !== null
+        ? data.totalPages
+        : Math.max(Math.ceil(total / pageSize) || 1, 1);
+    }
+    // 优先级5: data.data.orders
+    else if (data.data && data.data.orders && Array.isArray(data.data.orders)) {
+      orders = data.data.orders;
+      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.orders.length;
+      page = data.data.page || 1;
+      pageSize = data.data.pageSize || PAGE_SIZE;
+      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+    }
+    // 优先级6: data.data.list
+    else if (data.data && data.data.list && Array.isArray(data.data.list)) {
+      orders = data.data.list;
+      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.list.length;
+      page = data.data.page || 1;
+      pageSize = data.data.pageSize || PAGE_SIZE;
+      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+    }
+    // 优先级7: data.data.records
+    else if (data.data && data.data.records && Array.isArray(data.data.records)) {
+      orders = data.data.records;
+      total = data.data.total !== undefined && data.data.total !== null ? data.data.total : data.data.records.length;
+      page = data.data.page || 1;
+      pageSize = data.data.pageSize || PAGE_SIZE;
+      totalPages = data.data.totalPages || Math.max(Math.ceil(total / pageSize) || 1, 1);
+    }
+    // 优先级8: data.data (直接是数组)
+    else if (data.data && Array.isArray(data.data)) {
+      orders = data.data;
+      total = data.data.length;
+      page = 1;
+      pageSize = PAGE_SIZE;
+      totalPages = 1;
+    }
+
+    if (orders) {
+      return { orders, total, page, pageSize, totalPages };
+    }
+
     return { orders: [], total: 0, totalPages: 0 };
   },
 
@@ -239,7 +306,8 @@ Page({
           loading: false,
           searching: false,
           isRequesting: false,
-          loadingMore: false
+          loadingMore: false,
+          hasLoaded: true  // 标记数据已加载
         });
       })
       .catch((err) => {
@@ -363,7 +431,8 @@ Page({
           orders: pageOrders,
           totalOrders: allOrders.length,
           hasMore: allOrders.length > PAGE_SIZE,
-          loading: false, searching: false, isRequesting: false
+          loading: false, searching: false, isRequesting: false,
+          hasLoaded: true  // 标记数据已加载
         });
       })
       .catch((err) => {
@@ -404,7 +473,8 @@ Page({
       activeTab: tab, scrollToView: 'tab-' + tab,
       searchKeyword: '', noSearchResult: false,
       currentPage: 1, hasMore: true,
-      allOrders: [], orders: []
+      allOrders: [], orders: [],
+      hasLoaded: false  // 切换tab时重置标志位
     });
     wx.pageScrollTo({ scrollTop: 0, duration: 0 });
     this.getOrders();
