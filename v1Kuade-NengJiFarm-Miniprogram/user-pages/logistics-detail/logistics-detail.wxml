@@ -43,6 +43,17 @@
             <text class="waybill-no">{{logisticsInfo.waybillNo || orderId}}</text>
           </view>
         </view>
+        <!-- 发货时间 & 预计送达 -->
+        <view wx:if="{{shipTime || estimatedArrival}}" class="delivery-info">
+          <view wx:if="{{shipTime}}" class="delivery-row">
+            <text class="delivery-label">发货时间</text>
+            <text class="delivery-value">{{shipTime}}</text>
+          </view>
+          <view wx:if="{{estimatedArrival}}" class="delivery-row">
+            <text class="delivery-label">预计送达</text>
+            <text class="delivery-value delivery-highlight">{{estimatedArrival}}</text>
+          </view>
+        </view>
         <view class="card-actions">
           <view class="action-btn" bindtap="copyWaybillNo">复制单号</view>
           <view class="action-btn" bindtap="callCompany" wx:if="{{logisticsInfo.companyPhone}}">联系快递</view>

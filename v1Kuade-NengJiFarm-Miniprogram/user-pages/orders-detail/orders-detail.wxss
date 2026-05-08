@@ -286,6 +286,12 @@
   color: #999;
 }
 
+.logistics-estimated {
+  font-size: 24rpx;
+  color: #c99a5a;
+  font-weight: 500;
+}
+
 /* 物流预览（未发货/无轨迹时显示） */
 .logistics-preview {
   display: flex;

@@ -12,6 +12,8 @@ Page({
     orderItems: [],
     statusIcon: '🚚',
     statusHint: '您的包裹正在运输中',
+    shipTime: '',
+    estimatedArrival: '',
     // 物流插件所需数据
     waybillId: '',
     deliveryId: '',
@@ -41,41 +43,24 @@ Page({
   getLogisticsDetail(orderId) {
     wx.showLoading({ title: '加载中...' });
 
-    // 先尝试获取订单详情作为备用数据
-    api.order.getDetail(orderId)
-      .then((orderData) => {
-        console.log('获取订单详情成功:', orderData);
-        
-        // 先尝试获取物流详情
-        return api.logistics.getDetail(orderId)
-          .then((data) => {
-            console.log('获取物流详情成功:', data);
-            // 合并订单数据和物流数据
-            data.shippingAddress = orderData.shippingAddress;
-            data.items = orderData.items;
-            this.setLogisticsData(data);
-            return this.getLogisticsTrace(orderId, orderData);
-          })
-          .catch((err) => {
-            console.warn('获取物流详情失败，使用订单数据', err);
-            // 如果API失败，从订单数据获取
-            this.setMockLogisticsData(orderId, orderData);
-            return this.getLogisticsTrace(orderId, orderData);
-          });
+    // 物流API已包含 shippingAddress / items / shipTime / estimatedArrival，优先使用
+    api.logistics.getDetail(orderId)
+      .then((data) => {
+        console.log('获取物流详情成功:', data);
+        this.setLogisticsData(data);
+        return this.getLogisticsTrace(orderId);
       })
-      .catch((orderErr) => {
-        console.warn('获取订单详情失败，尝试直接获取物流', orderErr);
-        // 订单获取也失败，继续尝试物流API
-        return api.logistics.getDetail(orderId)
-          .then((data) => {
-            console.log('获取物流详情成功:', data);
-            this.setLogisticsData(data);
-            return this.getLogisticsTrace(orderId, null);
+      .catch((err) => {
+        console.warn('获取物流详情失败，尝试订单API:', err);
+        // 物流API失败，回退到订单详情
+        return api.order.getDetail(orderId)
+          .then((orderData) => {
+            this.setMockLogisticsData(orderId, orderData);
+            return this.getLogisticsTrace(orderId);
           })
-          .catch((err) => {
-            console.warn('获取物流详情也失败，使用模拟数据:', err);
+          .catch(() => {
             this.setMockLogisticsData(orderId, null);
-            return this.getLogisticsTrace(orderId, null);
+            return this.getLogisticsTrace(orderId);
           });
       })
       .finally(() => {
@@ -84,16 +69,15 @@ Page({
   },
 
   // 获取物流轨迹
-  getLogisticsTrace(orderId, orderData) {
+  getLogisticsTrace(orderId) {
     return api.logistics.getTrace(orderId)
       .then((traceData) => {
         console.log('获取物流轨迹成功:', traceData);
         this.setLogisticsTrace(traceData);
       })
       .catch((err) => {
-        console.warn('获取物流轨迹失败，使用模拟数据', err);
-        // 如果API失败，使用模拟轨迹数据
-        this.setMockLogisticsTrace(orderData);
+        console.warn('获取物流轨迹失败:', err);
+        this.setData({ logisticsTrace: [] });
       });
   },
 
@@ -117,7 +101,8 @@ Page({
   setLogisticsData(data) {
     const meta = this._getStatusMeta(data.status);
     const statusIcon = meta.icon;
-    const statusHint = meta.hint;
+    // 优先使用API返回的 statusText，否则用本地映射的 hint
+    const statusHint = data.statusText || meta.hint;
 
     // 处理商品图片
     let processedItems = [];
@@ -134,6 +119,8 @@ Page({
       orderItems: processedItems,
       statusIcon: statusIcon,
       statusHint: statusHint,
+      shipTime: data.shipTime || '',
+      estimatedArrival: data.estimatedArrival || '',
       loading: false
     });
   },
@@ -210,39 +197,6 @@ Page({
       statusHint: meta.hint,
       loading: false
     });
-  },
-
-  // 设置模拟物流轨迹
-  setMockLogisticsTrace(orderData) {
-    const now = new Date();
-    const trace = [];
-    
-    // 添加发货信息
-    trace.push({
-      time: this.formatDate(new Date(now.getTime() - 2 * 60 * 60 * 1000)),
-      desc: '快件已从【深圳转运中心】发出，准备发往下一站',
-      location: '深圳'
-    });
-    
-    trace.push({
-      time: this.formatDate(new Date(now.getTime() - 4 * 60 * 60 * 1000)),
-      desc: '快件已到达【深圳转运中心】',
-      location: '深圳'
-    });
-
-    this.setData({
-      logisticsTrace: trace
-    });
-  },
-
-  formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   },
 
   copyWaybillNo() {
