@@ -110,24 +110,23 @@ function renderOrderDetail() {
             const isFinished = dish.status === 2;
             const statusLabel = isFinished ? '已出餐' : '待出餐';
             const statusClass = isFinished ? 'completed' : 'pending';
-            // dish.id 是后端返回的菜品明细 ID
-            const dishOrderDetailsId = dish.id;
+            const dishOrderDetailsId = dish.dishOrderDetailsId;
 
             return `
-                <div class="item" id="dish-${dish.id}">
+                <div class="item" id="dish-${dish.dishOrderDetailsId}">
                     <div class="item-info">
                         <span class="item-name">${dish.name || '未知菜品'}</span>
                         <span class="item-quantity">x${dish.quantity || 1}</span>
                         ${dish.price != null ? `<span class="item-price">¥${Number(dish.price).toFixed(2)}</span>` : ''}
                     </div>
                     <div class="item-status">
-                        <span class="status-text ${statusClass}" id="status-text-${dish.id}">
+                        <span class="status-text ${statusClass}" id="status-text-${dish.dishOrderDetailsId}">
                             ${statusLabel}
                         </span>
                         <div class="button-group">
                             <button
                                 class="complete-button"
-                                id="btn-${dish.id}"
+                                id="btn-${dish.dishOrderDetailsId}"
                                 ${isFinished ? 'disabled' : ''}
                                 onclick="markDishFinished(${dishOrderDetailsId}, this)">
                                 ${isFinished ? '已出餐' : '出餐'}
@@ -173,7 +172,7 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         const data = json.data || json;
 
         // 本地更新菜品状态（status → 2）
-        const dish = (currentOrder.dishList || []).find(d => d.id === dishOrderDetailsId);
+        const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
         if (dish) {
             dish.status = 2;
         }
