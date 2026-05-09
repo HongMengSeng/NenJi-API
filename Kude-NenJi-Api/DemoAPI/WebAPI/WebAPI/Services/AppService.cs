@@ -53,7 +53,7 @@ public class AppService : IAppService
         var farmGoods = await BuildGoodsSummariesAsync(
             _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => (x.CommodityStatusId ?? 0) == 1)
                 .OrderByDescending(x => x.CommodityId)
                 .Take(6),
             cancellationToken);
@@ -107,7 +107,7 @@ public class AppService : IAppService
         var goods = await BuildGoodsSummariesAsync(
             _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => (x.CommodityStatusId ?? 0) == 1)
                 .OrderByDescending(x => x.CommodityId)
                 .Take(12),
             cancellationToken);
@@ -129,7 +129,7 @@ public class AppService : IAppService
     {
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1 && x.CategoryId == categoryId)
+            .Where(x => (x.CommodityStatusId ?? 0) == 1 && x.CategoryId == categoryId)
             .OrderByDescending(x => x.CommodityId);
 
         return await BuildPagedGoodsAsync(query, page, pageSize, cancellationToken);
@@ -141,7 +141,7 @@ public class AppService : IAppService
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1
+            .Where(x => (x.CommodityStatusId ?? 0) == 1
                 && (x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword)))
             .OrderByDescending(x => x.CommodityId);
 
@@ -152,7 +152,7 @@ public class AppService : IAppService
     {
         var commodity = await _dbContext.Commodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.CommodityStatusId ?? 0) == 1, cancellationToken);
 
         if (commodity is null)
         {
@@ -233,7 +233,7 @@ public class AppService : IAppService
     public async Task AddCartItemAsync(int userId, CartAddRequest request, CancellationToken cancellationToken = default)
     {
         var goods = await _dbContext.Commodities
-            .FirstOrDefaultAsync(x => x.CommodityId == request.GoodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.CommodityId == request.GoodsId && (x.CommodityStatusId ?? 0) == 1, cancellationToken);
 
         if (goods is null)
         {
@@ -725,7 +725,7 @@ public class AppService : IAppService
     {
         var demoGoods = await _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1)
+            .Where(x => (x.CommodityStatusId ?? 0) == 1)
             .OrderBy(x => x.CommodityId)
             .Take(2)
             .ToListAsync(cancellationToken);

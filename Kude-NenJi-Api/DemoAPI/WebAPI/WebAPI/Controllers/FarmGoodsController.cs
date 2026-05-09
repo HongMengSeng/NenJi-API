@@ -49,7 +49,7 @@ public class FarmGoodsController : ControllerBase
             var goods = await LoadGoodsCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
-                    .Where(x => (x.ProductStatus ?? 0) == 1)
+                    .Where(x => (x.CommodityStatusId ?? 0) == 1)
                     .OrderByDescending(x => x.CommodityId)
                     .Take(12),
                 cancellationToken);
@@ -118,7 +118,7 @@ public class FarmGoodsController : ControllerBase
 
             var query = _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1);
+                .Where(x => (x.CommodityStatusId ?? 0) == 1);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -301,7 +301,7 @@ public class FarmGoodsController : ControllerBase
     {
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => (x.CommodityStatusId ?? 0) == 1);
 
         if (string.Equals(category, "__empty__", StringComparison.OrdinalIgnoreCase))
         {

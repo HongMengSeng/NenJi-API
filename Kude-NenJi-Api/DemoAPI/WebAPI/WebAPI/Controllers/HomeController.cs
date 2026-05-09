@@ -119,7 +119,7 @@ public class HomeController : ControllerBase
             var allFarmGoods = await LoadCommodityCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
-                    .Where(x => (x.ProductStatus ?? 0) == 1)
+                    .Where(x => (x.CommodityStatusId ?? 0) == 1)
                     .OrderByDescending(x => x.CommodityId),
                 cancellationToken);
 

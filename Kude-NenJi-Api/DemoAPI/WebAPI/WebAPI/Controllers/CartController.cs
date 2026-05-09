@@ -152,7 +152,7 @@ public class CartController : ControllerBase
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.CommodityId == normalizedRequest.GoodsId && (x.ProductStatus ?? 0) == 1,
+                    x => x.CommodityId == normalizedRequest.GoodsId && (x.CommodityStatusId ?? 0) == 1,
                     cancellationToken);
 
             if (goods is null)
@@ -231,7 +231,7 @@ public class CartController : ControllerBase
 
             var goods = await _dbContext.Commodities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CommodityId == cartItem.CommodityId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+                .FirstOrDefaultAsync(x => x.CommodityId == cartItem.CommodityId && (x.CommodityStatusId ?? 0) == 1, cancellationToken);
 
             if (goods is null)
             {

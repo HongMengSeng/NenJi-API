@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAPI.Entities
 {
     [Table("commodity_material")]
     public class CommodityMaterial
     {
+        [Key]
         [Column("material_id")]
         public long MaterialId { get; set; }
 

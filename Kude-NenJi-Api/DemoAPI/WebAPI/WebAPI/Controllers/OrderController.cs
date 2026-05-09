@@ -49,7 +49,7 @@ public class OrderController : ControllerBase
 
             var commodities = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => (x.CommodityStatusId ?? 0) == 1)
                 .OrderBy(x => x.CategoryId)
                 .ThenBy(x => x.CommodityId)
                 .ToListAsync(cancellationToken);
@@ -111,7 +111,7 @@ public class OrderController : ControllerBase
 
             var commodities = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1)
+                .Where(x => (x.CommodityStatusId ?? 0) == 1)
                 .OrderBy(x => x.CategoryId)
                 .ThenBy(x => x.CommodityId)
                 .ToListAsync(cancellationToken);
@@ -260,7 +260,7 @@ public class OrderController : ControllerBase
 
             var commodityIds = sourceItems.Select(x => x.GoodsId).Distinct().ToList();
             var commodityMap = await _dbContext.Commodities
-                .Where(x => commodityIds.Contains(x.CommodityId) && (x.ProductStatus ?? 0) == 1)
+                .Where(x => commodityIds.Contains(x.CommodityId) && (x.CommodityStatusId ?? 0) == 1)
                 .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             foreach (var item in sourceItems)

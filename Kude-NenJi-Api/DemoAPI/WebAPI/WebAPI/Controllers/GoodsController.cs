@@ -54,7 +54,7 @@ public class GoodsController : ControllerBase
             // 1. 构建基础查询：已上架商品
             var query = _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1);
+                .Where(x => (x.CommodityStatusId ?? 0) == 1);
 
             // 2. 关键词模糊匹配 (名称 或 描述)
             query = query.Where(x => 
@@ -89,7 +89,7 @@ public class GoodsController : ControllerBase
             {
                 var stats = commodityStats.GetValueOrDefault(x.CommodityId);
                 var stock = stats?.Stock ?? (x.InStock ?? 0);
-                var status = (x.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+                var status = (x.CommodityStatusId ?? 0) == 1 && stock > 0 ? 1 : 0;
                 var imageUrl = NormalizeImageUrl(x.ImageUrl) ?? string.Empty;
                 return new
                 {
@@ -145,7 +145,7 @@ public class GoodsController : ControllerBase
             var commodity = await _dbContext.Commodities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1,
+                    x => x.CommodityId == goodsId && (x.CommodityStatusId ?? 0) == 1,
                     cancellationToken);
 
             if (commodity is null)
@@ -213,14 +213,14 @@ public class GoodsController : ControllerBase
             var originalPrice = commodity.OriginalPrice ?? price;
             var description = commodity.SpecDescription ?? string.Empty;
             var stock = commodity.InStock ?? 0;
-            var status = (commodity.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+            var status = (commodity.CommodityStatusId ?? 0) == 1 && stock > 0 ? 1 : 0;
             var unit = commodity.UnitName ?? string.Empty;
             var weight = commodity.WeightText ?? string.Empty;
             var storage = commodity.StorageCondition ?? string.Empty;
             var commodityStats = (await _inventoryStatsService.GetCommodityStatsAsync([commodity.CommodityId], cancellationToken))
                 .GetValueOrDefault(commodity.CommodityId);
             stock = commodityStats?.Stock ?? stock;
-            status = (commodity.ProductStatus ?? 0) == 1 && stock > 0 ? 1 : 0;
+            status = (commodity.CommodityStatusId ?? 0) == 1 && stock > 0 ? 1 : 0;
             var sold = commodityStats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
 
             return Ok(ApiResult.Success(new

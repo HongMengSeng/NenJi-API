@@ -20,8 +20,8 @@ public class Commodity
     [Column("quantity")]
     public int? Quantity { get; set; }
 
-    [Column("product_status")]
-    public int? ProductStatus { get; set; }
+    [Column("commodity_status_id")]
+    public int? CommodityStatusId { get; set; }
 
     [Column("product_name")]
     [MaxLength(100)]

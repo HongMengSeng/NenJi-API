@@ -49,7 +49,7 @@ public class ProductService : IProductService
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
-                Status = (c.ProductStatus ?? 0) == 1 ? "已上架" : "已下架",
+                Status = (c.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
                 Image = c.ImageUrl ?? string.Empty,
                 //UploadTime = c.CreatedAt.ToString("yyyy-MM-dd HH:mm")
             })
@@ -115,7 +115,7 @@ public class ProductService : IProductService
             Name = commodity.ProductName,
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
-            Status = (commodity.ProductStatus ?? 0) == 1 ? "已上架" : "已下架",
+            Status = (commodity.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
             Image = commodity.ImageUrl ?? string.Empty,
             CoverImage = commodity.ImageUrl ?? string.Empty,
             CarouselMedia = carouselMedia.Take(5).ToList(),
@@ -138,7 +138,7 @@ public class ProductService : IProductService
             ProductName = dto.Name,
             UnitPrice = dto.Price,
             InStock = dto.Stock,
-            ProductStatus = dto.Status == "已上架" ? 1 : 0,
+            CommodityStatusId = dto.Status == "已上架" ? 1 : 0,
             ImageUrl = dto.CoverImage,
             //NetWeight = dto.NetWeight,
             //WeightUnit = dto.WeightUnit,
@@ -212,7 +212,7 @@ public class ProductService : IProductService
         commodity.ProductName = dto.Name;
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
-        commodity.ProductStatus = dto.Status == "已上架" ? 1 : 0;
+        commodity.CommodityStatusId = dto.Status == "已上架" ? 1 : 0;
         commodity.ImageUrl = dto.CoverImage;
         //commodity.NetWeight = dto.NetWeight;
         //commodity.WeightUnit = dto.WeightUnit;
