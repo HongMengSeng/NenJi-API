@@ -123,7 +123,7 @@ namespace WebAPI.DTOs
         /// <summary>
         /// 状态，可以是：启用/禁用，可选，仅修改时才发送
         /// </summary>
-        public string? status { get; set; }
+        //public string? status { get; set; }
     }
 
     /// <summary>

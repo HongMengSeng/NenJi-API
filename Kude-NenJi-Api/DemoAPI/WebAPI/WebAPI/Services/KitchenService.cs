@@ -77,6 +77,15 @@ public class KitchenService : IKitchenService
 
     /// <summary>
     /// 获取今日订单列表（适配前端格式）
+    /// 修改说明：
+    /// - type=0 待出餐：只返回已付款且有待出菜品的订单（排除待付款订单）
+    /// - type=1 已出餐：只返回已付款且所有菜品都处理完的订单（排除待付款订单）
+    /// 
+    /// StatusId 说明：
+    /// - 1: 待付款 ? 后厨不显示
+    /// - 2: 待出餐 ? 待出餐列表
+    /// - 3: 已出餐 ? 已出餐列表
+    /// - 4: 已取消 ? 已出餐列表（作为已完成）
     /// </summary>
     public async Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type = 0, CancellationToken cancellationToken = default)
     {
@@ -90,24 +99,35 @@ public class KitchenService : IKitchenService
 
         if (type == 0)
         {
-            // 待出餐：存在未出餐的菜品（StatusId = 1 或 0）
+            // 待出餐：
+            // 1. 订单中不存在 StatusId = 1 的菜品（排除待付款）
+            // 2. 存在 StatusId = 2 的菜品（待出餐）
             orders = await ordersQuery
+                .Where(o => !_context.DishOrderDetails
+                    .Where(d => d.DishOrderId == o.OrderId)
+                    .Any(d => d.StatusId == 1))  // ? 排除待付款订单
                 .Where(o => _context.DishOrderDetails
                     .Where(d => d.DishOrderId == o.OrderId)
-                    .Any(d => d.StatusId == 1 || d.StatusId == 0))
+                    .Any(d => d.StatusId == 2))  // ? 只要求存在待出菜品
                 .OrderByDescending(o => o.CreateTime)
                 .ToListAsync(cancellationToken);
         }
         else if (type == 1)
         {
-            // 已出餐：所有菜品均已出餐（StatusId = 2）
+            // 已出餐（已完成）：
+            // 1. 订单中不存在 StatusId = 1 的菜品（排除待付款）
+            // 2. 订单中不存在 StatusId = 2 的菜品（没有待出的菜品）
+            // 3. 即所有菜品都是 StatusId = 3（已出）或 StatusId = 4（已取消）
             orders = await ordersQuery
+                .Where(o => !_context.DishOrderDetails
+                    .Where(d => d.DishOrderId == o.OrderId)
+                    .Any(d => d.StatusId == 1))  // ? 排除待付款订单
+                .Where(o => !_context.DishOrderDetails
+                    .Where(d => d.DishOrderId == o.OrderId)
+                    .Any(d => d.StatusId == 2))  // ? 不存在待出菜品
                 .Where(o => _context.DishOrderDetails
                     .Where(d => d.DishOrderId == o.OrderId)
-                    .All(d => d.StatusId == 2))
-                .Where(o => _context.DishOrderDetails
-                    .Where(d => d.DishOrderId == o.OrderId)
-                    .Any())
+                    .Any())  // 保证订单有菜品
                 .OrderByDescending(o => o.CreateTime)
                 .ToListAsync(cancellationToken);
         }
@@ -140,9 +160,8 @@ public class KitchenService : IKitchenService
                 {
                     Name = dish?.DishName ?? "未知菜品",
                     Quantity = detail.Quantity,
-                    Status = detail.StatusId,  // 0=未出, 1=已出
+                    Status = detail.StatusId,
                     Price = detail.UnitPrice
-                    // 注：cancelled 字段仅在需要时才返回，默认不返回
                 });
             }
 
