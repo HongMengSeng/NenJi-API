@@ -114,12 +114,42 @@ async function fetchStatistics() {
 async function fetchOrders() {
     const orderList = document.getElementById('order-list');
 
-    const type = currentTab === 'pending' ? 0 : 1;
-
     try {
-        const res = await apiFetch(`/order/list?type=${type}`);
-        const data = await parseApiResponse(res);
-        allOrders = Array.isArray(data) ? data : [];
+        let data;
+
+        if (currentTab === 'pending') {
+            const res = await apiFetch('/order/list?type=0');
+            data = await parseApiResponse(res);
+            allOrders = Array.isArray(data) ? data : [];
+        } else {
+            // 已出餐：同时拉待出餐列表，从中找出实际已完成（无 status=1 的菜品）的订单
+            // 因为后端 type=1 可能不包含含有已取消菜品的订单
+            const [res0, res1] = await Promise.all([
+                apiFetch('/order/list?type=0'),
+                apiFetch('/order/list?type=1')
+            ]);
+            const data0 = await parseApiResponse(res0);
+            const data1 = await parseApiResponse(res1);
+
+            const pendingList = Array.isArray(data0) ? data0 : [];
+            const completedList = Array.isArray(data1) ? data1 : [];
+
+            // 待出餐列表中，没有 status=1 菜品的订单 → 实际已完成
+            const actuallyCompleted = pendingList.filter(order => {
+                const items = order.items || [];
+                return items.length > 0 && !items.some(it => it.status === 1);
+            });
+
+            // 合并去重
+            const merged = [...completedList, ...actuallyCompleted];
+            const seen = new Set();
+            allOrders = merged.filter(order => {
+                if (seen.has(order.id)) return false;
+                seen.add(order.id);
+                return true;
+            });
+        }
+
         // 切页时复位页码
         if (currentPage > Math.ceil(allOrders.length / PAGE_SIZE)) {
             currentPage = 1;
@@ -171,12 +201,23 @@ function renderOrders() {
         const items = order.items || [];
         const total = items.length;
         const finished = items.filter(it => it.status === 2).length;
+        const cancelled = items.filter(it => it.status === 3).length;
 
-        const progressText = currentTab === 'pending'
-            ? `${finished}/${total} 已出餐`
-            : `全部出餐 ✓`;
-
-        const progressClass = currentTab === 'pending' ? '' : 'completed';
+        let progressText, progressClass;
+        if (currentTab === 'pending') {
+            progressText = cancelled > 0
+                ? `${finished}/${total} 已出餐，${cancelled} 已取消`
+                : `${finished}/${total} 已出餐`;
+            progressClass = cancelled > 0 ? 'has-cancelled' : '';
+        } else {
+            if (cancelled > 0) {
+                progressText = `已出餐 ${finished}，取消出餐 ${cancelled}`;
+                progressClass = 'has-cancelled';
+            } else {
+                progressText = `全部出餐 ✓`;
+                progressClass = 'completed';
+            }
+        }
         const timeStr = formatTime(order.time);
 
         return `

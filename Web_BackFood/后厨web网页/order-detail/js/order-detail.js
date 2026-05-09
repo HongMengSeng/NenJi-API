@@ -6,12 +6,20 @@
 //   POST /api/Kitchen/dish/cancel    { dishOrderDetailsId }
 // ==============================
 
-/** 菜品状态枚举 */
+/**
+ * 菜品状态枚举
+ * 后端定义: 0/1=待出餐, 2=已出餐, 3=已取消
+ */
 const DISH_STATUS = {
     PENDING: 1,    // 待出餐
     FINISHED: 2,   // 已出餐
     CANCELLED: 3,  // 已取消
 };
+
+/** 判断是否为待出餐（后端可能返回 0 或 1） */
+function isPendingStatus(status) {
+    return status === 0 || status === 1;
+}
 
 const API_BASE = 'http://192.168.101.30:7240/api/Kitchen';
 
@@ -115,10 +123,10 @@ function renderOrderDetail() {
     const itemsList = document.getElementById('items-list');
     itemsList.innerHTML = `
         ${dishList.map((dish) => {
-            const status = dish.status || DISH_STATUS.PENDING;
+            const status = dish.status;
             const isFinished = status === DISH_STATUS.FINISHED;
             const isCancelled = status === DISH_STATUS.CANCELLED;
-            const isPending = status === DISH_STATUS.PENDING;
+            const isPending = isPendingStatus(status);
             const dishOrderDetailsId = dish.dishOrderDetailsId;
 
             let statusLabel, statusClass, buttonsHtml;
