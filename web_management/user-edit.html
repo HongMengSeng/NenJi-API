@@ -189,11 +189,6 @@
 
 				<div class="form-container">
 					<div class="form-group">
-						<label for="phone">电话号码</label>
-						<input id="phone" type="text" v-model.trim="form.phone" placeholder="请输入 11 位手机号">
-					</div>
-
-					<div class="form-group">
 						<label for="realName">昵称</label>
 						<input id="realName" type="text" v-model.trim="form.realName" placeholder="请输入昵称">
 					</div>
@@ -209,16 +204,11 @@
 
 					<div class="form-group">
 						<label>身份</label>
-						<select v-model="form.roleId">
+						<select v-model="form.role">
 							<option value="">请选择身份</option>
-							<option value="2">工作人员</option>
-							<option value="4">厨师</option>
+							<option value="员工">员工</option>
+							<option value="厨师">厨师</option>
 						</select>
-					</div>
-
-					<div class="form-group">
-						<label for="password">密码</label>
-						<input id="password" type="password" v-model.trim="form.password" placeholder="请输入密码（不填则不修改）">
 					</div>
 
 					<div class="form-buttons">
@@ -241,12 +231,13 @@
 				return {
 					submitting: false,
 					form: {
+						id: '',
 						guid: '',
 						phone: '',
 						realName: '',
+						nickname: '',
 						gender: '',
-						roleId: '',
-						password: '',
+						role: '',
 						errormsg: ''
 					}
 				};
@@ -262,22 +253,52 @@
 				}
 
 				const urlParams = new URLSearchParams(window.location.search);
-				const userId = urlParams.get('guid');
+				const userId = urlParams.get('userId') || urlParams.get('id');
+				const currentRole = this.normalizeRole(urlParams.get('role'));
 				if (!userId) {
 					this.form.errormsg = '缺少用户 ID';
 					return;
 				}
 
-				this.form.guid = userId;
+				this.form.id = userId;
+				this.form.role = currentRole;
 				this.loadUserData(userId);
 			},
 			methods: {
 				navigateTo(page) {
 					window.location.href = page;
 				},
-				getRoleIdFromRole(roleText) {
-					if (roleText === '工作人员') return '2';
-					if (roleText === '厨师') return '4';
+				normalizeRole(roleValue) {
+					const role = String(roleValue || '').trim();
+					const lowerRole = role.toLowerCase();
+					if (!role) {
+						return '';
+					}
+					if (role === '2' || role.includes('员工') || role.includes('工作') || lowerRole.includes('staff') || lowerRole.includes('employee')) {
+						return '员工';
+					}
+					if (role === '4' || role.includes('厨') || lowerRole.includes('chef') || lowerRole.includes('cook')) {
+						return '厨师';
+					}
+					return role;
+				},
+				getUserRole(user) {
+					const roleFields = [
+						user.role,
+						user.roleName,
+						user.type,
+						user.identity,
+						user.userType,
+						user.roleId,
+						user.role_id,
+						user.roleCode
+					];
+					for (const roleField of roleFields) {
+						const role = this.normalizeRole(roleField);
+						if (role) {
+							return role;
+						}
+					}
 					return '';
 				},
 				getRoleFromRoleId(roleId) {
@@ -285,13 +306,16 @@
 					if (roleId === '4') return '厨师';
 					return '';
 				},
-				async loadUserData(id) {
+				getUserDetailPayload(data) {
+					const payload = data && Object.prototype.hasOwnProperty.call(data, 'data') ? data.data : data;
+					if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+						return payload.user && typeof payload.user === 'object' ? payload.user : payload;
+					}
+					return null;
+				},
+				async loadUserData(userId) {
 					try {
-						const params = new URLSearchParams({
-							pageNum: '1',
-							pageSize: '1000'
-						});
-						const res = await fetch(`http://192.168.101.30:7240/api/back-user/list?${params.toString()}`, {
+						const res = await fetch(`http://192.168.101.30:7240/api/back-user/${encodeURIComponent(userId)}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -302,42 +326,39 @@
 							return;
 						}
 
-						const records = Array.isArray(data?.data?.records)
-							? data.data.records
-							: (Array.isArray(data?.data) ? data.data : []);
-						const user = records.find(item => String(item.guid) === String(id));
+						if (data.code && data.code !== 200) {
+							this.form.errormsg = data.message || '获取用户详情失败';
+							return;
+						}
+
+						const user = this.getUserDetailPayload(data);
 
 						if (!user) {
 							this.form.errormsg = '用户不存在';
 							return;
 						}
 
-						this.form.phone = user.phone || '';
-						this.form.realName = user.nickname || '';
+						this.form.id = user.id || user.userId || userId;
+						this.form.guid = user.guid || user.userId || user.id || userId;
+						this.form.phone = user.phone && user.phone !== '无' ? user.phone : '';
+						this.form.realName = user.nickname || user.realName || user.account || '';
 						this.form.gender = user.gender || '';
-						this.form.roleId = this.getRoleIdFromRole(user.role) || '';
+						const detailRole = this.getUserRole(user);
+						if (detailRole) {
+							this.form.role = detailRole;
+						}
 					} catch (error) {
 						console.error('Load user request failed:', error);
 						this.form.errormsg = '网络错误，请重试';
 					}
 				},
 				async updateUser() {
-					if (!this.form.guid) {
+					if (!this.form.guid && !this.form.id) {
 						this.form.errormsg = '缺少用户 ID';
 						return;
 					}
 
-					if (!this.form.phone) {
-						this.form.errormsg = '手机号不能为空';
-						return;
-					}
-
-					if (!/^\d{11}$/.test(this.form.phone)) {
-						this.form.errormsg = '请输入正确的 11 位手机号';
-						return;
-					}
-
-					if (!this.form.roleId) {
+					if (!this.form.role) {
 						this.form.errormsg = '请选择身份';
 						return;
 					}
@@ -347,11 +368,10 @@
 
 					try {
 						const bodyData = {
-							guid: this.form.guid,
-							phone: this.form.phone,
-							realName: this.form.realName,
+							guid: this.form.guid || this.form.id,
+							nickname: this.form.realName,
 							gender: this.form.gender,
-							role: this.getRoleFromRoleId(this.form.roleId)
+							role: this.form.role
 						};
 
 						if (this.form.password) {

@@ -245,7 +245,7 @@
 		/* 用户表格主体：承载用户列表字段和数据行。 */
 		.user-table {
 			width: 100%;
-			min-width: 1180px;
+			min-width: 1260px;
 			border-collapse: collapse;
 			background: white;
 		}
@@ -532,6 +532,7 @@
 								<thead>
 									<tr>
 										<th class="is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
+										<th>ID</th>
 										<th>用户ID</th>
 										<th>昵称</th>
 										<th>微信ID</th>
@@ -544,6 +545,7 @@
 								<tbody>
 									<tr v-for="user in users" :key="user.uniqueKey">
 										<td class="is-center"><input type="checkbox" v-model="user.selected" @change="updateSelectedUser"></td>
+										<td>{{ user.id || '-' }}</td>
 										<td>{{ user.guid || '-' }}</td>
 										<td id="nickname">{{ user.nickname || '无' }}</td>
 										<td>{{ user.wxOpenid || '无' }}</td>
@@ -683,10 +685,11 @@
 				normalizeUser(item) {
 					const guid = item.guid || item.userId || '';
 					return {
+						id: item.id || '',
 						guid: guid,
 						userId: guid,
 						nickname: item.nickname || '',
-						uniqueKey: guid ? `user-${guid}` : `user-${item.phone || Math.random()}`,
+						uniqueKey: item.id ? `user-${item.id}` : (guid ? `user-${guid}` : `user-${item.phone || Math.random()}`),
 						wxOpenid: item.wxOpenid || '',
 						phone: item.phone || '无',
 						gender: item.gender,
@@ -843,17 +846,24 @@
 					}
 					window.location.href = 'user-add.html';
 				},
-				// 跳转编辑页：仅允许编辑普通员工，并把用户 ID 带到编辑页。
+				// 跳转编辑页：仅允许编辑普通员工，并把列表 ID 带到编辑页。
 				editUser(user = this.selectedUser) {
 					if (!this.ensureSession()) {
 						return;
 					}
 
 					const targetUser = user && (user.role === '员工' || user.role === '厨师') ? user : null;
-					if (targetUser && targetUser.guid) {
-						window.location.href = 'user-edit.html?guid=' + encodeURIComponent(targetUser.guid);
+					if (targetUser && targetUser.id) {
+						console.log('当前用户guid:', targetUser.guid);
+						const params = new URLSearchParams({
+							userId: targetUser.id,
+							role: targetUser.role || targetUser.roleText || ''
+						});
+						window.location.href = 'user-edit.html?' + params.toString();
 						return;
 					}
+
+					alert('未找到用户ID');
 				},
 				deleteUser() {
 					if (!this.ensureSession()) {
