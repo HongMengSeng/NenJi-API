@@ -9,18 +9,18 @@ using Microsoft.EntityFrameworkCore;
 namespace WebAPI.Entities.Entities;
 
 /// <summary>
-/// 商品状态表
+/// 商品订单状态表
 /// </summary>
-[Table("commodity_status")]
+[Table("commodity_order_status")]
 [Index("StatusName", Name = "uk_commodity_status_name", IsUnique = true)]
-public partial class CommodityStatus
+public partial class CommodityOrderStatus
 {
     /// <summary>
-    /// 商品状态ID
+    /// 商品订单状态ID
     /// </summary>
     [Key]
-    [Column("commodity_status_id")]
-    public int CommodityStatusId { get; set; }
+    [Column("order_status_id")]
+    public int OrderStatusId { get; set; }
 
     /// <summary>
     /// 状态名称
@@ -29,4 +29,7 @@ public partial class CommodityStatus
     [Column("status_name")]
     [StringLength(30)]
     public string StatusName { get; set; }
+
+    [InverseProperty("OrderStatus")]
+    public virtual ICollection<CommodityOrder> CommodityOrders { get; set; } = new List<CommodityOrder>();
 }

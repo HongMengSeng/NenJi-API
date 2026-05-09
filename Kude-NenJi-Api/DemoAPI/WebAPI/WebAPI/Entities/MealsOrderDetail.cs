@@ -16,6 +16,7 @@ public class MealsOrderDetail
     [Column("dish_id")]
     public int DishId { get; set; }
 
+
     [Column("dish_name")]
     [MaxLength(255)]
     public string DishName { get; set; } = string.Empty;

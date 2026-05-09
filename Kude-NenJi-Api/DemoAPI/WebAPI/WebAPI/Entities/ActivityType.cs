@@ -9,24 +9,27 @@ using Microsoft.EntityFrameworkCore;
 namespace WebAPI.Entities.Entities;
 
 /// <summary>
-/// 商品状态表
+/// 活动类型表
 /// </summary>
-[Table("commodity_status")]
-[Index("StatusName", Name = "uk_commodity_status_name", IsUnique = true)]
-public partial class CommodityStatus
+[Table("activity_type")]
+[Index("TypeName", Name = "uk_activity_type_name", IsUnique = true)]
+public partial class ActivityType
 {
     /// <summary>
-    /// 商品状态ID
+    /// 活动类型ID
     /// </summary>
     [Key]
-    [Column("commodity_status_id")]
-    public int CommodityStatusId { get; set; }
+    [Column("activity_type_id")]
+    public int ActivityTypeId { get; set; }
 
     /// <summary>
-    /// 状态名称
+    /// 类型名称
     /// </summary>
     [Required]
-    [Column("status_name")]
+    [Column("type_name")]
     [StringLength(30)]
-    public string StatusName { get; set; }
+    public string TypeName { get; set; }
+
+    [InverseProperty("Type")]
+    public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 }
