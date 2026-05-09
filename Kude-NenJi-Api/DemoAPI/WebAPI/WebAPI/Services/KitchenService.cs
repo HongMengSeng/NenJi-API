@@ -1,5 +1,6 @@
 using System.Data;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Data;
@@ -403,6 +404,38 @@ public class KitchenService : IKitchenService
             TodayFinishedDish = finishedDish
         };
     }
+
+
+        //private readonly YourDbContext _context; // 替換為你的 DbContext
+
+        //public KitchenService(YourDbContext context)
+        //{
+        //    _context = context;
+        //}
+
+        public async Task<(bool Success, string Message, object? Data)> CancelDishAsync(int detailId, CancellationToken ct)
+        {
+            // 1. 查詢明細
+            var detail = await _context.DishOrderDetails
+                .FirstOrDefaultAsync(d => d.DishOrderDetailsId == detailId, ct);
+
+            if (detail == null)
+                return (false, "未找到該菜品明細", null);
+
+            // 2. 業務判定：已出餐 (StatusId == 3) 不可取消
+            if (detail.StatusId == 3)
+                return (false, "已出餐的菜品不可取消", null);
+
+            // 3. 執行取消：將狀態改為 3 (根據你的文檔要求)
+            detail.StatusId = 3;
+
+            await _context.SaveChangesAsync(ct);
+
+            // 返回成功結果
+            return (true, "操作成功", new { dishOrderDetailsId = detailId, status = 3 });
+        }
+    
+
 
     /// <summary>
     /// 获取当前登录用户信息

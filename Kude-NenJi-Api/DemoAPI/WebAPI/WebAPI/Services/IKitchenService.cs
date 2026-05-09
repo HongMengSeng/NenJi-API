@@ -15,6 +15,8 @@ public interface IKitchenService
     /// </summary>
     Task<List<KitchenOrderListItemDto>> GetTodayOrderListAsync(int type = 0, CancellationToken cancellationToken = default);
 
+    Task<(bool Success, string Message, object? Data)> CancelDishAsync(int detailId, CancellationToken ct);
+
     /// <summary>
     /// 获取订单详情（包含菜品明细）
     /// </summary>

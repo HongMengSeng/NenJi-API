@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Dtos;
 using WebAPI.Dtos.Kitchen;
 using WebAPI.Services;
+
+using static WebAPI.Common.ApiResult;
 
 namespace WebAPI.Controllers;
 
@@ -166,6 +170,28 @@ public class KitchenController : ControllerBase
 
             return Ok(ApiResult.Fail("菜品出餐标记失败"));
         }
+    }
+
+    [HttpPost("dish/cancel")]
+    public async Task<IActionResult> CancelDish([FromBody] CancelDishRequest request, CancellationToken ct)
+    {
+        var (success, message, data) = await _kitchenService.CancelDishAsync(request.DishOrderDetailsId, ct);
+
+        if (!success)
+        {
+            // 失敗時返回 400 或 404
+            return Ok(new ApiResponse<object>
+            {
+                Code = 400,
+                Message = message
+            });
+        }
+
+        // 成功時返回文檔要求的格式
+        return Ok(new ApiResponse<object>
+        {
+            Data = data
+        });
     }
 
     /// <summary>
