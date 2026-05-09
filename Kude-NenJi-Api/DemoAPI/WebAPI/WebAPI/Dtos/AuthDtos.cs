@@ -63,7 +63,7 @@ public class AuthUserDto
 {
     public int Id { get; set; }
 
-    public string UserNo { get; set; } = string.Empty;
+    public string UserGuid { get; set; } = string.Empty;
 
     public string Nickname { get; set; } = string.Empty;
 

@@ -81,7 +81,7 @@ namespace WebAPI.DTOs
 
     public class UserDetailDto
     {
-        public string id { get; set; } = "";        
+        public string Guid { get; set; } = "";        
         public string phone { get; set; } = "";
         public string nickname { get; set; } = "";
         public string avatar { get; set; } = "";
@@ -98,7 +98,7 @@ namespace WebAPI.DTOs
         /// <summary>
         /// 用户ID，必须提供，以此识别要编辑的个用户
         /// </summary>
-        public string id { get; set; } = null!;
+        public string Guid { get; set; } = null!;
 
         /// <summary>
         /// 昵称，可选，仅修改时才发送

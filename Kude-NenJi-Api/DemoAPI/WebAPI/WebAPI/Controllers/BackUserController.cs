@@ -110,7 +110,7 @@ namespace WebAPI.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(dto.id))
+                if (string.IsNullOrWhiteSpace(dto.Guid))
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -119,7 +119,7 @@ namespace WebAPI.Controllers
                     });
                 }
 
-                _logger.LogInformation($"编辑用户|用户ID: {dto.id}");
+                _logger.LogInformation($"编辑用户|用户ID: {dto.Guid}");
                 await _userService.EditUser(dto);
 
                 return Ok(new ApiResponse
@@ -326,6 +326,102 @@ namespace WebAPI.Controllers
                 {
                     Code = 400,
                     Message = "注销失败"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 获取用户详情（基于用户ID）
+        /// GET: /api/back-user/{userId}
+        /// </summary>
+        [HttpGet("{userId:int}")]
+        public async Task<IActionResult> GetUserDetailById(int userId)
+        {
+            if (userId <= 0)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = "用户ID无效"
+                });
+            }
+
+            try
+            {
+                _logger.LogInformation($"获取用户详情|用户ID: {userId}");
+                var result = await _userService.GetUserDetailByIdAsync(userId);
+
+                if (result == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Code = 404,
+                        Message = "用户不存在"
+                    });
+                }
+
+                return Ok(new ApiResponses<UserDetailDto>
+                {
+                    Code = 200,
+                    Message = "获取成功",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"获取用户详情失败: {ex.Message}");
+                return StatusCode(500, new ApiResponse
+                {
+                    Code = 500,
+                    Message = "获取用户详情失败"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 获取用户详情（基于UserGuid）
+        /// GET: /api/back-user/detail/guid?guid=xxx
+        /// </summary>
+        [HttpGet("detail/guid")]
+        public async Task<IActionResult> GetUserDetailByGuid([FromQuery] string? guid)
+        {
+            if (string.IsNullOrWhiteSpace(guid))
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = "用户Guid不能为空"
+                });
+            }
+
+            try
+            {
+                _logger.LogInformation($"获取用户详情|用户Guid: {guid}");
+                var result = await _userService.GetUserDetailByGuidAsync(guid);
+
+                if (result == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Code = 404,
+                        Message = "用户不存在"
+                    });
+                }
+
+                return Ok(new ApiResponses<UserDetailDto>
+                {
+                    Code = 200,
+                    Message = "获取成功",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"获取用户详情失败: {ex.Message}");
+                return StatusCode(500, new ApiResponse
+                {
+                    Code = 500,
+                    Message = "获取用户详情失败"
                 });
             }
         }

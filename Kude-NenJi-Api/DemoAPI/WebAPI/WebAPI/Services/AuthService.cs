@@ -25,12 +25,12 @@ public class AuthService : IAuthService
     {
         var deviceId = TrimToLength(request.DeviceId, 45);
         var user = await _dbContext.Users
-            .FirstOrDefaultAsync(x => x.UserNo == deviceId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserGuid == deviceId, cancellationToken);
 
         if (user is null)
         {
             user = await CreateDefaultUserAsync(cancellationToken);
-            user.UserNo = deviceId;
+            user.UserGuid = deviceId;
 
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -48,7 +48,7 @@ public class AuthService : IAuthService
         if (user is null)
         {
             user = await CreateDefaultUserAsync(cancellationToken);
-            user.UserNo = $"wx_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+            user.UserGuid = $"wx_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
             user.WxOpenId = openId;
             user.WxName = TrimToLength(request.Nickname, 45);
             user.WxImage = TrimToLength(request.Avatar, 45);
@@ -84,7 +84,7 @@ public class AuthService : IAuthService
         if (user is null)
         {
             user = await CreateDefaultUserAsync(cancellationToken);
-            user.UserNo = TrimToLength($"phone_{request.Phone}", 45);
+            user.UserGuid = TrimToLength($"phone_{request.Phone}", 45);
             user.PhoneNumber = TrimToLength(request.Phone, 45);
             _dbContext.Users.Add(user);
         }
@@ -104,7 +104,7 @@ public class AuthService : IAuthService
             .Select(x => new AuthUserDto
             {
                 Id = x.UserId,
-                UserNo = x.UserNo,
+                UserGuid = x.UserGuid,
                 Nickname = x.WxName,
                 Avatar = x.WxImage,
                 Phone = x.PhoneNumber,
@@ -120,7 +120,7 @@ public class AuthService : IAuthService
         var userDto = new AuthUserDto
         {
             Id = user.UserId,
-            UserNo = user.UserNo,
+            UserGuid = user.UserGuid,
             Nickname = user.WxName,
             Avatar = user.WxImage,
             Phone = user.PhoneNumber,

@@ -11,7 +11,7 @@ public class User
     public int UserId { get; set; }
 
     [Column("user_guid")]
-    public string UserNo { get; set; } = string.Empty;
+    public string UserGuid { get; set; } = string.Empty;
 
     [Column("phone_number")]
     public string PhoneNumber { get; set; } = string.Empty;

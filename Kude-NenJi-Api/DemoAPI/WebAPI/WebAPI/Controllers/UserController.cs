@@ -386,7 +386,7 @@ public class UserController : ControllerBase
         }
 
         return await _dbContext.Users
-            .FirstOrDefaultAsync(x => x.UserNo == userGuid, cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserGuid == userGuid, cancellationToken);
     }
 
     private int GetCurrentUserId()

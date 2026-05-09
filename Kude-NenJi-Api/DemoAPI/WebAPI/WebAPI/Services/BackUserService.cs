@@ -74,7 +74,7 @@ namespace WebAPI.Services
                             select new
                             {
                                 id = u.UserId.ToString(),
-                                Guid = u.UserNo,
+                                Guid = u.UserGuid,
                                 phone = u.PhoneNumber,
                                 nickname = u.WxName,
                                 WxOpenid = u.WxOpenId,
@@ -134,7 +134,7 @@ namespace WebAPI.Services
             // 创建新用户实体
             var newUser = new User
             {
-                UserNo = NewUserGuid,
+                UserGuid = NewUserGuid,
                 PhoneNumber = dto.Phone,
                 RegisterTime = DateTime.Now,
                 WxOpenId = null,
@@ -162,7 +162,7 @@ namespace WebAPI.Services
         /// </summary>
         public async Task<bool> EditUser(EditUserDto dto)
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.WxOpenId == dto.id);
+            var user = _dbContext.Users.FirstOrDefault(u => u.UserGuid == dto.Guid);
 
             if (user == null)
             {
@@ -180,16 +180,16 @@ namespace WebAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 编辑用户成功 | 用户ID: {dto.id}");
+            _logger.LogInformation($"✅ 编辑用户成功 | 用户ID: {dto.Guid}");
             return true;
         }
 
         /// <summary>
         /// 删除指定用户
         /// </summary>
-        public async Task<bool> DeleteUser(string UserNo)
+        public async Task<bool> DeleteUser(string UserGuid)
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.UserNo == UserNo);
+            var user = _dbContext.Users.FirstOrDefault(u => u.UserGuid == UserGuid);
 
             if (user == null)
             {
@@ -199,7 +199,7 @@ namespace WebAPI.Services
             _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation($"✅ 用户已删除 | 用户GUID: {UserNo}");
+            _logger.LogInformation($"✅ 用户已删除 | 用户GUID: {UserGuid}");
             return true;
         }
 
@@ -214,9 +214,9 @@ namespace WebAPI.Services
             // 映射为 DTO
             return new UserDetailDto
             {
-                id = user.WxOpenId,
+                Guid = user.UserGuid,
                 phone = user.PhoneNumber,
-                nickname = user.UserNo,
+                nickname = user.RealName,
                 avatar = user.WxImage ?? "https://example.com/default-avatar.jpg", // 处理空头像
                 gender = user.Gender ?? "未知",
                 loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录"
@@ -317,5 +317,52 @@ namespace WebAPI.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// 获取用户详情（基于用户ID）
+        /// </summary>
+        public async Task<UserDetailDto?> GetUserDetailByIdAsync(int userId)
+        {
+            var user = await _dbContext.Users
+                .Where(u => u.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if (user == null) 
+                return null;
+
+            return MapUserToDetailDto(user);
+        }
+
+        /// <summary>
+        /// 获取用户详情（基于UserGuid）
+        /// </summary>
+        public async Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid)
+        {
+            var user = await _dbContext.Users
+                .Where(u => u.UserGuid == userGuid)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                return null;
+
+            return MapUserToDetailDto(user);
+        }
+
+        /// <summary>
+        /// 将User实体映射为UserDetailDto
+        /// 这样可以复用投影逻辑
+        /// </summary>
+        private UserDetailDto MapUserToDetailDto(User user)
+        {
+            return new UserDetailDto
+            {
+                Guid = user.UserGuid,
+                phone = user.PhoneNumber ?? string.Empty,
+                nickname = user.WxName ?? string.Empty,
+                avatar = user.WxImage ?? "https://example.com/default-avatar.jpg",
+                gender = user.Gender ?? "未设置",
+                loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录"
+            };
+        }
     }
 }

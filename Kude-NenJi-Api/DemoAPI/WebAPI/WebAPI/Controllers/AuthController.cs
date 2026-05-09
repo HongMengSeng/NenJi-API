@@ -132,7 +132,7 @@ public class AuthController : ControllerBase
                 token,
                 isNewUser,
                 user_id = user.UserId,
-                user_guid = user.UserNo,
+                user_guid = user.UserGuid,
                 register_time = user.RegisterTime,
                 openid = user.WxOpenId,
                 phone_number = user.PhoneNumber
@@ -249,7 +249,7 @@ public class AuthController : ControllerBase
                 token,
                 isNewUser,
                 user_id = user.UserId,
-                user_guid = user.UserNo,
+                user_guid = user.UserGuid,
                 register_time = user.RegisterTime,
                 openid = user.WxOpenId,
                 phone_number = user.PhoneNumber,
@@ -293,7 +293,7 @@ public class AuthController : ControllerBase
                 isLogin = true,
                 isLoggedIn = true,
                 user_id = user.UserId,
-                user_guid = user.UserNo,
+                user_guid = user.UserGuid,
                 register_time = user.RegisterTime,
                 openid = user.WxOpenId,
                 phone_number = user.PhoneNumber
@@ -353,7 +353,7 @@ public class AuthController : ControllerBase
             return Ok(ApiResult.Success(new
             {
                 user_id = user.UserId,
-                user_guid = user.UserNo,
+                user_guid = user.UserGuid,
                 purePhoneNumber
             }));
         }
@@ -432,7 +432,7 @@ public class AuthController : ControllerBase
 
         return new User
         {
-            UserNo = Guid.NewGuid().ToString("N"),
+            UserGuid = Guid.NewGuid().ToString("N"),
             PhoneNumber = string.Empty,
             RegisterTime = DateTime.Now,
             WxOpenId = openId,

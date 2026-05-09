@@ -12,5 +12,14 @@ namespace WebAPI.Services
         Task<bool> DeleteUser(string userId);
         Task<LoginResponseDto?> Login(string phone, string password);
         Task<UserDetailDto?> GetUserDetailAsync(string userId);
+        /// <summary>
+        /// 获取用户详情（基于用户ID）
+        /// </summary>
+        Task<UserDetailDto?> GetUserDetailByIdAsync(int userId);
+
+        /// <summary>
+        /// 获取用户详情（基于UserGuid）
+        /// </summary>
+        Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid);
     }
 }
