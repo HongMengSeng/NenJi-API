@@ -2,8 +2,16 @@
 // 后厨订单详情页 - order-detail.js
 // API:
 //   GET  /api/Kitchen/order/detail?orderId={id}
-//   POST /api/Kitchen/dish/finish  { dishOrderDetailsId }
+//   POST /api/Kitchen/dish/finish    { dishOrderDetailsId }
+//   POST /api/Kitchen/dish/cancel    { dishOrderDetailsId }
 // ==============================
+
+/** 菜品状态枚举 */
+const DISH_STATUS = {
+    PENDING: 1,    // 待出餐
+    FINISHED: 2,   // 已出餐
+    CANCELLED: 3,  // 已取消
+};
 
 const API_BASE = 'http://192.168.101.30:7240/api/Kitchen';
 
@@ -107,10 +115,30 @@ function renderOrderDetail() {
     const itemsList = document.getElementById('items-list');
     itemsList.innerHTML = `
         ${dishList.map((dish) => {
-            const isFinished = dish.status === 2;
-            const statusLabel = isFinished ? '已出餐' : '待出餐';
-            const statusClass = isFinished ? 'completed' : 'pending';
+            const status = dish.status || DISH_STATUS.PENDING;
+            const isFinished = status === DISH_STATUS.FINISHED;
+            const isCancelled = status === DISH_STATUS.CANCELLED;
+            const isPending = status === DISH_STATUS.PENDING;
             const dishOrderDetailsId = dish.dishOrderDetailsId;
+
+            let statusLabel, statusClass, buttonsHtml;
+
+            if (isFinished) {
+                statusLabel = '已出餐';
+                statusClass = 'completed';
+                buttonsHtml = `<button class="complete-button" disabled>已出餐</button>`;
+            } else if (isCancelled) {
+                statusLabel = '已取消';
+                statusClass = 'cancelled';
+                buttonsHtml = `<button class="cancel-button" disabled>已取消</button>`;
+            } else {
+                statusLabel = '待出餐';
+                statusClass = 'pending';
+                buttonsHtml = `
+                    <button class="complete-button" onclick="markDishFinished(${dishOrderDetailsId}, this)">出餐</button>
+                    <button class="cancel-button" onclick="markDishCancelled(${dishOrderDetailsId}, this)">取消出餐</button>
+                `;
+            }
 
             return `
                 <div class="item" id="dish-${dish.dishOrderDetailsId}">
@@ -124,13 +152,7 @@ function renderOrderDetail() {
                             ${statusLabel}
                         </span>
                         <div class="button-group">
-                            <button
-                                class="complete-button"
-                                id="btn-${dish.dishOrderDetailsId}"
-                                ${isFinished ? 'disabled' : ''}
-                                onclick="markDishFinished(${dishOrderDetailsId}, this)">
-                                ${isFinished ? '已出餐' : '出餐'}
-                            </button>
+                            ${buttonsHtml}
                         </div>
                     </div>
                 </div>
@@ -174,7 +196,7 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         // 本地更新菜品状态（status → 2）
         const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
         if (dish) {
-            dish.status = 2;
+            dish.status = DISH_STATUS.FINISHED;
         }
 
         // 更新按钮和状态文字
@@ -187,11 +209,7 @@ async function markDishFinished(dishOrderDetailsId, btn) {
         }
 
         // 更新已出餐金额
-        const completedAmount = (currentOrder.dishList || [])
-            .filter(d => d.status === 2)
-            .reduce((sum, d) => sum + (Number(d.price || 0) * Number(d.quantity || 1)), 0);
-        const amountEl = document.getElementById('completed-amount');
-        if (amountEl) amountEl.textContent = `¥${completedAmount.toFixed(2)}`;
+        updateCompletedAmount();
 
         // 全部出餐提示
         if (data && data.allFinished === true) {
@@ -212,6 +230,73 @@ async function markDishFinished(dishOrderDetailsId, btn) {
     } finally {
         btn.classList.remove('loading');
     }
+}
+
+// ========== 取消菜品出餐 ==========
+async function markDishCancelled(dishOrderDetailsId, btn) {
+    if (!confirm('确定要取消该菜品吗？取消后该菜品将不再出餐。')) return;
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.textContent = '提交中...';
+    hideError();
+
+    try {
+        const res = await apiFetch('/dish/cancel', {
+            method: 'POST',
+            body: JSON.stringify({ dishOrderDetailsId })
+        });
+
+        const json = await res.json();
+        console.log('取消出餐接口返回:', json);
+
+        if (!res.ok || (json.code !== 0 && json.code !== 200)) {
+            throw new Error(json.message || json.msg || '接口返回错误');
+        }
+
+        // 本地更新菜品状态（status → 3）
+        const dish = (currentOrder.dishList || []).find(d => d.dishOrderDetailsId === dishOrderDetailsId);
+        if (dish) {
+            dish.status = DISH_STATUS.CANCELLED;
+        }
+
+        // 更新 UI：状态标签改为"已取消"、禁用按钮
+        const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
+        if (statusEl) {
+            statusEl.textContent = '已取消';
+            statusEl.className = 'status-text cancelled';
+        }
+
+        // 找到该菜品的 item 容器，更新按钮区域
+        const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
+        if (itemEl) {
+            const btnGroup = itemEl.querySelector('.button-group');
+            if (btnGroup) {
+                btnGroup.innerHTML = `<button class="cancel-button" disabled>已取消</button>`;
+            }
+        }
+
+        // 更新已出餐金额（取消的菜品不再计入）
+        updateCompletedAmount();
+
+    } catch (err) {
+        console.error('取消出餐失败:', err);
+        showError(`操作失败：${err.message}`);
+        btn.disabled = false;
+        btn.textContent = '取消出餐';
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
+
+/** 更新已出餐金额显示 */
+function updateCompletedAmount() {
+    const dishList = currentOrder?.dishList || [];
+    const completedAmount = dishList
+        .filter(d => d.status === DISH_STATUS.FINISHED)
+        .reduce((sum, d) => sum + (Number(d.price || 0) * Number(d.quantity || 1)), 0);
+    const amountEl = document.getElementById('completed-amount');
+    if (amountEl) amountEl.textContent = `¥${completedAmount.toFixed(2)}`;
 }
 
 // ========== 工具函数 ==========

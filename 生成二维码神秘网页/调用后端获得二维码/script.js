@@ -105,8 +105,8 @@ function renderCards(data) {
   data.forEach((item, idx) => {
     const tableId = item.tableId || item.id || (idx + 1);
     const tableName = item.tableName || item.tableNo || tableId + '号桌';
-    const url = item.url || buildTableUrl(tableId);
-    const qrImg = item.qrCode || '';
+    // 始终使用本地生成的 URL，确保二维码编码正确的微信跳转链接
+    const url = buildTableUrl(tableId);
 
     const card = document.createElement('div');
     card.className = 'card';
@@ -117,10 +117,7 @@ function renderCards(data) {
       <div class="card-title" style="margin-top:8px;">${tableName}</div>
       <div class="card-subtitle">桌台 ID: ${tableId}</div>
       <div class="qr-wrapper" id="qr-${tableId}">
-        ${qrImg
-          ? '<img src="' + qrImg + '" alt="' + tableName + '二维码" style="width:180px;height:180px;object-fit:contain;" />'
-          : '<div class="loading-placeholder">生成中...</div>'
-        }
+        <div class="loading-placeholder">生成中...</div>
       </div>
       <div class="card-url" onclick="copyUrl(this, '${tableId}')" title="点击复制链接">
         ${url}
@@ -134,11 +131,10 @@ function renderCards(data) {
 
     grid.appendChild(card);
 
-    if (!qrImg) {
-      setTimeout(() => {
-        generateQr('qr-' + tableId, url, tableId);
-      }, 100 * idx);
-    }
+    // 无论 API 是否返回二维码图片，都基于本地 URL 重新生成
+    setTimeout(() => {
+      generateQr('qr-' + tableId, url, tableId);
+    }, 100 * idx);
   });
 }
 
