@@ -44,24 +44,6 @@ public class CreateCouponDto
 /// </summary>
 public class UpdateCouponDto : CreateCouponDto
 {
-    [Required(ErrorMessage = "券品ID不能为空")]
-    public string Id { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// 删除券品请求
-/// </summary>
-public class DeleteCouponRequest
-{
-    [Required(ErrorMessage = "券品ID不能为空")]
-    public string Id { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// 批量删除券品请求
-/// </summary>
-public class DeleteBatchCouponRequest
-{
-    [Required(ErrorMessage = "券品ID不能为空")]
-    public string[] Ids { get; set; } = [];
+    [Range(1, long.MaxValue, ErrorMessage = "券品ID不能为空")]
+    public long Id { get; set; }
 }

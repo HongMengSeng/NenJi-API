@@ -5,7 +5,7 @@ namespace WebAPI.Dtos;
 /// </summary>
 public class CouponDetailDto
 {
-    public string Id { get; set; } = string.Empty;
+    public long Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public decimal Price { get; set; }

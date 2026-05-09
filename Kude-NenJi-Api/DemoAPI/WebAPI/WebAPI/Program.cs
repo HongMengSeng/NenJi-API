@@ -137,6 +137,7 @@ public class Program
         builder.Services.AddScoped<IPasswordService, PasswordService>();
         builder.Services.AddScoped<IKitchenService, KitchenService>();
         builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<ICouponService, CouponService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

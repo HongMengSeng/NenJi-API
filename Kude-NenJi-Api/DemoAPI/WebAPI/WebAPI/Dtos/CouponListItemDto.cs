@@ -6,9 +6,9 @@ namespace WebAPI.Dtos;
 public class CouponListItemDto
 {
     /// <summary>
-    /// 券品编码 (Q20260409103001)
+    /// 券品ID
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public long Id { get; set; }
 
     /// <summary>
     /// 券品名称
@@ -16,7 +16,7 @@ public class CouponListItemDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 券品类型: 采摘券 / 研学活动券
+    /// 券品类型：采摘券 / 研学活动券
     /// </summary>
     public string Type { get; set; } = string.Empty;
 
@@ -46,7 +46,7 @@ public class CouponListItemDto
     public string ValidityUnit { get; set; } = string.Empty;
 
     /// <summary>
-    /// 有效期展示文本 (如: 30天)
+    /// 有效期展示（如 30天）
     /// </summary>
     public string Validity { get; set; } = string.Empty;
 
@@ -66,7 +66,7 @@ public class CouponListItemDto
     public string Image { get; set; } = string.Empty;
 
     /// <summary>
-    /// 轮播图/视频 (最多5个)
+    /// 轮播图/视频
     /// </summary>
     public List<CarouselMediaDto> CarouselMedia { get; set; } = [];
 
@@ -81,7 +81,7 @@ public class CouponListItemDto
     public int VerifiedCount { get; set; }
 
     /// <summary>
-    /// 创建时间 (yyyy-MM-dd HH:mm)
+    /// 创建时间
     /// </summary>
     public string CreateTime { get; set; } = string.Empty;
 }
