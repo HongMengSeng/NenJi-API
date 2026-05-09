@@ -286,9 +286,9 @@ Page({
         this.clearCartByType(orderType);
         
         setTimeout(() => {
-          // 跳转到支付页面
-          wx.redirectTo({
-            url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}`
+          // 跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
+          wx.navigateTo({
+            url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}&from=cart`
           });
         }, 1500);
       })

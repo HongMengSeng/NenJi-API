@@ -705,10 +705,10 @@ Page({
           return sum + Number(item.price || 0) * Number(item.count || 1);
         }, 0);
         
-        // 关闭弹窗并跳转到支付页面
+        // 关闭弹窗并跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
         this.setData({ showModal: false });
-        wx.redirectTo({
-          url: `/user-pages/pay/pay?orderId=${orderId}&type=goods&totalPrice=${totalPrice}`
+        wx.navigateTo({
+          url: `/user-pages/pay/pay?orderId=${orderId}&type=goods&totalPrice=${totalPrice}&from=cart`
         });
       })
       .catch((err) => {

@@ -30,6 +30,7 @@ Page({
     // 订单类型：从参数获取，默认自动识别
     const orderType = options.type || '';
     const clearCartList = options.clearCartList === '1';
+    const from = options.from || '';
 
     if (!orderId) {
       wx.showToast({
@@ -45,7 +46,8 @@ Page({
       totalPrice,
       activityId,
       orderType,
-      clearCartList
+      clearCartList,
+      from
     });
 
     // 自动开始支付
@@ -264,6 +266,13 @@ Page({
           url: `/user-pages/activity-detail/activity-detail?id=${this.data.activityId}&paid=true&orderId=${this.data.orderId}`
         });
       }, 1500);
+    } else if (this.data.from === 'cart') {
+      // 如果是从购物车过来的，支付成功后返回到购物车
+      setTimeout(() => {
+        wx.switchTab({
+          url: '/pages/cart/cart'
+        });
+      }, 1500);
     } else {
       // 普通订单跳转到订单列表
       setTimeout(() => {
@@ -319,13 +328,20 @@ Page({
 
   // 返回上一页或订单列表
   goBack: function () {
-    wx.navigateBack({
-      fail: () => {
-        wx.switchTab({
-          url: '/pages/index/index'
-        });
-      }
-    });
+    // 如果是从购物车过来的，返回到购物车
+    if (this.data.from === 'cart') {
+      wx.switchTab({
+        url: '/pages/cart/cart'
+      });
+    } else {
+      wx.navigateBack({
+        fail: () => {
+          wx.switchTab({
+            url: '/pages/index/index'
+          });
+        }
+      });
+    }
   },
 
   // 重新支付
