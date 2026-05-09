@@ -69,7 +69,7 @@
         </view>
         <view class="history-right">
           <text class="history-time">{{item.verifyTimeFormatted}}</text>
-          <text class="history-status success">已核销</text>
+          <text class="history-status success">{{item.status}}</text>
         </view>
       </view>
     </view>
@@ -93,6 +93,58 @@
     <!-- 没有更多数据 -->
     <view wx:if="{{!hasMore && historyList.length > 0}}" class="no-more">
       <text class="no-more-text">没有更多数据了</text>
+    </view>
+  </view>
+
+  <!-- 核销记录详情弹窗 -->
+  <view class="result-modal" wx:if="{{showDetail && detailItem}}">
+    <view class="result-card">
+      <text class="detail-title">核销记录详情</text>
+
+      <view class="voucher-info">
+        <view class="voucher-row">
+          <text class="voucher-label">券类型：</text>
+          <text class="voucher-value">{{detailItem.typeName}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">持券人：</text>
+          <text class="voucher-value">{{detailItem.userName}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">手机号：</text>
+          <text class="voucher-value">{{detailItem.userPhone}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">券内容：</text>
+          <text class="voucher-value">{{detailItem.content}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">核销码：</text>
+          <text class="voucher-value">{{detailItem.voucherCode}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">核销人数：</text>
+          <text class="voucher-value">{{detailItem.participantCount}} 人</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">核销时间：</text>
+          <text class="voucher-value">{{detailItem.verifyTime}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">核销员工：</text>
+          <text class="voucher-value">{{detailItem.staffName}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">订单号：</text>
+          <text class="voucher-value">{{detailItem.orderId}}</text>
+        </view>
+        <view class="voucher-row">
+          <text class="voucher-label">状态：</text>
+          <text class="voucher-value success-text">{{detailItem.status}}</text>
+        </view>
+      </view>
+
+      <button class="close-result-btn" bindtap="closeDetail">关闭</button>
     </view>
   </view>
 </view>

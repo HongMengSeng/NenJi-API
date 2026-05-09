@@ -14,7 +14,9 @@ Page({
     dateRange: {
       startDate: '',
       endDate: ''
-    }
+    },
+    showDetail: false,
+    detailItem: null
   },
 
   onLoad() {
@@ -146,7 +148,7 @@ Page({
 
         const historyList = list.map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: 'activity',
+          voucherType: item.voucherType || 'activity',
           typeName: item.categoryName || item.typeName || '活动券',
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
@@ -156,7 +158,8 @@ Page({
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),
           status: item.status || '已核销',
           verified: item.verified || true,
-          orderId: item.orderId || item.orderNo || item.id
+          orderId: item.orderId || item.orderNo || item.id,
+          raw: item
         }));
 
         // 分页处理：如果是第一页则覆盖，否则追加
@@ -257,15 +260,38 @@ Page({
   },
 
   /**
-   * 查看详情
+   * 查看核销记录详情
    */
   viewDetail(e) {
     const item = e.currentTarget.dataset.item;
-    wx.showModal({
-      title: '核销详情',
-      content: `券类型：${item.typeName}\n持券人：${item.userName}\n核销时间：${item.verifyTimeFormatted}\n券内容：${item.content}\n核销人数：${item.participantCount}`,
-      showCancel: false,
-      confirmText: '知道了'
+    if (!item) return;
+
+    const raw = item.raw || {};
+    this.setData({
+      showDetail: true,
+      detailItem: {
+        id: item.id,
+        typeName: item.typeName,
+        userName: item.userName,
+        userPhone: item.userPhone || '-',
+        content: item.content,
+        participantCount: item.participantCount,
+        verifyTime: item.verifyTimeFormatted,
+        status: item.status,
+        voucherCode: raw.voucherCode || raw.code || '-',
+        staffName: raw.staffName || raw.operatorName || '-',
+        orderId: item.orderId || '-'
+      }
+    });
+  },
+
+  /**
+   * 关闭核销记录详情
+   */
+  closeDetail() {
+    this.setData({
+      showDetail: false,
+      detailItem: null
     });
   },
 

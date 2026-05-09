@@ -1,171 +1,45 @@
 <view class="container">
-
-  <!-- 返回按钮 - 浮动圆形 -->
+  <!-- 返回按钮 -->
   <view class="nav-back" bindtap="goBack">
     <text class="back-icon">‹</text>
   </view>
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading">
+  <!-- 订单信息 -->
+  <view class="order-info">
+    <view class="item">
+      <text class="item-label">订单号：</text>
+      <text class="item-value">{{orderNo}}</text>
+    </view>
+    <view class="item">
+      <text class="item-label">快递公司：</text>
+      <text class="item-value">{{deliveryName || '-'}}</text>
+    </view>
+    <view class="item">
+      <text class="item-label">快递单号：</text>
+      <text class="item-value">{{waybillId || '-'}}</text>
+    </view>
+  </view>
+
+  <!-- 加载/错误状态 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-ring"></view>
-    <text class="loading-txt">加载中...</text>
+    <text class="loading-text">{{loadingText}}</text>
   </view>
 
-  <!-- 主内容 -->
-  <view wx:else class="logistics-content">
-
-    <!-- 状态头部 -->
-    <view class="status-banner">
-      <view class="status-banner-inner">
-        <view class="status-icon-wrap">
-          <text class="status-banner-icon">{{statusIcon}}</text>
-        </view>
-        <view class="status-text-wrap">
-          <view class="status-main-text">{{logisticsInfo.statusText || '运输中'}}</view>
-          <view class="status-sub-text">{{statusHint}}</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 快递公司和单号 -->
-    <view wx:if="{{logisticsInfo.companyName || logisticsInfo.waybillNo}}" class="card">
-      <view class="card-title">
-        <view class="card-title-left">
-          <view class="card-title-bar"></view>
-          <text class="card-title-text">快递信息</text>
-        </view>
-      </view>
-      <view class="card-body">
-        <view class="card-row card-row-column">
-          <text class="company-name">{{logisticsInfo.companyName || '快递公司'}}</text>
-          <view class="waybill-row">
-            <text class="label-tag">运单号</text>
-            <text class="waybill-no">{{logisticsInfo.waybillNo || orderId}}</text>
-          </view>
-        </view>
-        <!-- 发货时间 & 预计送达 -->
-        <view wx:if="{{shipTime || estimatedArrival}}" class="delivery-info">
-          <view wx:if="{{shipTime}}" class="delivery-row">
-            <text class="delivery-label">发货时间</text>
-            <text class="delivery-value">{{shipTime}}</text>
-          </view>
-          <view wx:if="{{estimatedArrival}}" class="delivery-row">
-            <text class="delivery-label">预计送达</text>
-            <text class="delivery-value delivery-highlight">{{estimatedArrival}}</text>
-          </view>
-        </view>
-        <view class="card-actions">
-          <view class="action-btn" bindtap="copyWaybillNo">复制单号</view>
-          <view class="action-btn" bindtap="callCompany" wx:if="{{logisticsInfo.companyPhone}}">联系快递</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 待发货提示 -->
-    <view wx:elif="{{logisticsInfo.status === 'pending' || logisticsInfo.status === 'paid'}}" class="card">
-      <view class="card-body pending-body">
-        <view class="pending-icon-wrap">
-          <text class="pending-icon">📦</text>
-        </view>
-        <text class="pending-text">商家正在准备发货</text>
-        <text class="pending-sub">请耐心等待，发货后将更新物流信息</text>
-      </view>
-    </view>
-
-    <!-- 收货地址 -->
-    <view wx:if="{{shippingAddress}}" class="card">
-      <view class="card-title">
-        <view class="card-title-left">
-          <view class="card-title-bar"></view>
-          <text class="card-title-text">收货地址</text>
-        </view>
-      </view>
-      <view class="card-body addr-body">
-        <view class="addr-icon-wrap">
-          <text class="addr-icon">📍</text>
-        </view>
-        <view class="addr-content">
-          <view class="addr-row">
-            <text class="addr-name">{{shippingAddress.name}}</text>
-            <text class="addr-phone">{{shippingAddress.phone}}</text>
-          </view>
-          <view class="addr-detail">{{shippingAddress.address}}</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 商品信息 -->
-    <view wx:if="{{orderItems && orderItems.length > 0}}" class="card">
-      <view class="card-title">
-        <view class="card-title-left">
-          <view class="card-title-bar"></view>
-          <text class="card-title-text">商品信息</text>
-        </view>
-        <text class="card-title-sub">共 {{orderItems.length}} 件</text>
-      </view>
-      <view class="card-body goods-body">
-        <view class="goods-item" wx:for="{{orderItems}}" wx:key="id">
-          <image class="goods-img" src="{{item.image}}" mode="aspectFill" />
-          <view class="goods-mid">
-            <view class="goods-name">{{item.name}}</view>
-            <view class="goods-qty-row">
-              <text class="goods-qty">× {{item.quantity}}</text>
-            </view>
-          </view>
-          <view class="goods-right">
-            <view class="goods-price">￥{{item.price}}</view>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 物流轨迹 -->
-    <view class="card">
-      <view class="card-title">
-        <view class="card-title-left">
-          <view class="card-title-bar"></view>
-          <text class="card-title-text">物流轨迹</text>
-        </view>
-      </view>
-      <view class="card-body">
-        <view wx:if="{{logisticsTrace && logisticsTrace.length > 0}}" class="trace-list">
-          <view wx:for="{{logisticsTrace}}" wx:key="index" class="trace-item {{index === 0 ? 'current' : ''}}">
-            <view class="trace-dot-col">
-              <view class="trace-dot {{index === 0 ? 'active' : ''}}"></view>
-              <view class="trace-line" wx:if="{{index !== logisticsTrace.length - 1}}"></view>
-            </view>
-            <view class="trace-content">
-              <view class="trace-desc {{index === 0 ? 'current' : ''}}">{{item.desc}}</view>
-              <view class="trace-time-row">
-                <text class="trace-time">{{item.time}}</text>
-                <text wx:if="{{item.location}}" class="trace-location">{{item.location}}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-        <view wx:else class="empty-tip">
-          <text class="empty-tip-text">暂无物流轨迹</text>
-          <text class="empty-tip-sub">商家发货后将更新物流信息</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 查看官方物流详情按钮 -->
-    <view wx:if="{{logisticsInfo.waybillNo}}" class="plugin-btn-wrap">
-      <button
-        class="plugin-btn"
-        bindtap="viewLogisticsPlugin"
-        loading="{{pluginLoading}}"
-        disabled="{{pluginLoading}}"
-      >
-        {{pluginLoading ? '加载中...' : '查看官方物流详情'}}
-      </button>
-    </view>
-
+  <view wx:elif="{{errorMsg}}" class="error-wrap">
+    <text class="error-text">{{errorMsg}}</text>
+    <button class="retry-btn" bindtap="retry">重新加载</button>
   </view>
 
-  <!-- 客服悬浮按钮 -->
-  <button class="service-btn" open-type="contact">
-    <image class="service-icon" src="https://img.icons8.com/ios-glyphs/24/ffffff/headset.png" />
-  </button>
+  <!-- 查看物流按钮 -->
+  <view wx:else class="btn-wrap">
+    <button
+      class="logistics-btn"
+      bindtap="viewLogistics"
+      disabled="{{loading}}"
+    >
+      {{loading ? '加载中...' : '查看物流详情'}}
+    </button>
+    <text class="btn-tip">点击后将跳转至微信官方物流页面</text>
+  </view>
 </view>

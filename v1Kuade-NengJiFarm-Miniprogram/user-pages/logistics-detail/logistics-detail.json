@@ -1,6 +1,4 @@
 {
-  "navigationStyle": "custom",
-  "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark",
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "物流查询"
 }

@@ -1,275 +1,169 @@
-﻿const { api } = require('../../utils/api');
 // 引入物流查询插件
 const plugin = requirePlugin("logisticsPlugin");
+const { api } = require('../../utils/api');
 
 Page({
   data: {
     orderId: '',
-    loading: true,
-    logisticsInfo: {},
-    logisticsTrace: [],
-    shippingAddress: null,
-    orderItems: [],
-    statusIcon: '🚚',
-    statusHint: '您的包裹正在运输中',
-    shipTime: '',
-    estimatedArrival: '',
-    // 物流插件所需数据
+    orderNo: '',
     waybillId: '',
     deliveryId: '',
     deliveryName: '',
+    openId: '',
     transId: '',
-    pluginLoading: false
+    loading: false,
+    loadingText: '加载中...',
+    errorMsg: '',
+    orderItems: [],
+    goodsList: []
   },
 
   onLoad(options) {
-    const orderId = options.orderId;
+    const orderId = options.orderId || '';
     if (!orderId) {
-      wx.showToast({
-        title: '缺少订单ID',
-        icon: 'none'
-      });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
+      this.setData({ errorMsg: '缺少订单信息' });
       return;
     }
 
-    this.setData({ orderId });
-    this.getLogisticsDetail(orderId);
+    this.setData({
+      orderId: orderId,
+      orderNo: options.orderNo || orderId,
+      waybillId: options.waybillId || '',
+      deliveryId: options.deliveryId || '',
+      deliveryName: options.deliveryName || '',
+      transId: options.transId || '',
+      openId: wx.getStorageSync('openid') || wx.getStorageSync('openId') || ''
+    });
+
+    // 如果已经有运单号和快递公司编码，直接准备查看物流
+    if (this.data.waybillId && this.data.deliveryId) {
+      // 尝试加载商品信息（从订单详情获取）
+      this.loadGoodsInfo();
+    } else {
+      // 缺少物流信息，先尝试从接口获取
+      this.fetchLogisticsInfo();
+    }
   },
 
-  // 获取物流详情
-  getLogisticsDetail(orderId) {
-    wx.showLoading({ title: '加载中...' });
+  // 从订单/物流接口获取运单信息
+  fetchLogisticsInfo() {
+    this.setData({ loading: true, loadingText: '获取物流信息...', errorMsg: '' });
 
-    // 物流API已包含 shippingAddress / items / shipTime / estimatedArrival，优先使用
-    api.logistics.getDetail(orderId)
-      .then((data) => {
-        console.log('获取物流详情成功:', data);
-        this.setLogisticsData(data);
-        return this.getLogisticsTrace(orderId);
-      })
-      .catch((err) => {
-        console.warn('获取物流详情失败，尝试订单API:', err);
-        // 物流API失败，回退到订单详情
-        return api.order.getDetail(orderId)
-          .then((orderData) => {
-            this.setMockLogisticsData(orderId, orderData);
-            return this.getLogisticsTrace(orderId);
-          })
-          .catch(() => {
-            this.setMockLogisticsData(orderId, null);
-            return this.getLogisticsTrace(orderId);
+    api.logistics.getDetail(this.data.orderId)
+      .then(data => {
+        if (data) {
+          const waybillId = data.waybillNo || data.waybillId || '';
+          const deliveryId = data.companyCode || data.deliveryId || data.expressCode || '';
+          const deliveryName = data.companyName || data.expressCompany || data.deliveryName || '';
+          const items = data.items || [];
+
+          this.setData({
+            waybillId,
+            deliveryId,
+            deliveryName,
+            orderItems: items,
+            goodsList: (items || []).map(item => {
+              const entry = { goodsName: item.name || '能记农场商品' };
+              if (item.image && !item.image.includes('192.168.')) {
+                entry.goodsImgUrl = item.image;
+              }
+              return entry;
+            }),
+            loading: false
           });
+
+          // 自动调用物流插件
+          if (waybillId && deliveryId) {
+            this.viewLogistics();
+          } else {
+            this.setData({ errorMsg: '暂无物流信息' });
+          }
+        } else {
+          this.setData({ loading: false, errorMsg: '暂无物流信息' });
+        }
       })
-      .finally(() => {
-        wx.hideLoading();
+      .catch(err => {
+        console.error('获取物流信息失败:', err);
+        this.setData({ loading: false, errorMsg: '获取物流信息失败，请稍后重试' });
       });
   },
 
-  // 获取物流轨迹
-  getLogisticsTrace(orderId) {
-    return api.logistics.getTrace(orderId)
-      .then((traceData) => {
-        console.log('获取物流轨迹成功:', traceData);
-        this.setLogisticsTrace(traceData);
+  // 加载商品信息（作为查看物流时的商品列表展示）
+  loadGoodsInfo() {
+    api.order.getDetail(this.data.orderId)
+      .then(orderData => {
+        if (orderData && orderData.items) {
+          const items = orderData.items;
+          this.setData({
+            orderItems: items,
+            goodsList: items.map(item => ({
+              goodsName: item.name || '能记农场商品',
+              goodsImgUrl: item.image || ''
+            }))
+          });
+        }
       })
-      .catch((err) => {
-        console.warn('获取物流轨迹失败:', err);
-        this.setData({ logisticsTrace: [] });
-      });
+      .catch(() => {});
   },
 
-  // 根据状态获取图标和提示语
-  _getStatusMeta(status) {
-    const map = {
-      'pending':      { icon: '📦', hint: '商家正在准备发货' },
-      'paid':         { icon: '📦', hint: '商家正在准备发货' },
-      'picked':       { icon: '📦', hint: '快递员已揽收' },
-      'shipping':     { icon: '🚚', hint: '您的包裹正在运输中' },
-      'transporting': { icon: '🚚', hint: '您的包裹正在运输中' },
-      'delivering':   { icon: '🚚', hint: '快递员正在派送中' },
-      'delivered':    { icon: '✅', hint: '包裹已签收' },
-      'completed':    { icon: '✅', hint: '包裹已签收' },
-      'signed':       { icon: '✅', hint: '包裹已签收' }
-    };
-    return map[status] || { icon: '🚚', hint: '物流信息更新中' };
-  },
+  // 查看物流详情
+  viewLogistics() {
+    const { waybillId, deliveryId, openId, transId, goodsList, orderId } = this.data;
 
-  // 设置物流数据
-  setLogisticsData(data) {
-    const meta = this._getStatusMeta(data.status);
-    const statusIcon = meta.icon;
-    // 优先使用API返回的 statusText，否则用本地映射的 hint
-    const statusHint = data.statusText || meta.hint;
-
-    // 处理商品图片
-    let processedItems = [];
-    if (data.items) {
-      processedItems = data.items.map(item => ({
-        ...item,
-        image: this.processImageUrl(item.image)
-      }));
-    }
-
-    this.setData({
-      logisticsInfo: data,
-      shippingAddress: data.shippingAddress || null,
-      orderItems: processedItems,
-      statusIcon: statusIcon,
-      statusHint: statusHint,
-      shipTime: data.shipTime || '',
-      estimatedArrival: data.estimatedArrival || '',
-      loading: false
-    });
-  },
-
-  // 设置物流轨迹
-  setLogisticsTrace(traceData) {
-    let trace = [];
-    if (Array.isArray(traceData)) {
-      trace = traceData;
-    } else if (traceData && Array.isArray(traceData.trace)) {
-      trace = traceData.trace;
-    }
-
-    this.setData({
-      logisticsTrace: trace
-    });
-  },
-
-  // 处理图片URL
-  processImageUrl: function(imageUrl) {
-    const utils = require('../../utils/utils');
-    return utils.media.processUrl(imageUrl);
-  },
-
-  // 设置模拟物流数据
-  setMockLogisticsData(orderId, orderData) {
-    const now = new Date();
-    
-    // 处理商品图片
-    let processedItems = [];
-    if (orderData && orderData.items) {
-      processedItems = orderData.items.map(item => ({
-        ...item,
-        image: this.processImageUrl(item.image)
-      }));
-    }
-    
-    // 判断订单状态
-    const orderStatus = orderData ? orderData.status : '';
-    const isPaidOnly = orderStatus === 'paid';
-    
-    // 确定状态
-    let status = 'shipping';
-    let statusText = '运输中';
-    if (isPaidOnly) {
-      status = 'pending';
-      statusText = '待发货';
-    } else if (orderData && (orderData.status === 'completed' || orderData.status === 'delivered')) {
-      status = 'delivered';
-      statusText = '已签收';
-    }
-
-    const meta = this._getStatusMeta(status);
-
-    const logisticsData = {
-      companyName: isPaidOnly ? '' : '顺丰速运',
-      companyPhone: isPaidOnly ? '' : '95338',
-      waybillNo: isPaidOnly ? '' : orderId,
-      status: status,
-      statusText: statusText,
-      shippingAddress: orderData ? orderData.shippingAddress : {
-        name: '收货人',
-        phone: '13800138000',
-        address: '广东省深圳市南山区'
-      },
-      items: processedItems
-    };
-
-    this.setData({
-      logisticsInfo: logisticsData,
-      shippingAddress: logisticsData.shippingAddress,
-      orderItems: logisticsData.items,
-      statusIcon: meta.icon,
-      statusHint: meta.hint,
-      loading: false
-    });
-  },
-
-  copyWaybillNo() {
-    wx.setClipboardData({
-      data: this.data.logisticsInfo.waybillNo || '',
-      success: () => {
-        wx.showToast({ title: '单号已复制', icon: 'success' });
-      }
-    });
-  },
-
-  callCompany() {
-    const phone = this.data.logisticsInfo.companyPhone || '95338';
-    wx.makePhoneCall({
-      phoneNumber: phone
-    });
-  },
-
-  goBack() {
-    wx.navigateBack();
-  },
-
-  // 查看物流详情（调用微信官方物流插件）
-  viewLogisticsPlugin() {
-    const { logisticsInfo, orderId } = this.data;
-
-    // 检查是否有物流单号
-    if (!logisticsInfo.waybillNo) {
-      wx.showToast({ title: '暂无物流信息', icon: 'none' });
+    if (!waybillId || !deliveryId) {
+      // 回到登录页自动获取
+      this.fetchLogisticsInfo();
       return;
     }
 
-    this.setData({ pluginLoading: true });
+    this.setData({ loading: true, loadingText: '加载物流中...' });
 
-    // 获取openId
-    const openId = wx.getStorageSync('openid') || wx.getStorageSync('openId') || '';
-
-    // 调用后端接口获取waybill_token（使用新的API接口）
+    // 调用后端接口获取 waybill_token
     api.logistics.getWaybillToken({
       openId: openId,
-      waybillId: logisticsInfo.waybillNo,
-      deliveryId: logisticsInfo.companyCode || 'SF', // 快递公司代码，默认顺丰
-      receiverPhone: logisticsInfo.shippingAddress?.phone || '13800138000',
-      transId: this.data.transId || '',
-      goodsList: logisticsInfo.items?.map(item => ({
-        goodsName: item.name || '能记农场商品',
-        goodsImgUrl: item.image || ''
-      })) || [{ goodsName: '能记农场商品', goodsImgUrl: '' }]
+      waybillId: waybillId,
+      deliveryId: deliveryId,
+      receiverPhone: '',  // 后端根据订单获取
+      transId: transId,
+      goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '能记农场商品' }]
     })
-      .then((data) => {
-        const waybillToken = data.waybillToken;
+      .then(data => {
+        const waybillToken = data.waybillToken || data;
         if (waybillToken) {
           // 调用微信官方插件打开物流详情页
           plugin.openWaybillTracking({
             waybillToken: waybillToken,
             success: () => {
               console.log('打开物流详情成功');
+              this.setData({ loading: false });
             },
             fail: (err) => {
               console.error('打开物流详情失败：', err);
-              wx.showToast({ title: '打开失败', icon: 'none' });
+              this.setData({ loading: false, errorMsg: '打开物流失败，请重试' });
             }
           });
         } else {
-          wx.showToast({ title: '获取物流信息失败', icon: 'none' });
+          this.setData({ loading: false, errorMsg: '获取物流信息失败' });
         }
       })
-      .catch((err) => {
-        console.error('获取物流token失败:', err);
-        wx.showToast({ title: err.message || '获取物流信息失败', icon: 'none' });
-      })
-      .finally(() => {
-        this.setData({ pluginLoading: false });
+      .catch(err => {
+        console.error('请求异常：', err);
+        const msg = err.message || '';
+        if (msg.includes('access_token') || msg.includes('credential')) {
+          this.setData({ loading: false, errorMsg: '物流服务配置异常，请联系管理员' });
+        } else {
+          this.setData({ loading: false, errorMsg: msg || '网络异常，请稍后重试' });
+        }
       });
+  },
+
+  // 重试
+  retry() {
+    this.setData({ errorMsg: '', loading: false });
+    this.fetchLogisticsInfo();
+  },
+
+  goBack() {
+    wx.navigateBack();
   }
 });

@@ -10,7 +10,9 @@ Page({
     resultTitle: '',
     resultMsg: '',
     voucherInfo: null,
-    historyList: []
+    historyList: [],
+    showHistoryDetail: false,
+    historyDetail: null
   },
 
   onLoad() {
@@ -65,7 +67,7 @@ Page({
       scanType: ['qrCode'],
       success: (res) => {
         console.log('扫码结果:', res.result);
-        
+
         const code = (res.result || '').trim();
         if (!code) {
           wx.showToast({ title: '无效的二维码', icon: 'none' });
@@ -154,7 +156,7 @@ Page({
       .catch(err => {
         console.error('核销失败:', err);
 
-        let title = '❌ 核销失败';
+        let title = '核销失败';
         let msg = (err && err.message) || '该券无效或已被使用';
 
         // 如果是后端返回的错误信息，友好展示
@@ -220,14 +222,21 @@ Page({
 
         console.log('解析后的列表:', list);
 
-        // 格式化数据
+        // 格式化数据（与 staff-verify-history 保持一致）
         const historyList = list.map(item => ({
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: 'activity',
-          userName: item.userName || '未知',
-          time: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
-          status: item.verified ? '已核销' : (item.status || '已核销'),
-          verified: item.verified || true  // 核销记录默认已核销
+          voucherType: item.voucherType || 'activity',
+          typeName: item.categoryName || item.typeName || '活动券',
+          userName: item.userName || '未知用户',
+          userPhone: item.userPhone || item.phone || '',
+          content: item.content || item.description || '-',
+          participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
+          verifyTime: item.verifyTime || item.time || item.createTime,
+          verifyTimeFormatted: item.verifyTime ? this.formatTime(new Date(item.verifyTime)) : '-',
+          status: item.status || '已核销',
+          verified: item.verified || true,
+          orderId: item.orderId || item.orderNo || item.id,
+          raw: item
         }));
 
         console.log('格式化后的历史列表:', historyList);
@@ -241,6 +250,42 @@ Page({
   },
 
   /**
+   * 查看核销记录详情（与 staff-verify-history 保持一致）
+   */
+  showHistoryDetail(e) {
+    const item = e.currentTarget.dataset.item;
+    if (!item) return;
+
+    const raw = item.raw || {};
+    this.setData({
+      showHistoryDetail: true,
+      historyDetail: {
+        id: item.id,
+        typeName: item.typeName,
+        userName: item.userName,
+        userPhone: item.userPhone || raw.userPhone || raw.phone || '-',
+        content: item.content || raw.content || raw.voucherContent || '-',
+        participantCount: item.participantCount || 1,
+        verifyTime: item.verifyTimeFormatted || this.formatDateTime(raw.verifyTime || item.verifyTime),
+        status: item.status,
+        voucherCode: raw.voucherCode || raw.code || '-',
+        staffName: raw.staffName || raw.operatorName || '-',
+        orderId: item.orderId || '-'
+      }
+    });
+  },
+
+  /**
+   * 关闭核销记录详情
+   */
+  closeHistoryDetail() {
+    this.setData({
+      showHistoryDetail: false,
+      historyDetail: null
+    });
+  },
+
+  /**
    * 格式化时间
    */
   formatTime(date) {
@@ -251,6 +296,24 @@ Page({
       const hour = String(d.getHours()).padStart(2, '0');
       const min = String(d.getMinutes()).padStart(2, '0');
       return `${month}-${day} ${hour}:${min}`;
+    } catch (e) {
+      return '-';
+    }
+  },
+
+  /**
+   * 格式化日期时间为 YYYY-MM-DD HH:mm
+   */
+  formatDateTime(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hour = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hour}:${min}`;
     } catch (e) {
       return '-';
     }
