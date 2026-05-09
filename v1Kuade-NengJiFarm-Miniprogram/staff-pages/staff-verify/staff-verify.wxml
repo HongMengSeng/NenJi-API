@@ -62,9 +62,9 @@
           <text class="voucher-label">使用时间：</text>
           <text class="voucher-value">{{voucherInfo.useTime}}</text>
         </view>
-        <view class="voucher-row" wx:if="{{voucherInfo.participantCount}}">
+        <view class="voucher-row">
           <text class="voucher-label">核销人数：</text>
-          <text class="voucher-value">{{voucherInfo.participantCount}} 人</text>
+          <text class="voucher-value">{{voucherInfo.participantCount || 1}} 人</text>
         </view>
       </view>
 

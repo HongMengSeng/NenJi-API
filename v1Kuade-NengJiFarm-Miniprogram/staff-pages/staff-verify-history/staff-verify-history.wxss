@@ -260,6 +260,12 @@
   max-width: 350rpx;
 }
 
+.history-count {
+  font-size: 22rpx;
+  color: #c99a5a;
+  font-weight: 500;
+}
+
 .history-right {
   display: flex;
   flex-direction: column;

@@ -64,6 +64,7 @@
           <view class="history-detail">
             <text class="history-user">{{item.userName}}</text>
             <text class="history-content">{{item.content}}</text>
+            <text class="history-count">{{item.participantCount}} 人</text>
           </view>
         </view>
         <view class="history-right">

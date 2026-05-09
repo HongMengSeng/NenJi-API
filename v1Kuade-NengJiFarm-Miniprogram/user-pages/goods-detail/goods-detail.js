@@ -57,7 +57,7 @@ Page({
     this.updateCartCount();
     // 重新获取地址列表，确保从地址页面返回时能看到最新的地址
     this.getAddressList();
-    // 重新获取商品详情，刷新最新库存
+    // 重新获取商品详情，从后端获取真实库存
     if (this.data.goods.id) {
       this.getGoodsDetail(this.data.goods.id);
     }

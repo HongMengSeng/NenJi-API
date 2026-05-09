@@ -151,6 +151,7 @@ Page({
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
           content: item.content || item.description || '-',
+          participantCount: item.participantCount || item.count || item.numberOfDiners || 1,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: this.formatDateTime(item.verifyTime || item.time || item.createTime),
           status: item.status || '已核销',
@@ -262,7 +263,7 @@ Page({
     const item = e.currentTarget.dataset.item;
     wx.showModal({
       title: '核销详情',
-      content: `券类型：${item.typeName}\n持券人：${item.userName}\n核销时间：${item.verifyTimeFormatted}\n券内容：${item.content}`,
+      content: `券类型：${item.typeName}\n持券人：${item.userName}\n核销时间：${item.verifyTimeFormatted}\n券内容：${item.content}\n核销人数：${item.participantCount}`,
       showCancel: false,
       confirmText: '知道了'
     });

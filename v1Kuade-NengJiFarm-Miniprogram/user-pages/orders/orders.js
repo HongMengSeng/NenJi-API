@@ -24,10 +24,9 @@ Page({
     statusTabs: [
       { key: 'all', name: '全部' },
       { key: 'pending', name: '待支付' },
-      { key: 'paid', name: '待发货/待出餐' },
-      { key: 'shipping', name: '待收货' },
-      { key: 'cancelled', name: '已取消' },
-      { key: 'completed', name: '已完成' }
+      { key: 'processing', name: '待处理' },
+      { key: 'completed', name: '已完成' },
+      { key: 'refund', name: '退款' }
     ],
     // 订单类型标签
     typeTabs: [
@@ -192,7 +191,9 @@ Page({
     }
     // 如果在状态标签页，设置状态过滤
     else if (this.data.activeTab !== 'all') {
-      status = this.data.activeTab;
+      status = this.data.activeTab === 'refund' ? 'refund,refunded'
+        : this.data.activeTab === 'processing' ? 'paid,ordered,verify_pending,shipping'
+        : this.data.activeTab;
     }
     // 如果在"全部"标签页，根据关键词自动识别订单类型（仅当没有选择类型标签时）
     else if (this.data.activeTypeTab === 'all') {
@@ -456,6 +457,11 @@ Page({
       this.setData({ currentOrderType: orderType });
     } else if (this.data.activeTab !== 'all') {
       status = this.data.activeTab;
+      if (status === 'refund') {
+        status = 'refund,refunded';
+      } else if (status === 'processing') {
+        status = 'paid,ordered,verify_pending,shipping';
+      }
     }
 
     const self = this;
@@ -590,7 +596,9 @@ Page({
     } else if (['food', 'acre', 'activity', 'cart'].includes(activeTab)) {
       params.type = activeTab;
     } else if (activeTab !== 'all') {
-      params.status = activeTab;
+      params.status = activeTab === 'refund' ? 'refund,refunded'
+        : activeTab === 'processing' ? 'paid,ordered,verify_pending,shipping'
+        : activeTab;
     }
 
     const self = this;
@@ -890,14 +898,8 @@ Page({
       return;
     }
 
-    const reasons = [
-      { value: 'wrong_item', label: '收到的商品与描述不符' },
-      { value: 'damaged', label: '商品损坏/腐烂' },
-      { value: 'not_as_expected', label: '不想要了' },
-      { value: 'delayed_delivery', label: '长时间未发货' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
+    // 根据订单类型展示不同的退款原因
+    const reasons = this._getRefundReasonsByType(order.type);
 
     wx.showActionSheet({
       itemList: reasons.map(r => r.label),
@@ -933,6 +935,35 @@ Page({
   },
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
+
+  // 根据订单类型获取退款原因列表
+  _getRefundReasonsByType(type) {
+    const goodsReasons = [
+      { value: 'wrong_item', label: '收到的商品与描述不符' },
+      { value: 'damaged', label: '商品损坏/腐烂' },
+      { value: 'not_as_expected', label: '不想要了' },
+      { value: 'delayed_delivery', label: '长时间未发货' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+    const foodReasons = [
+      { value: 'wrong_dish', label: '菜品与点单不符' },
+      { value: 'poor_quality', label: '菜品质量不佳' },
+      { value: 'delayed_service', label: '出餐速度慢' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+    const activityReasons = [
+      { value: 'activity_changed', label: '活动内容变更' },
+      { value: 'schedule_conflict', label: '时间安排冲突' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+
+    if (type === 'food') return foodReasons;
+    if (type === 'activity') return activityReasons;
+    return goodsReasons;
+  },
 
   onPullDownRefresh() {
     console.log('下拉刷新触发');

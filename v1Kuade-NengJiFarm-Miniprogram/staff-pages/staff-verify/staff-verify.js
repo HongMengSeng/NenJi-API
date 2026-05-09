@@ -120,7 +120,7 @@ Page({
           userName: data.userName || '未知用户',
           content: data.content || data.message || '-',
           useTime: this.formatTime(new Date()),
-          participantCount: data.participantCount || data.count || data.verifiedCount || ''
+          participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
         };
 
         // 根据是否已核销设置不同的提示

@@ -97,6 +97,24 @@ Page({
           orderData.typeText = typeMap[orderData.type] || '订单';
         }
 
+        // 统一状态文本：后端可能不返回 statusText
+        if (!orderData.statusText) {
+          const statusTextMap = {
+            'pending': '待支付',
+            'cancelled': '已取消',
+            'paid': '待发货',
+            'ordered': '待出餐',
+            'shipping': '待收货',
+            'verify_pending': '待核销',
+            'verified': '已核销',
+            'completed': '已完成',
+            'refund': '待退款',
+            'refunding': '待退款',
+            'refunded': '已退款'
+          };
+          orderData.statusText = statusTextMap[orderData.status] || orderData.status;
+        }
+
         // 处理订单明细
         orderData.items = (orderData.items || []).map(item => {
           const price = item.price ? item.price.toString().replace(/[¥￥]/g, '') : item.price;
@@ -186,7 +204,7 @@ Page({
 
         // 如果订单处于退款状态但还没有 refundInfo，先初始化一个占位对象
         // 避免退款进度卡片因 refundInfo 为空而不显示
-        if ((orderData.status === 'refund' || orderData.status === 'refunded' || orderData.hasRefund) && !orderData.refundInfo) {
+        if ((orderData.status === 'refund' || orderData.status === 'refunding' || orderData.status === 'refunded' || orderData.hasRefund) && !orderData.refundInfo) {
           orderData.refundInfo = {
             status: orderData.status === 'refunded' ? 'completed' : 'pending',
             statusText: orderData.status === 'refunded' ? '退款已完成' : '等待商家处理',
@@ -219,7 +237,7 @@ Page({
         }
 
         // 加载退款信息：可申请退款状态 + 退款中/已退款状态
-        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending', 'refund', 'refunded'];
+        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending', 'refund', 'refunding', 'refunded'];
         if (refundableStatuses.includes(orderData.status) || orderData.hasRefund) {
           this._loadRefundInfo(orderId);
         }
@@ -537,10 +555,19 @@ Page({
   // 加载退款信息
   _loadRefundInfo(orderId) {
     const reasonMap = {
+      // 商品订单
       wrong_item: '收到的商品与描述不符',
       damaged: '商品损坏/腐烂',
       not_as_expected: '不想要了',
       delayed_delivery: '长时间未发货',
+      // 点餐订单
+      wrong_dish: '菜品与点单不符',
+      poor_quality: '菜品质量不佳',
+      delayed_service: '出餐速度慢',
+      // 活动订单
+      activity_changed: '活动内容变更',
+      schedule_conflict: '时间安排冲突',
+      // 通用
       duplicate_order: '重复下单',
       other: '其他原因'
     };
@@ -613,15 +640,8 @@ Page({
       return;
     }
 
-    // 退款原因选项
-    const reasons = [
-      { value: 'wrong_item', label: '收到的商品与描述不符' },
-      { value: 'damaged', label: '商品损坏/腐烂' },
-      { value: 'not_as_expected', label: '不想要了' },
-      { value: 'delayed_delivery', label: '长时间未发货' },
-      { value: 'duplicate_order', label: '重复下单' },
-      { value: 'other', label: '其他原因' }
-    ];
+    // 根据订单类型展示不同的退款原因
+    const reasons = this._getRefundReasonsByType(order.type);
 
     // 使用 actionSheet 让用户选择退款原因
     wx.showActionSheet({
@@ -631,6 +651,35 @@ Page({
         this._submitRefund(orderId, selectedReason.value, selectedReason.label);
       }
     });
+  },
+
+  // 根据订单类型获取退款原因列表
+  _getRefundReasonsByType(type) {
+    const goodsReasons = [
+      { value: 'wrong_item', label: '收到的商品与描述不符' },
+      { value: 'damaged', label: '商品损坏/腐烂' },
+      { value: 'not_as_expected', label: '不想要了' },
+      { value: 'delayed_delivery', label: '长时间未发货' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+    const foodReasons = [
+      { value: 'wrong_dish', label: '菜品与点单不符' },
+      { value: 'poor_quality', label: '菜品质量不佳' },
+      { value: 'delayed_service', label: '出餐速度慢' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+    const activityReasons = [
+      { value: 'activity_changed', label: '活动内容变更' },
+      { value: 'schedule_conflict', label: '时间安排冲突' },
+      { value: 'duplicate_order', label: '重复下单' },
+      { value: 'other', label: '其他原因' }
+    ];
+
+    if (type === 'food') return foodReasons;
+    if (type === 'activity') return activityReasons;
+    return goodsReasons; // 默认为商品订单
   },
 
   // 内部方法：提交退款申请
