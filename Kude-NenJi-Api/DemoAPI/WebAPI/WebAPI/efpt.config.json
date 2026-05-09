@@ -77,6 +77,38 @@
       {
          "Name": "commodity_tag_detail",
          "ObjectType": 0
+      },
+      {
+         "Name": "dining_table_status_dict",
+         "ObjectType": 0
+      },
+      {
+         "Name": "dish_category",
+         "ObjectType": 0
+      },
+      {
+         "Name": "dish_category_status",
+         "ObjectType": 0
+      },
+      {
+         "Name": "dish_image",
+         "ObjectType": 0
+      },
+      {
+         "Name": "dish_order_detail_status",
+         "ObjectType": 0
+      },
+      {
+         "Name": "dish_status",
+         "ObjectType": 0
+      },
+      {
+         "Name": "stock_log",
+         "ObjectType": 0
+      },
+      {
+         "Name": "unit",
+         "ObjectType": 0
       }
    ],
    "UiHint": null,

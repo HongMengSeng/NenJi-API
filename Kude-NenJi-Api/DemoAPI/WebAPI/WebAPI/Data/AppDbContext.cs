@@ -57,6 +57,12 @@ public class AppDbContext : DbContext
 
     public DbSet<Video> Videos => Set<Video>();
 
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+
+    public DbSet<CouponMaterial> CouponMaterials => Set<CouponMaterial>();
+
+    public DbSet<CouponStatistic> CouponStatistics => Set<CouponStatistic>();
+
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
     //public DbSet<Coupon> Coupons => Set<Coupon>();
@@ -181,6 +187,28 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.VideoId);
             entity.Property(x => x.VideoId).ValueGeneratedOnAdd();
         });
+
+        modelBuilder.Entity<Coupon>(entity =>
+        {
+            entity.HasKey(x => x.CouponId);
+            entity.Property(x => x.CouponId).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<CouponMaterial>(entity =>
+        {
+            entity.HasKey(x => x.MaterialId);
+            entity.Property(x => x.MaterialId).ValueGeneratedOnAdd();
+        });
+
+        //modelBuilder.Entity<CouponStatistic>(entity =>
+        //{
+        //    entity.HasKey(x => x.StatId);
+        //    entity.Property(x => x.StatId).ValueGeneratedOnAdd();
+        //    entity.HasOne(x => x.Coupon)
+        //        .WithOne(c => c.CouponStatistic)
+        //        .HasForeignKey<CouponStatistic>(x => x.CouponId)
+        //        .OnDelete(DeleteBehavior.Cascade);
+        //});
 
         //modelBuilder.Entity<AdminAccount>(entity =>
         //{
