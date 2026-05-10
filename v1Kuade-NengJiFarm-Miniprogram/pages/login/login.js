@@ -31,7 +31,7 @@ Page({
   // 获取背景图片
   getBackgroundImage: function () {
     // 使用远程背景图
-    const bgImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000012.jpg';
+    const bgImageUrl = 'http://192.168.101.47/api/file/image/farm_0000000000012.jpg';
     this.setData({
       bgImage: bgImageUrl
     });
@@ -161,7 +161,7 @@ Page({
     imageUrl = String(imageUrl).replace(/[`\s]/g, '');
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       if (imageUrl.includes('127.0.0.1:5000')) {
-        return imageUrl.replace('127.0.0.1:5000', '192.168.203.56');
+        return imageUrl.replace('127.0.0.1:5000', '192.168.101.47');
       }
       return imageUrl;
     }

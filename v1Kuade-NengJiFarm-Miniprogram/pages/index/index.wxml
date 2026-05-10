@@ -24,7 +24,7 @@
    <!-- 视频播放器 -->
    <view class="video-section" wx:if="{{videos.length > 0}}">
     <view class="video-container">
-      <video 
+      <video
         class="video-player"
         src="{{videos[0].videoUrl}}"
         poster="{{videos[0].coverImage && videos[0].coverImage.startsWith('http') ? videos[0].coverImage : ''}}"
@@ -39,6 +39,7 @@
         show-fullscreen-btn="true"
         enable-playback-rate="true"
         bindfullscreenchange="onFullscreenChange"
+        binderror="onVideoError"
         volume="1.0"
         enable-play-btn="true"
         show-mute-btn="true"

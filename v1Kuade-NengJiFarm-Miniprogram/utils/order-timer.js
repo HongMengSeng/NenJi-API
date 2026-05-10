@@ -88,10 +88,15 @@ class OrderTimer {
 
   handleTimeout(orderId, onTimeout) {
     console.log(`订单 ${orderId} 超时，自动取消`);
-    
+
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);
+        // 恢复库存扣减
+        try {
+          const stockDeduction = require('./stock-deduction');
+          stockDeduction.remove(orderId);
+        } catch (e) {}
         // 记录取消时间到本地 Storage
         this.saveCancelledTime(orderId, Date.now());
         // 状态更新成功后再通知页面刷新，避免页面读到旧状态
@@ -103,6 +108,11 @@ class OrderTimer {
         // 如果订单不存在（404），说明已经被处理了，不算错误
         if (err && err.code === 404) {
           console.log(`订单 ${orderId} 不存在，可能已被处理`);
+          // 404 也尝试恢复库存，防止之前未恢复
+          try {
+            const stockDeduction = require('./stock-deduction');
+            stockDeduction.remove(orderId);
+          } catch (e) {}
         } else {
           console.error(`订单 ${orderId} 取消失败:`, err);
         }

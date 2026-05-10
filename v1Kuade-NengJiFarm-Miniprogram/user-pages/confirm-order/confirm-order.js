@@ -277,6 +277,16 @@ Page({
           return;
         }
 
+        // 保存库存扣减记录（仅点餐订单）
+        if (orderType === 'food') {
+          try {
+            const stockDeduction = require('../../utils/stock-deduction');
+            stockDeduction.save(orderId, items);
+          } catch (e) {
+            console.error('保存库存扣减失败:', e);
+          }
+        }
+
         // 关闭加载状态
         this.setData({ loading: false, isCreatingOrder: false });
 

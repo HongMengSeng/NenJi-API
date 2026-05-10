@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'http://192.168.203.56';
+const BASE_URL = 'http://192.168.101.47';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
@@ -370,6 +370,8 @@ const api = {
     // ========== 商品订单 API ==========
     // 获取点餐菜单数据（公开接口）
     getMenu: () => get('/api/order'),
+    // 获取全量点餐/商城分类商品数据（无参数，一次性返回所有分类+商品）
+    getFullMenu: () => get('/api/order/getOrderData'),
 
     // 获取商品订单列表
     getCommodityList: (params = {}) => get('/api/order/list', params),
