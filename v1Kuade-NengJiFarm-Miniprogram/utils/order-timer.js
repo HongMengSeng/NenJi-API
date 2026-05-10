@@ -92,13 +92,7 @@ class OrderTimer {
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);
-        // 通知后端恢复库存
-        this.restoreStock(orderId);
-        // 恢复本地库存扣减记录
-        try {
-          const stockDeduction = require('./stock-deduction');
-          stockDeduction.remove(orderId);
-        } catch (e) {}
+        // 后端在取消订单时已自动恢复库存，无需前端操作
         // 记录取消时间到本地 Storage
         this.saveCancelledTime(orderId, Date.now());
         // 状态更新成功后再通知页面刷新，避免页面读到旧状态
@@ -110,11 +104,6 @@ class OrderTimer {
         // 如果订单不存在（404），说明已经被处理了，不算错误
         if (err && err.code === 404) {
           console.log(`订单 ${orderId} 不存在，可能已被处理`);
-          // 404 也尝试恢复库存，防止之前未恢复
-          try {
-            const stockDeduction = require('./stock-deduction');
-            stockDeduction.remove(orderId);
-          } catch (e) {}
         } else {
           console.error(`订单 ${orderId} 取消失败:`, err);
         }
@@ -147,27 +136,6 @@ class OrderTimer {
   getCancelledTime(orderId) {
     const cancelledTimers = wx.getStorageSync('order_cancelled_timers') || {};
     return cancelledTimers[orderId] || null;
-  }
-
-  restoreStock(orderId) {
-    try {
-      const map = wx.getStorageSync('stock_deduction_map') || {};
-      const entry = map[orderId];
-      if (!entry || !entry.goodsList || !Array.isArray(entry.goodsList)) return;
-      const updates = {};
-      entry.goodsList.forEach(item => {
-        const goodsId = item.id || item.Id || item.goodsId;
-        const qty = item.quantity || item.Quantity || 0;
-        if (goodsId && qty > 0) {
-          updates[goodsId] = qty; // 正数 = 加回库存
-        }
-      });
-      if (Object.keys(updates).length > 0) {
-        api.syncStock.updateQuantity(updates);
-      }
-    } catch (e) {
-      console.error('通知后端恢复库存失败:', e);
-    }
   }
 }
 

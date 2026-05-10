@@ -171,18 +171,13 @@ Page({
   },
 
   addImageUrlsToGoods(goods) {
-    const stockDeduction = require('../../utils/stock-deduction');
-    return goods.map(item => {
-      const deduction = stockDeduction.getByGoodsId(item.id);
-      const apiStock = item.stock || 0;
-      return {
-        ...item,
-        image: this.processImageUrl(item.image),
-        price: (item.price || '').toString().replace(/[¥￥]/g, ''),
-        stock: Math.max(0, apiStock - deduction),
-        sold: item.sold || 0
-      };
-    });
+    return goods.map(item => ({
+      ...item,
+      image: this.processImageUrl(item.image),
+      price: (item.price || '').toString().replace(/[¥￥]/g, ''),
+      stock: item.stock || 0,
+      sold: item.sold || 0
+    }));
   },
 
   switchCategory(e) {

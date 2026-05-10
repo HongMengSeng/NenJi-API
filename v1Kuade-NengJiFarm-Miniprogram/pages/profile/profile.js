@@ -59,7 +59,7 @@ Page({
   // 获取推荐图片
   getRecommendImage: function() {
     // 使用新的图片路径获取图片
-    const recommendImageUrl = 'http://192.168.101.47/api/file/image/farm_0000000000007.jpg';
+    const recommendImageUrl = 'http://192.168.203.56/api/file/image/farm_0000000000007.jpg';
     this.setData({
       recommendImage: recommendImageUrl
     });
@@ -242,7 +242,7 @@ Page({
     
     // 上传图片到服务器
     wx.uploadFile({
-      url: 'http://192.168.101.47/api/file/upload/avatar',
+      url: 'http://192.168.203.56/api/file/upload/avatar',
       filePath: avatarUrl,
       name: 'file',
       header: {

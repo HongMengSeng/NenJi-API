@@ -104,7 +104,7 @@ Page({
       this.setData({ loading: false })
     })
 
-    const BASE_URL = 'http://192.168.101.47';
+    const BASE_URL = 'http://192.168.203.56';
     const videos = [{
       id: 1,
       title: '农场航拍',

@@ -272,11 +272,11 @@ const media = {
    */
   processUrl(url) {
     if (!url) return '';
-    const baseUrl = 'http://192.168.101.47';
+    const baseUrl = 'http://192.168.203.56';
     let normalized = String(url).replace(/[`\s]/g, '');
 
-    // 0. 兜底处理旧格式完整 URL（如 http://192.168.101.47/Farm_14.jpg）
-    //    转换为 http://192.168.101.47/api/file/image/images/farm/Farm_14.jpg
+    // 0. 兜底处理旧格式完整 URL（如 http://192.168.203.56/Farm_14.jpg 或 http://192.168.101.47/Farm_14.jpg）
+    //    转换为 http://192.168.203.56/api/file/image/images/farm/Farm_14.jpg
     if (normalized.startsWith(baseUrl + '/') && !normalized.startsWith(baseUrl + '/api/') && !normalized.startsWith(baseUrl + '/images/')) {
       const rawPath = normalized.substring(baseUrl.length); // /Farm_14.jpg
       const fileName = rawPath.split('/').filter(Boolean).pop() || '';

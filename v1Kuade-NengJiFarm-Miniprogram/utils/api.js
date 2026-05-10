@@ -1,5 +1,5 @@
 // API 封装
-const BASE_URL = 'http://192.168.101.47';
+const BASE_URL = 'http://192.168.203.56';
 
 // 需要登录才能访问的接口路径前缀（这些接口无 token 时自动跳登录）
 const AUTH_REQUIRED_PREFIXES = [
@@ -407,12 +407,6 @@ const api = {
     // 旧接口兼容方法 - 通过聚合接口实现
     getActivityList: (params = {}) => get('/api/orders', { ...params, type: 'activity' }),
     getDishList: (params = {}) => get('/api/orders', { ...params, type: 'food' })
-  },
-
-  // 库存同步（下单时占库存，取消时释放）
-  syncStock: {
-    // 更新商品库存数量（正数增加/负数减少）
-    updateQuantity: (updates) => post('/api/order/updateGoodsQuantity', { updates })
   },
 
   // 桌台相关
