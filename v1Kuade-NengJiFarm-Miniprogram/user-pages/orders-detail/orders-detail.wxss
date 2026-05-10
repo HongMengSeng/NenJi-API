@@ -1147,6 +1147,76 @@
   line-height: 1.5;
 }
 
+
+/* ============================================
+   发货弹窗
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 28rpx;
+  width: 86%;
+  max-width: 640rpx;
+  padding: 40rpx 36rpx 32rpx;
+  box-shadow: 0 16rpx 64rpx rgba(0, 0, 0, 0.3);
+}
+
+.modal-sm {
+  max-width: 520rpx;
+}
+
+.modal-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 36rpx;
+  letter-spacing: 2rpx;
+}
+
+.modal-desc {
+  font-size: 28rpx;
+  color: #888;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: #1e1c18;
+  }
+
+  .modal-title {
+    color: #e8e0d4;
+  }
+
+  .modal-desc {
+    color: #888;
+  }
+}
+
 /* ============================================
    有效期卡片
    ============================================ */

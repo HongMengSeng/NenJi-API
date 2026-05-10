@@ -343,7 +343,13 @@ const api = {
     getDetail: (id) => get(`/api/orders/${id}`),
 
     // 更新订单状态
-    updateStatus: (id, status, reason) => put(`/api/orders/${id}/status`, { status, reason }),
+    // 发货时 extra 可传 { trackingNumber, trackingTypeId, trackingTypeName, deliveryId }
+    updateStatus: (id, status, extra = {}) => {
+      const payload = typeof extra === 'string'
+        ? { status, reason: extra }
+        : { status, ...extra };
+      return put(`/api/orders/${id}/status`, payload);
+    },
 
     // 取消订单
     cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),

@@ -388,28 +388,29 @@ Page({
     });
   },
 
-  // 模拟发货
-  markShipping() {
-    const { order } = this.data;
-    wx.showModal({
-      title: '确认发货',
-      content: `确定要标记此订单为已发货吗？\n收货地址：${order.shippingAddress ? order.shippingAddress.name + ' ' + order.shippingAddress.phone + ' ' + order.shippingAddress.address : '未设置'}`,
-      success: (res) => {
-        if (res.confirm) {
-          wx.showLoading({ title: '发货中...' });
-          api.order.updateStatus(order.id, 'shipped')
-            .then(() => {
-              wx.hideLoading();
-              wx.showToast({ title: '发货成功', icon: 'success' });
-              this.getOrderDetail(order.id);
-            })
-            .catch((err) => {
-              wx.hideLoading();
-              wx.showToast({ title: err.message || '发货失败', icon: 'none' });
-            });
-        }
-      }
-    });
+  // ========== 模拟发货 ==========
+  mockShipping() {
+    this.setData({ showMockConfirm: true });
+  },
+
+  cancelMockShipping() {
+    this.setData({ showMockConfirm: false });
+  },
+
+  confirmMockShipping() {
+    wx.showLoading({ title: '模拟发货中...' });
+
+    api.order.updateStatus(this.data.order.id, 'shipped')
+      .then(() => {
+        wx.hideLoading();
+        this.setData({ showMockConfirm: false });
+        wx.showToast({ title: '模拟发货成功', icon: 'success' });
+        this.getOrderDetail(this.data.order.id);
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        wx.showToast({ title: err.message || '模拟发货失败', icon: 'none' });
+      });
   },
 
   goToOrders() {
