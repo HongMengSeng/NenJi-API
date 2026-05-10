@@ -47,7 +47,8 @@ Page({
     isRequesting: false,
     isPageVisible: false,
     orderCountdowns: {},
-    hasLoaded: false  // 标记是否已加载过数据
+    hasLoaded: false,  // 标记是否已加载过数据
+    refreshing: false   // 下拉刷新状态
   },
 
   searchTimer: null,
@@ -170,14 +171,13 @@ Page({
         hasMore: true,
         isRequesting: false
       });
-      this.getOrders();
-      return;
+      return this.getOrders();
     }
 
     // 防抖处理：如果正在请求中，先清除之前的请求状态
     if (this.data.isRequesting) {
       console.log('搜索请求正在进行中，跳过本次搜索');
-      return;
+      return Promise.resolve();
     }
 
     this.setData({ isRequesting: true, loading: true, searching: true });
@@ -212,7 +212,7 @@ Page({
     }
 
     const self = this;
-    api.order.searchOrders({
+    return api.order.searchOrders({
       keyword,
       status: status || 'all',
       type: orderType || 'all',
@@ -444,7 +444,7 @@ Page({
   getOrders() {
     if (this.data.isRequesting) {
       console.log('请求中，忽略重复调用');
-      return;
+      return Promise.resolve();
     }
 
     this.setData({ isRequesting: true, loading: true, searching: true });
@@ -468,7 +468,7 @@ Page({
     }
 
     const self = this;
-    api.order.getList({
+    return api.order.getList({
       type: orderType || 'all',
       status: status || 'all',
       page: 1,
@@ -890,7 +890,11 @@ Page({
 
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
+    // 查找订单，使用订单号(orderNumber)作为导航标识
+    // 后端列表接口返回的 id 字段可能与 orderNumber 不一致，直接用 id 会跳到错误订单
+    const order = this.data.orders.find(o => o.id === id || o.orderNumber === id || o.orderNo === id);
+    const navId = (order && (order.orderNumber || order.orderNo)) || id;
+    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${navId}` });
   },
 
   applyRefund(e) {
@@ -939,6 +943,27 @@ Page({
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
+  // scroll-view 下拉刷新
+  onRefresherRefresh() {
+    this.setData({ refreshing: true });
+
+    this.setData({
+      currentPage: 1,
+      hasMore: true,
+      isRequesting: false,
+      loadingMore: false
+    });
+
+    const promise = this.data.searchKeyword?.trim()
+      ? this.searchOrders()
+      : this.getOrders();
+
+    // 用 Promise.resolve 包装：即使方法返回 undefined（被防重挡掉），也能正常关闭
+    Promise.resolve(promise).finally(() => {
+      this.setData({ refreshing: false });
+    });
+  },
+
   // 根据订单类型获取退款原因列表
   _getRefundReasonsByType(type) {
     const goodsReasons = [
@@ -969,33 +994,6 @@ Page({
   },
 
   onPullDownRefresh() {
-    console.log('下拉刷新触发');
-
-    // 重置分页状态
-    this.setData({
-      currentPage: 1,
-      hasMore: true,
-      isRequesting: false,
-      loadingMore: false
-    });
-
-    // 执行刷新操作
-    const refreshPromise = this.data.searchKeyword?.trim()
-      ? this.searchOrders()
-      : this.getOrders();
-
-    // 确保在请求完成后停止下拉刷新
-    if (refreshPromise && refreshPromise.then) {
-      refreshPromise.finally(() => {
-        wx.stopPullDownRefresh();
-        this.setData({ isRequesting: false });
-      });
-    } else {
-      // 如果没有返回 Promise，使用延迟停止
-      setTimeout(() => {
-        wx.stopPullDownRefresh();
-        this.setData({ isRequesting: false });
-      }, 1500);
-    }
+    // 页面级下拉刷新已关闭，由 scroll-view refresher 接管
   }
 });

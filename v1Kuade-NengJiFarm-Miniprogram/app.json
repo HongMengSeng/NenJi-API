@@ -26,8 +26,7 @@
                 "profile-edit/profile-edit",
                 "address-edit/address-edit",
                 "address/address",
-                "search/search",
-                "logistics-detail/logistics-detail"
+                "search/search"
             ]
         },
         {
@@ -87,10 +86,10 @@
         "chooseLocation"
     ],
     "usingComponents": {},
-    "plugins": {
-        "logisticsPlugin": {
-            "provider": "wx9ad912bf20548d92",
-            "version": "2.3.0"
-        }
+    
+    "logisticsPlugin": {
+      "provider": "wx9ad912bf20548d92",
+      "version": "2.3.0"
     }
+   
 }

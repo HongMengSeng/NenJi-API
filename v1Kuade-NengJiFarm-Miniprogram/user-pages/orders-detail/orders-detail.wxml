@@ -96,8 +96,8 @@
     </view>
   </view>
 
-  <!-- 物流信息（点击跳转微信物流插件） -->
-  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed')}}" class="card clickable-card" bindtap="goToLogisticsDetail">
+  <!-- 物流信息 -->
+  <view wx:if="{{!order.isActivityOrder && !order.isAcreOrder && !order.isCancelledOrder && !order.isFoodOrder && (order.status === 'paid' || order.status === 'shipping' || order.status === 'completed') && (order.logisticsCompany || order.trackingNumber)}}" class="card clickable-card" bindtap="goToLogisticsDetail">
     <view class="card-title">
       <view class="card-title-left">
         <view class="card-title-bar"></view>
@@ -106,7 +106,7 @@
       <text class="card-title-arrow">查看详情 ›</text>
     </view>
     <view class="card-body logistics-card-body">
-      <view wx:if="{{order.logisticsCompany || order.trackingNumber}}" class="logistics-basic">
+      <view class="logistics-basic">
         <view class="logistics-basic-icon">📦</view>
         <view class="logistics-basic-info">
           <text class="logistics-basic-company">{{order.logisticsCompany || '快递公司'}}</text>
@@ -114,7 +114,6 @@
           <text wx:if="{{order.estimatedArrival}}" class="logistics-estimated">预计送达：{{order.estimatedArrival}}</text>
         </view>
       </view>
-      <view wx:else class="empty-tip">暂无物流信息</view>
     </view>
   </view>
 
