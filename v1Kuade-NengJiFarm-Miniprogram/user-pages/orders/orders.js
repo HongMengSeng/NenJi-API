@@ -47,8 +47,7 @@ Page({
     isRequesting: false,
     isPageVisible: false,
     orderCountdowns: {},
-    hasLoaded: false,  // 标记是否已加载过数据
-    refreshing: false   // 下拉刷新状态
+    hasLoaded: false  // 标记是否已加载过数据
   },
 
   searchTimer: null,
@@ -975,17 +974,9 @@ Page({
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
-  // scroll-view 下拉刷新
-  onRefresherRefresh() {
-    // 防重入：如果已经在刷新中，忽略此次调用
-    if (this.data.refreshing) {
-      console.log('下拉刷新正在进行中，忽略重复调用');
-      return;
-    }
-
-    // 显式进入刷新状态
+  // 下拉刷新（模仿活动页）
+  onPullDownRefresh() {
     this.setData({
-      refreshing: true,
       currentPage: 1,
       hasMore: true,
       isRequesting: false,
@@ -997,9 +988,10 @@ Page({
       : this.getOrders({ _isPullRefresh: true });
 
     Promise.resolve(promise).then(() => {
-      this.setData({ refreshing: false });
+      wx.stopPullDownRefresh();
     }).catch(() => {
-      this.setData({ refreshing: false, isRequesting: false, searching: false, loading: false });
+      wx.stopPullDownRefresh();
+      this.setData({ isRequesting: false, searching: false, loading: false });
     });
   },
 

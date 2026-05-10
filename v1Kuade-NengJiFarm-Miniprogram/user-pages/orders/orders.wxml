@@ -1,13 +1,4 @@
 <view class="container">
-  <!-- 导航栏 - 微信风格 -->
-  <view class="nav-bar">
-    <view class="nav-back" bindtap="goBack">
-      <text class="back-icon">‹</text>
-    </view>
-    <view class="nav-title">订单</view>
-    <view class="nav-placeholder"></view>
-  </view>
-  
   <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-box">
@@ -37,7 +28,7 @@
 
 
   <!-- 订单列表 -->
-  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100" refresher-enabled="{{true}}" refresher-default-style="none" refresher-refreshing="{{refreshing}}" bindrefresherrefresh="onRefresherRefresh">
+  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100">
     <!-- 加载中 -->
     <view wx:if="{{loading}}" class="loading">
       <view class="loading-spinner"></view>
