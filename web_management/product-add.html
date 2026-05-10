@@ -463,8 +463,11 @@
 							</div>
 							
 							<div class="form-actions">
-								<button class="btn btn-success" @click="saveProduct">新增产品</button>
+								<button class="btn btn-success" @click="saveProduct" :disabled="submitting">{{ submitting ? '提交中...' : '新增产品' }}</button>
 								<button class="btn btn-default" @click="cancel">取消</button>
+							</div>
+							<div v-if="submitMessage" style="margin-top: 12px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px;">
+								{{ submitMessage }}
 							</div>
 						</div>
 					</div>
@@ -478,6 +481,8 @@
 			createApp({
 				data() {
 					return {
+						submitting: false,
+						submitMessage: '',
 						// 产品表单
 						productForm: {
 							name: '',
@@ -541,6 +546,16 @@
 							const reader = new FileReader();
 							reader.onload = (e) => {
 								this.productForm.coverImage = e.target.result;
+								console.groupCollapsed('添加产品封面:', file.name);
+								console.log('图片信息:', {
+									name: file.name,
+									type: file.type,
+									size: file.size,
+									urlPreview: this.productForm.coverImage.slice(0, 80),
+									urlLength: this.productForm.coverImage.length
+								});
+								console.log('完整图片地址:', this.productForm.coverImage);
+								console.groupEnd();
 							};
 							reader.readAsDataURL(file);
 						}
@@ -566,18 +581,38 @@
 							const reader = new FileReader();
 							reader.onload = (e) => {
 								if (this.productForm.carouselMedia.length < 5) {
+									let mediaItem;
 									if (isVideo) {
-										this.productForm.carouselMedia.push({
+										mediaItem = {
 											type: 'video',
 											url: e.target.result,
 											thumb: this.generateVideoThumb(file.name)
-										});
+										};
 									} else {
-										this.productForm.carouselMedia.push({
+										mediaItem = {
 											type: 'image',
 											url: e.target.result
-										});
+										};
 									}
+									this.productForm.carouselMedia.push(mediaItem);
+									console.groupCollapsed('添加产品轮播媒体:', file.name);
+									console.log('媒体信息:', {
+										name: file.name,
+										type: file.type,
+										size: file.size,
+										media: {
+											type: mediaItem.type,
+											urlPreview: mediaItem.url.slice(0, 80),
+											urlLength: mediaItem.url.length,
+											thumbPreview: mediaItem.thumb ? mediaItem.thumb.slice(0, 80) : '',
+											thumbLength: mediaItem.thumb ? mediaItem.thumb.length : 0
+										}
+									});
+									console.log('完整媒体地址:', mediaItem.url);
+									if (mediaItem.thumb) {
+										console.log('完整视频缩略图地址:', mediaItem.thumb);
+									}
+									console.groupEnd();
 								}
 							};
 							reader.readAsDataURL(file);
@@ -615,6 +650,16 @@
 							reader.onload = (e) => {
 								if (this.productForm.specImages.length < 5) {
 									this.productForm.specImages.push(e.target.result);
+									console.groupCollapsed('添加产品规格图片:', file.name);
+									console.log('图片信息:', {
+										name: file.name,
+										type: file.type,
+										size: file.size,
+										urlPreview: e.target.result.slice(0, 80),
+										urlLength: e.target.result.length
+									});
+									console.log('完整图片地址:', e.target.result);
+									console.groupEnd();
 								}
 							};
 							reader.readAsDataURL(file);
@@ -628,39 +673,76 @@
 						this.productForm.specImages.splice(index, 1);
 					},
 					
-					// 保存产品
-					saveProduct() {
-						// 从localStorage中获取产品数据
-						let products = [];
-						const productsData = localStorage.getItem('products');
-						if (productsData) {
-							products = JSON.parse(productsData);
-						}
-						
-						// 创建新产品对象
-						const newProduct = {
-							id: 'P' + Date.now(),
-							name: this.productForm.name,
-							price: this.productForm.price,
-							stock: this.productForm.stock,
+					// 转换数字字段，空值按 0 提交。
+					toNumber(value) {
+						const numberValue = Number(value);
+						return Number.isFinite(numberValue) ? numberValue : 0;
+					},
+
+					// 按后端新增产品接口要求组装 body。
+					buildProductBody() {
+						return {
+							name: String(this.productForm.name || '').trim(),
+							price: this.toNumber(this.productForm.price),
+							stock: this.toNumber(this.productForm.stock),
 							status: this.productForm.status,
-							image: this.productForm.coverImage,
-							carouselMedia: this.productForm.carouselMedia,
-							netWeight: this.productForm.netWeight,
+							coverImage: this.productForm.coverImage,
+							carouselMedia: this.productForm.carouselMedia.map(item => ({
+								type: item.type || '',
+								url: item.url || '',
+								thumb: item.thumb || ''
+							})),
+							netWeight: this.toNumber(this.productForm.netWeight),
 							weightUnit: this.productForm.weightUnit,
-							storageCondition: this.productForm.storageCondition,
+							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							specImages: this.productForm.specImages,
-							description: this.productForm.description
+							description: String(this.productForm.description || '').trim()
 						};
-						
-						// 添加到产品数组
-						products.push(newProduct);
-						
-						// 保存回localStorage
-						localStorage.setItem('products', JSON.stringify(products));
-						
-						// 跳回产品管理页面
-						window.location.href = 'product.html';
+					},
+
+					// 保存产品：调用新增产品 API，成功后返回产品列表页。
+					async saveProduct() {
+						const bodyData = this.buildProductBody();
+						if (!bodyData.name) {
+							this.submitMessage = '产品名称不能为空';
+							return;
+						}
+						if (!bodyData.coverImage) {
+							this.submitMessage = '请添加产品封面';
+							return;
+						}
+
+						this.submitting = true;
+						this.submitMessage = '';
+
+						try {
+							const res = await fetch('http://192.168.101.30:7240/api/product/add', {
+								method: 'POST',
+								headers: window.Auth.getAuthHeaders({
+									'Content-Type': 'application/json'
+								}),
+								body: JSON.stringify(bodyData)
+							});
+							const data = await res.json();
+
+							if (res.status === 401 || res.status === 403 || data.code === 401 || data.code === 403) {
+								window.Auth.clearAuth();
+								window.Auth.redirectToLogin();
+								return;
+							}
+
+							if (res.ok && (data.code == null || Number(data.code) === 200)) {
+								window.location.href = 'product.html';
+								return;
+							}
+
+							this.submitMessage = data.message || '新增产品失败';
+						} catch (error) {
+							console.error('Add product failed:', error);
+							this.submitMessage = '网络错误，请重试';
+						} finally {
+							this.submitting = false;
+						}
 					},
 					
 					// 取消
