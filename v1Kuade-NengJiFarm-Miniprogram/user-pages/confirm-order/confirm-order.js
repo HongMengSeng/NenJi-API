@@ -277,8 +277,6 @@ Page({
           return;
         }
 
-        // 后端已在创建订单时自动扣减库存，无需前端额外处理
-
         // 关闭加载状态
         this.setData({ loading: false, isCreatingOrder: false });
 

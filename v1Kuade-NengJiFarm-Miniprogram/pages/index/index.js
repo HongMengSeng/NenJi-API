@@ -221,11 +221,6 @@ Page({
   // 跳转到菜品详情页面
   navigateToOrderFoodsDetail: function(e) {
     const id = e.currentTarget.dataset.id;
-    // 把热销菜品数据传给详情页，避免详情页调错误的 API
-    const dish = this.data.hotDishes.find(i => String(i.id) === String(id));
-    if (dish) {
-      getApp().globalData.foodDetail = dish;
-    }
     wx.navigateTo({
       url: '/user-pages/order-foods-detail/order-foods-detail?id=' + id
     });
@@ -243,12 +238,6 @@ Page({
     const fullScreen = e.detail.fullScreen;
     console.log('视频全屏状态变化', fullScreen);
     // 可以在这里添加全屏状态变化的逻辑
-  },
-
-  // 视频加载失败处理
-  onVideoError: function(e) {
-    console.error('视频加载失败:', e.detail.errMsg || e.detail);
-    this.setData({ videos: [] });
   },
 
   // 添加商品到购物车

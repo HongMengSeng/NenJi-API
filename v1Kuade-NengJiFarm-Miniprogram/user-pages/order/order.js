@@ -54,19 +54,15 @@ Page({
 
   onShow() {
     try {
-      // 已有数据则直接刷新合并列表，避免 onShow 期间出现空白
-      if (this.data.categories.length > 0 && Object.keys(this.data.goodsList).length > 0) {
-        this.updateMergedGoodsList();
-        // 静默刷新库存（不阻塞显示）
-        this.refreshStock();
-      }
-
-      // 恢复购物车状态
       const cart = wx.getStorageSync('orderCart') || {};
       this.restoreCart(cart);
       const tableNumber = wx.getStorageSync('tableNumber');
       if (tableNumber) this.setData({ tableNumber });
       this.syncFromCart();
+      // 刷新菜品库存，确保返回时仅剩数量是最新的
+      if (this.data.categories.length > 0) {
+        this.refreshStock();
+      }
     } catch (e) {}
   },
 
@@ -79,85 +75,33 @@ Page({
     }
   },
 
-  // 获取菜单数据：使用 /api/order/getOrderData 一次性获取全部分类 + 菜品
+  // 核心：替换为对方的 api 接口，其他完全用你的逻辑
   getOrderData() {
     wx.showLoading({ title: '加载中...' })
-    api.order.getFullMenu()
+    // 使用对方的获取分类接口
+    api.goods.getCategories({ type: 'food' })
       .then(data => {
-        console.log('菜单原始数据:', JSON.stringify(data).substring(0, 2000));
-        // 后端返回格式为 { data: { data: { categories, goodsList } } }
-        // request() 已解一层 data，还需再解两层
-        const inner = data.data || data;
-        const menuData = inner.data || inner;
-        let rawCats = [];
-        let rawGoodsList = {};
-
-        if (Array.isArray(menuData)) {
-          // 格式A: data 本身就是分类数组
-          rawCats = menuData;
-        } else if (Array.isArray(menuData.categories)) {
-          rawCats = menuData.categories;
-          rawGoodsList = menuData.goodsList || {};
-        } else if (Array.isArray(menuData.list)) {
-          rawCats = menuData.list;
-          rawGoodsList = menuData.goodsList || {};
-        } else if (Array.isArray(menuData.data)) {
-          rawCats = menuData.data;
-        } else if (Array.isArray(menuData.records)) {
-          rawCats = menuData.records;
-        } else if (Array.isArray(menuData.items)) {
-          rawCats = menuData.items;
-        }
-
-        console.log('解析后的分类数:', rawCats.length, 'goodsList 键:', Object.keys(rawGoodsList));
-
         const categories = [
           { id: 'all', name: '全部菜品' },
-          ...rawCats.map(cat => ({
+          ...(data || []).map(cat => ({
             id: String(cat.id),
             name: cat.name
           }))
         ];
-
-        // 构建 goodsList：按分类 ID 索引
-        const goodsList = {};
-        const allItems = [];
-        const goodsKeys = Object.keys(rawGoodsList);
-
-        if (goodsKeys.length > 0) {
-          // 格式1: goodsList 是 { "分类ID": [items] }
-          goodsKeys.forEach(catId => {
-            const items = this.addImageUrlsToGoods(rawGoodsList[catId] || []);
-            goodsList[catId] = items;
-            allItems.push(...items);
-          });
-        } else {
-          // 格式2: 从分类中提取 items/dishes/products/goods/list
-          rawCats.forEach(cat => {
-            const catId = String(cat.id);
-            const itemList = cat.items || cat.dishes || cat.products || cat.goods || cat.list || cat.foods || [];
-            const items = this.addImageUrlsToGoods(itemList);
-            goodsList[catId] = items;
-            allItems.push(...items);
-          });
-        }
-        goodsList['all'] = allItems;
-
-        console.log('分类数:', categories.length, '商品总数:', allItems.length);
-
+        const currentCategory = 'all';
         this.setData({
-          activeCategory: 'all',
+          activeCategory: currentCategory,
           categories,
-          goodsList,
-          pageMap: {},
-          hasMoreMap: {},
+          pageMap: { [currentCategory]: 1 },
+          hasMoreMap: { [currentCategory]: true },
           loading: false
         });
 
         this.updateMergedGoodsList();
+        this.loadAllCategories();
       })
       .catch(err => {
-        console.error('获取菜单失败:', err);
+        console.error('获取分类失败', err);
         this.setData({ loading: false });
         wx.showToast({ title: '加载失败', icon: 'none' });
       })
@@ -220,52 +164,57 @@ Page({
     })
   },
 
-  // 数据已在 getOrderData 中全量加载，按分类切换无需额外请求
-  loadCategoryGoods() {},
-  loadAllCategories() {},
+  // 加载菜品：使用对方的 api.goods.getList
+  loadCategoryGoods(category, isLoadMore) {
+    if (isLoadMore && this.data.lazyLoading) return;
+    const nextPage = isLoadMore ? (this.data.pageMap[category] || 0) + 1 : 1;
+    this.setData({ lazyLoading: isLoadMore });
 
-  // 后台刷新所有菜品库存（不显示loading）
-  refreshStock() {
-    api.order.getFullMenu()
+    let reqData = { type: 'food', pageSize: 100 };
+    if (category !== 'all') {
+      reqData.categoryId = category;
+    }
+
+    api.goods.getList(reqData)
       .then(data => {
-        const inner = data.data || data;
-        const menuData = inner.data || inner;
-        let rawCats = [];
-        let rawGoodsList = {};
-        if (Array.isArray(menuData)) {
-          rawCats = menuData;
-        } else if (Array.isArray(menuData.categories)) {
-          rawCats = menuData.categories;
-          rawGoodsList = menuData.goodsList || {};
-        } else if (Array.isArray(menuData.list)) {
-          rawCats = menuData.list;
-          rawGoodsList = menuData.goodsList || {};
-        } else if (Array.isArray(menuData.data)) {
-          rawCats = menuData.data;
-        }
-        const goodsList = {};
-        const allItems = [];
-        const goodsKeys = Object.keys(rawGoodsList);
-        if (goodsKeys.length > 0) {
-          goodsKeys.forEach(catId => {
-            const items = this.addImageUrlsToGoods(rawGoodsList[catId] || []);
-            goodsList[catId] = items;
-            allItems.push(...items);
-          });
-        } else {
-          rawCats.forEach(cat => {
-            const catId = String(cat.id);
-            const itemList = cat.items || cat.dishes || cat.products || cat.goods || cat.list || cat.foods || [];
-            const items = this.addImageUrlsToGoods(itemList);
-            goodsList[catId] = items;
-            allItems.push(...items);
-          });
-        }
-        goodsList['all'] = allItems;
-        this.setData({ goodsList });
+        let newGoods = this.addImageUrlsToGoods(data || []);
+        const old = this.data.goodsList[category] || [];
+        this.setData({
+          [`goodsList.${category}`]: isLoadMore ? old.concat(newGoods) : newGoods,
+          [`pageMap.${category}`]: nextPage,
+          [`hasMoreMap.${category}`]: newGoods.length >= this.data.pageSize,
+          lazyLoading: false
+        });
         this.updateMergedGoodsList();
-      })
-      .catch(() => {});
+      }).catch(() => {
+        this.setData({ lazyLoading: false });
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      });
+  },
+
+  loadAllCategories() {
+    this.data.categories.forEach(c => {
+      if (!this.data.goodsList[c.id]) this.loadCategoryGoods(c.id, false);
+    });
+  },
+
+  // 后台刷新所有分类的菜品库存（不显示loading）
+  refreshStock() {
+    this.data.categories.forEach(c => {
+      let reqData = { type: 'food', pageSize: 100 };
+      if (c.id !== 'all') {
+        reqData.categoryId = c.id;
+      }
+      api.goods.getList(reqData)
+        .then(data => {
+          let refreshedGoods = this.addImageUrlsToGoods(data || []);
+          this.setData({
+            [`goodsList.${c.id}`]: refreshedGoods
+          });
+          this.updateMergedGoodsList();
+        })
+        .catch(() => {});
+    });
   },
 
   updateMergedGoodsList() {
@@ -407,11 +356,6 @@ Page({
 
   navigateToGoodsDetail(e) {
     const id = e.currentTarget.dataset.id;
-    // 把该菜品数据传给详情页，避免详情页再调错误的 /api/goods/{id}
-    const goods = this.data.mergedGoodsList.find(i => String(i.id) === String(id));
-    if (goods) {
-      getApp().globalData.foodDetail = goods;
-    }
     wx.navigateTo({
       url: `/user-pages/order-foods-detail/order-foods-detail?id=${id}`
     });

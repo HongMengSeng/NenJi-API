@@ -222,7 +222,9 @@ Page({
       status: status || 'all',
       type: orderType || 'all',
       page: 1,
-      pageSize: 20
+      pageSize: 20,
+      sortBy: 'createTime',
+      sortOrder: 'desc'
     };
     // 下拉刷新时不显示 loading 遮罩
     const reqOptions = _isPullRefresh ? { showLoading: false } : {};
@@ -618,7 +620,7 @@ Page({
     this.setData({ loadingMore: true, isRequesting: true });
 
     // 使用原有分页逻辑
-    let params = { page: nextPage, pageSize: PAGE_SIZE };
+    let params = { page: nextPage, pageSize: PAGE_SIZE, sortBy: 'createTime', sortOrder: 'desc' };
     const activeTab = this.data.activeTab;
     const activeTypeTab = this.data.activeTypeTab;
 

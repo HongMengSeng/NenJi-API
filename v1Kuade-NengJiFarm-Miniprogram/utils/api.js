@@ -331,10 +331,10 @@ const api = {
   order: {
     // ========== 统一订单管理 API ==========
     // 获取订单列表 (支持 type: all/goods/food/activity, status: all/pending/paid/shipping/completed/cancelled)
-    getList: (params = {}) => get('/api/orders', params),
+    getList: (params = {}, options = {}) => get('/api/orders', params, options),
 
     // 订单搜索 (支持关键词搜索、状态过滤、类型过滤)
-    searchOrders: (params = {}) => get('/api/orders/search', params),
+    searchOrders: (params = {}, options = {}) => get('/api/orders/search', params, options),
 
     // 获取订单数量统计
     getCounts: (params = {}) => get('/api/orders/counts', params),
@@ -370,8 +370,6 @@ const api = {
     // ========== 商品订单 API ==========
     // 获取点餐菜单数据（公开接口）
     getMenu: () => get('/api/order'),
-    // 获取全量点餐/商城分类商品数据（无参数，一次性返回所有分类+商品）
-    getFullMenu: () => get('/api/order/getOrderData'),
 
     // 获取商品订单列表
     getCommodityList: (params = {}) => get('/api/order/list', params),

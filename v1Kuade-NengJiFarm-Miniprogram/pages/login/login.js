@@ -165,7 +165,7 @@ Page({
       }
       return imageUrl;
     }
-    const baseUrl = 'http://192.168.203.56';
+    const baseUrl = 'http://192.168.101.47';
     if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
     return baseUrl + imageUrl;
   },

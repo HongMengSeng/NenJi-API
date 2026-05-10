@@ -37,7 +37,7 @@
 
 
   <!-- 订单列表 -->
-  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100" refresher-enabled="{{true}}" refresher-refreshing="{{refreshing}}" bindrefresherrefresh="onRefresherRefresh">
+  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100" refresher-enabled="{{true}}" refresher-default-style="none" refresher-refreshing="{{refreshing}}" bindrefresherrefresh="onRefresherRefresh">
     <!-- 加载中 -->
     <view wx:if="{{loading}}" class="loading">
       <view class="loading-spinner"></view>

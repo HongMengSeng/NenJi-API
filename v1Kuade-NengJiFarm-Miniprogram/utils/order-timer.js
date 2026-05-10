@@ -88,11 +88,10 @@ class OrderTimer {
 
   handleTimeout(orderId, onTimeout) {
     console.log(`订单 ${orderId} 超时，自动取消`);
-
+    
     api.order.updateStatus(orderId, 'cancelled')
       .then(() => {
         console.log(`订单 ${orderId} 自动取消成功`);
-        // 后端在取消订单时已自动恢复库存，无需前端操作
         // 记录取消时间到本地 Storage
         this.saveCancelledTime(orderId, Date.now());
         // 状态更新成功后再通知页面刷新，避免页面读到旧状态
