@@ -86,10 +86,12 @@
         "chooseLocation"
     ],
     "usingComponents": {},
-    
-    "logisticsPlugin": {
-      "provider": "wx9ad912bf20548d92",
-      "version": "2.3.0"
+
+     "plugins": {
+        "logisticsPlugin": {
+            "provider": "wx9ad912bf20548d92",
+            "version": "2.3.0"
+        }
     }
    
 }

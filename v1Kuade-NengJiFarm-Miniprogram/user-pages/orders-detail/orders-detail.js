@@ -434,6 +434,14 @@ Page({
     const waybillId = trackingNumber;
     const deliveryId = order.logisticsCompanyCode || '';
     const transId = order.transactionId || '';
+    const receiverPhone = (order.shippingAddress && order.shippingAddress.phone) || '';
+
+    // 校验手机号是否有效，避免无效数据触发后端物流 API 报错
+    const cleanedPhone = receiverPhone.replace(/[^0-9]/g, '');
+    if (!cleanedPhone || cleanedPhone.length !== 11 || !cleanedPhone.startsWith('1')) {
+      wx.showToast({ title: '暂无物流信息', icon: 'none' });
+      return;
+    }
 
     // 构造商品列表
     const goodsList = (order.items || []).map(item => {
@@ -452,11 +460,11 @@ Page({
     wx.showLoading({ title: '加载物流中...' });
 
     // 调用后端接口获取 waybill_token
-    // 注意：不传 receiverPhone，因为订单的收件人手机号可能与快递公司记录不一致
     api.logistics.getWaybillToken({
       orderId: order.orderNumber || order.orderNo || order.id,
       openId,
       waybillId,
+      receiverPhone,
       deliveryId,
       transId,
       goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '能记农场商品', goodsImgUrl: '' }]

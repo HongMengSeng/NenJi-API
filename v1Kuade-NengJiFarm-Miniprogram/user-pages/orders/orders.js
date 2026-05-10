@@ -157,7 +157,7 @@ Page({
     }
   },
 
-  searchOrders() {
+  searchOrders({ _isPullRefresh } = {}) {
     const keyword = this.data.searchKeyword?.trim();
     if (!keyword) {
       // 清除搜索状态，重新加载订单列表
@@ -171,7 +171,7 @@ Page({
         hasMore: true,
         isRequesting: false
       });
-      return this.getOrders();
+      return this.getOrders({ _isPullRefresh });
     }
 
     // 防抖处理：如果正在请求中，先清除之前的请求状态
@@ -180,7 +180,12 @@ Page({
       return Promise.resolve();
     }
 
-    this.setData({ isRequesting: true, loading: true, searching: true });
+    // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
+    if (_isPullRefresh) {
+      this.setData({ isRequesting: true, searching: true });
+    } else {
+      this.setData({ isRequesting: true, loading: true, searching: true });
+    }
 
     // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
     let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
@@ -212,13 +217,23 @@ Page({
     }
 
     const self = this;
-    return api.order.searchOrders({
+    const searchParams = {
       keyword,
       status: status || 'all',
       type: orderType || 'all',
       page: 1,
       pageSize: 20
-    })
+    };
+    // 下拉刷新时不显示 loading 遮罩
+    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+
+    // 请求超时兜底：15秒无响应则主动超时
+    const apiPromise = api.order.searchOrders(searchParams, reqOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
+    });
+
+    return Promise.race([apiPromise, timeoutPromise])
       .then((data) => {
         let list = [];
         // 支持多种数据结构
@@ -441,13 +456,18 @@ Page({
   // ======== 分页加载核心 ========
 
   // 首次加载 / 切换tab
-  getOrders() {
+  getOrders({ _isPullRefresh } = {}) {
     if (this.data.isRequesting) {
       console.log('请求中，忽略重复调用');
       return Promise.resolve();
     }
 
-    this.setData({ isRequesting: true, loading: true, searching: true });
+    // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
+    if (_isPullRefresh) {
+      this.setData({ isRequesting: true, searching: true });
+    } else {
+      this.setData({ isRequesting: true, loading: true, searching: true });
+    }
 
     // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
     let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
@@ -468,14 +488,24 @@ Page({
     }
 
     const self = this;
-    return api.order.getList({
+    const reqParams = {
       type: orderType || 'all',
       status: status || 'all',
       page: 1,
       pageSize: PAGE_SIZE,
       sortBy: 'createTime',
       sortOrder: 'desc'
-    })
+    };
+    // 下拉刷新时不显示 loading 遮罩，避免干扰 scroll-view 的 refresher 状态机
+    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+
+    // 请求超时兜底：15秒无响应则主动超时，避免三个点一直转
+    const apiPromise = api.order.getList(reqParams, reqOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
+    });
+
+    return Promise.race([apiPromise, timeoutPromise])
       .then((data) => {
         console.log('getOrders - 原始数据:', data);
 
@@ -945,9 +975,15 @@ Page({
 
   // scroll-view 下拉刷新
   onRefresherRefresh() {
-    this.setData({ refreshing: true });
+    // 防重入：如果已经在刷新中，忽略此次调用
+    if (this.data.refreshing) {
+      console.log('下拉刷新正在进行中，忽略重复调用');
+      return;
+    }
 
+    // 显式进入刷新状态
     this.setData({
+      refreshing: true,
       currentPage: 1,
       hasMore: true,
       isRequesting: false,
@@ -955,12 +991,13 @@ Page({
     });
 
     const promise = this.data.searchKeyword?.trim()
-      ? this.searchOrders()
-      : this.getOrders();
+      ? this.searchOrders({ _isPullRefresh: true })
+      : this.getOrders({ _isPullRefresh: true });
 
-    // 用 Promise.resolve 包装：即使方法返回 undefined（被防重挡掉），也能正常关闭
-    Promise.resolve(promise).finally(() => {
+    Promise.resolve(promise).then(() => {
       this.setData({ refreshing: false });
+    }).catch(() => {
+      this.setData({ refreshing: false, isRequesting: false, searching: false, loading: false });
     });
   },
 
@@ -993,7 +1030,4 @@ Page({
     return goodsReasons;
   },
 
-  onPullDownRefresh() {
-    // 页面级下拉刷新已关闭，由 scroll-view refresher 接管
-  }
 });
