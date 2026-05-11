@@ -1,12 +1,10 @@
 ﻿using System.Data;
 
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Dtos.Kitchen;
-using WebAPI.Entities;
 using WebAPI.PasswordHash;
 
 namespace WebAPI.Services;
@@ -228,7 +226,7 @@ public class KitchenService : IKitchenService
     {
         var detail = await _context.DishOrderDetails
             .FirstOrDefaultAsync(d => d.DishOrderDetailsId == dishOrderDetailsId, cancellationToken);
-      
+
         var order = await _context.DishOrders
             .FirstOrDefaultAsync(o => o.OrderId == detail.DishOrderId, cancellationToken);
 
@@ -271,7 +269,7 @@ public class KitchenService : IKitchenService
         detail.StatusId = 4;
 
         // 获取订单的所有菜品
-        
+
 
         // 检查订单是否全部出餐
         var isAllFinished = orderDetails.All(d => d.StatusId == 4);
@@ -331,7 +329,7 @@ public class KitchenService : IKitchenService
         // 2. 判定「已完成订单」：订单有菜品，且不存在 StatusId = 2 的菜品
         // 即所有菜品都是 3（已出）或 4（已取消）
         var finishedOrders = todayOrdersWithDetails
-            .Where(o => o.DetailsStatus.Count > 0 
+            .Where(o => o.DetailsStatus.Count > 0
                 && !o.DetailsStatus.Any(status => status == 2))  // ✅ 核心：没有待出菜品
             .ToList();
 
@@ -363,35 +361,35 @@ public class KitchenService : IKitchenService
     }
 
 
-        //private readonly YourDbContext _context; // 替換為你的 DbContext
+    //private readonly YourDbContext _context; // 替換為你的 DbContext
 
-        //public KitchenService(YourDbContext context)
-        //{
-        //    _context = context;
-        //}
+    //public KitchenService(YourDbContext context)
+    //{
+    //    _context = context;
+    //}
 
-        public async Task<(bool Success, string Message, object? Data)> CancelDishAsync(int detailId, CancellationToken ct)
-        {
-            // 1. 查詢明細
-            var detail = await _context.DishOrderDetails
-                .FirstOrDefaultAsync(d => d.DishOrderDetailsId == detailId, ct);
+    public async Task<(bool Success, string Message, object? Data)> CancelDishAsync(int detailId, CancellationToken ct)
+    {
+        // 1. 查詢明細
+        var detail = await _context.DishOrderDetails
+            .FirstOrDefaultAsync(d => d.DishOrderDetailsId == detailId, ct);
 
-            if (detail == null)
-                return (false, "未找到該菜品明細", null);
+        if (detail == null)
+            return (false, "未找到該菜品明細", null);
 
-            // 2. 業務判定：已出餐 (StatusId == 3) 不可取消
-            if (detail.StatusId == 3)
-                return (false, "已出餐的菜品不可取消", null);
+        // 2. 業務判定：已出餐 (StatusId == 3) 不可取消
+        if (detail.StatusId == 3)
+            return (false, "已出餐的菜品不可取消", null);
 
-            // 3. 執行取消：將狀態改为 3 (根據你的文檔要求)
-            detail.StatusId = 3;
+        // 3. 執行取消：將狀態改为 3 (根據你的文檔要求)
+        detail.StatusId = 3;
 
-            await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesAsync(ct);
 
-            // 返回成功結果
-            return (true, "操作成功", new { dishOrderDetailsId = detailId, status = 3 });
-        }
-    
+        // 返回成功結果
+        return (true, "操作成功", new { dishOrderDetailsId = detailId, status = 3 });
+    }
+
 
 
     /// <summary>

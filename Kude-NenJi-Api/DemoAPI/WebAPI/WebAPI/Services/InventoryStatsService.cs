@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Data;
-using WebAPI.Entities;
-using WebAPI.Entities.Entities;
 
 namespace WebAPI.Services;
 
