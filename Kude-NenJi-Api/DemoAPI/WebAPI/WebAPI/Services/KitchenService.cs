@@ -212,62 +212,22 @@ public class KitchenService : IKitchenService
     /// </summary>
     public async Task<MarkDishFinishResponseDto> MarkDishFinishAsync(long dishOrderDetailsId, CancellationToken cancellationToken)
     {
-        // 查询订单明细
+        // 1. 依然建议保留查询 Detail 的逻辑，以获取关联的 OrderId
         var detail = await _context.DishOrderDetails
+            .Select(d => new { d.DishOrderDetailsId, d.DishOrderId }) // 仅查询必要的列
             .FirstOrDefaultAsync(d => d.DishOrderDetailsId == dishOrderDetailsId, cancellationToken);
 
-        if (detail == null)
-        {
-            throw new Exception("菜品明细不存在");
-        }
+        if (detail == null) throw new Exception("菜品明细不存在");
 
-        // 查询订单
-        var order = await _context.DishOrders
-            .FirstOrDefaultAsync(o => o.OrderId == detail.DishOrderId, cancellationToken);
+        // 2. 进阶更新：直接发送 UPDATE SQL
+        // 这一步会直接生成：UPDATE DishOrders SET OrderStatusId = 4 WHERE OrderId = @id
+        int rowsAffected = await _context.DishOrders
+            .Where(o => o.OrderId == detail.DishOrderId && o.OrderStatusId != 4) // 增加条件防止无效更新
+            .ExecuteUpdateAsync(s => s.SetProperty(b => b.OrderStatusId, 4), cancellationToken);
 
-        if (order == null)
-        {
-            throw new Exception("订单不存在");
-        }
+        _logger.LogInformation($"受影响行数: {rowsAffected}, OrderId: {detail.DishOrderId}");
 
-        // 幂等性检查：如果订单状态已经是“已出餐”，直接返回成功
-        var currentStatus = await _context.DishOrderStatuses
-            .FirstOrDefaultAsync(s => s.OrderStatusId == order.OrderStatusId, cancellationToken);
-
-        if (currentStatus != null && currentStatus.OrderStatusId == 4)
-        {
-            _logger.LogInformation($"订单已出餐，无需重复标记 - OrderId: {order.OrderId}");
-
-            return new MarkDishFinishResponseDto
-            {
-                AllFinished = true,
-                FinishDish = 0, // 不需要统计明细
-                TotalDish = 0   // 不需要统计明细
-            };
-        }
-
-        // 更新订单状态为“已出餐”
-        var finishedStatus = await _context.DishOrderStatuses
-            .FirstOrDefaultAsync(s => s.OrderStatusId == 4, cancellationToken);
-
-        if (finishedStatus == null)
-        {
-            throw new Exception("未找到'已出餐'状态，请检查状态配置");
-        }
-
-        order.OrderStatusId = finishedStatus.OrderStatusId;
-
-        // 保存更改
-        await _context.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation($"订单状态已更新为'已出餐' - OrderId: {order.OrderId}");
-
-        return new MarkDishFinishResponseDto
-        {
-            AllFinished = true,
-            FinishDish = 0, // 不需要统计明细
-            TotalDish = 0   // 不需要统计明细
-        };
+        return new MarkDishFinishResponseDto { AllFinished = true };
     }
 
     /// <summary>
