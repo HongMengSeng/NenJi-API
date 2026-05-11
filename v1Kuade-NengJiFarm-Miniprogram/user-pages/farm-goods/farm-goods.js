@@ -24,6 +24,32 @@ Page({
     this.updateCartCount();
   },
 
+  getCategories: function () {
+    api.farmGoods.getCategories()
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.categories || data.list || []);
+        const categories = list.map(item => ({
+          id: item.id || item.categoryId || '',
+          name: item.name || item.categoryName || ''
+        })).filter(item => item.id && item.name);
+
+        this.setData({
+          categories: [
+            { id: 'all', name: '全部商品' },
+            ...categories
+          ]
+        });
+      })
+      .catch(err => {
+        console.error('获取商品分类失败:', err);
+        this.setData({
+          categories: [
+            { id: 'all', name: '全部商品' }
+          ]
+        });
+      });
+  },
+
   onShow: function () {
     this.restoreCart();
     this.updateCartCount();
@@ -95,14 +121,9 @@ Page({
 
     let list = [];
 
-    if (currentCategory === 'acre') {
-      // 只显示认购商品
-      list = acreList;
-    } else if (currentCategory === 'all') {
-      // 显示所有商品（普通商品 + 认购商品）
+    if (currentCategory === 'all') {
       list = [...goodsList, ...acreList];
     } else {
-      // 显示指定分类的普通商品
       list = goodsList.filter(item => item.categoryId === currentCategory || item.category === currentCategory);
     }
 
