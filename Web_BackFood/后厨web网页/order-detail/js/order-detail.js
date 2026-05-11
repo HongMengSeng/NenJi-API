@@ -3,20 +3,75 @@
 // 后端地址: http://192.168.101.30:7240
 // ==============================
 
-// 新API: status=2=待出餐, 3=已取消, 4=已完成
+// 新API: status=1=待出餐, 3=已取消, 4=已完成
 const DISH_STATUS = {
-    PENDING: 2,
+    PENDING: 1,
     FINISHED: 4,
     CANCELLED: 3,
 };
 
 function isPendingStatus(status) {
-    return status === 2;
+    return status === 1;
 }
 
 const API_BASE = 'http://192.168.101.30:7240';
 
 let currentOrder = null;
+
+// ========== 本地菜品状态持久化（解决后端未持久化问题） ==========
+const STORAGE_KEY_PREFIX = 'order_dishes_';
+
+function saveDishStatuses(orderId, dishList) {
+    if (!orderId || !dishList) {
+        console.warn('保存跳过: orderId=%s, dishList=%s', orderId, dishList);
+        return;
+    }
+    try {
+        const key = STORAGE_KEY_PREFIX + orderId;
+        const value = JSON.stringify(dishList);
+        localStorage.setItem(key, value);
+        console.log('已保存到 localStorage [%s]: %s', key, value);
+    } catch (e) {
+        console.warn('保存本地菜品状态失败:', e);
+    }
+}
+
+function loadLocalDishStatuses(orderId) {
+    if (!orderId) return null;
+    try {
+        const data = localStorage.getItem(STORAGE_KEY_PREFIX + orderId);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        console.warn('读取本地菜品状态失败:', e);
+        return null;
+    }
+}
+
+function removeLocalDishStatuses(orderId) {
+    try {
+        localStorage.removeItem(STORAGE_KEY_PREFIX + orderId);
+    } catch (e) {}
+}
+
+/** 将本地保存的菜品状态覆盖到 API 返回的数据上 */
+function applyLocalStatusOverrides(order) {
+    const localDishes = loadLocalDishStatuses(order.orderId);
+    if (!localDishes || !order.dishList || order.dishList.length === 0) return;
+
+    const localMap = new Map();
+    localDishes.forEach(d => {
+        if (d.dishOrderDetailsId != null) {
+            localMap.set(d.dishOrderDetailsId, d);
+        }
+    });
+
+    order.dishList.forEach(d => {
+        const local = localMap.get(d.dishOrderDetailsId);
+        if (local && local.status !== undefined) {
+            d.status = local.status;
+        }
+    });
+}
 
 async function apiFetch(path, options = {}) {
     const token = localStorage.getItem('token');
@@ -53,6 +108,7 @@ function normalizeOrder(o) {
         orderNo: o.orderNo ?? o.no,
         createTime: o.createTime ?? o.time,
         tableNumber: o.tableNumber ?? o.table,
+        remark: o.remark ?? '',
         totalAmount: o.totalAmount ?? o.total,
         dishList: (o.dishList || o.items || []).map(d => ({
             dishOrderDetailsId: d.dishOrderDetailsId,
@@ -83,7 +139,7 @@ window.onload = function () {
     fetchOrderDetail(orderId);
 };
 
-// ========== 获取订单详情（从订单列表查找，无独立详情接口） ==========
+// ========== 获取订单详情 ==========
 async function fetchOrderDetail(orderId) {
     const itemsList = document.getElementById('items-list');
     itemsList.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#999;">加载中...</div>';
@@ -97,10 +153,31 @@ async function fetchOrderDetail(orderId) {
         }
         currentOrder = normalizeOrder(currentOrder);
 
-        console.log('订单详情:', currentOrder);
+        // 用本地保存的菜品状态覆盖 API 返回的数据
+        applyLocalStatusOverrides(currentOrder);
+
+        console.log('订单详情(已应用本地覆盖):', currentOrder);
         renderOrderDetail();
     } catch (err) {
         console.error('获取订单详情失败:', err);
+
+        // 如果 API 失败但本地有缓存数据，用本地数据渲染
+        const localDishes = loadLocalDishStatuses(orderId);
+        if (localDishes && localDishes.length > 0) {
+            currentOrder = {
+                orderId: orderId,
+                orderNo: orderId,
+                createTime: null,
+                tableNumber: '—',
+                remark: '',
+                totalAmount: 0,
+                dishList: localDishes,
+            };
+            console.log('API失败，使用本地缓存渲染:', currentOrder);
+            renderOrderDetail();
+            return;
+        }
+
         itemsList.innerHTML = `
             <div style="text-align:center;padding:60px 20px;color:#999;">
                 获取订单详情失败：${err.message}<br>
@@ -116,6 +193,7 @@ function renderOrderDetail() {
     document.getElementById('order-id').textContent = currentOrder.orderNo || currentOrder.orderId;
     document.getElementById('order-time').textContent = formatTime(currentOrder.createTime);
     document.getElementById('table-number').textContent = currentOrder.tableNumber || '—';
+    document.getElementById('order-remark').textContent = currentOrder.remark || '无';
 
     const dishList = currentOrder.dishList || [];
 
@@ -178,6 +256,9 @@ function renderOrderDetail() {
             <div class="total-amount" id="completed-amount">¥${completedAmount.toFixed(2)}</div>
         </div>
     `;
+
+    // 每次渲染都把当前菜品状态写入 localStorage，确保数据同步
+    saveDishStatuses(currentOrder.orderId, currentOrder.dishList);
 }
 
 // ========== 标记菜品为已出餐 ==========
@@ -207,6 +288,9 @@ async function markDishFinished(dishOrderDetailsId, btn) {
             dish.status = DISH_STATUS.FINISHED;
         }
 
+        // 保存到本地，确保刷新后状态不丢失
+        saveDishStatuses(currentOrder.orderId, currentOrder.dishList);
+
         btn.textContent = '已出餐';
         btn.disabled = true;
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
@@ -215,14 +299,28 @@ async function markDishFinished(dishOrderDetailsId, btn) {
             statusEl.className = 'status-text completed';
         }
 
+        // 同步替换按钮组，移除取消出餐按钮
+        const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
+        if (itemEl) {
+            const btnGroup = itemEl.querySelector('.button-group');
+            if (btnGroup) {
+                btnGroup.innerHTML = `<button class="complete-button" disabled>已出餐</button>`;
+            }
+        }
+
         updateCompletedAmount();
 
-        if (data && data.allFinished === true) {
+        // 检测是否全部菜品已处理完
+        const dishList = currentOrder?.dishList || [];
+        const allDone = dishList.length > 0 && dishList.every(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED);
+        if (allDone) {
             try {
                 localStorage.setItem('order_completed_at_' + currentOrder.orderId, Date.now().toString());
             } catch (e) {}
             setTimeout(() => {
-                alert(`订单所有菜品已全部出餐！（${data.finishDish}/${data.totalDish}）`);
+                const total = dishList.length;
+                const done = dishList.filter(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED).length;
+                alert(`订单所有菜品已全部出餐！（${done}/${total}）`);
             }, 200);
         }
 
@@ -262,6 +360,9 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
         if (dish) {
             dish.status = DISH_STATUS.CANCELLED;
         }
+
+        // 保存到本地，确保刷新后状态不丢失
+        saveDishStatuses(currentOrder.orderId, currentOrder.dishList);
 
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
         if (statusEl) {

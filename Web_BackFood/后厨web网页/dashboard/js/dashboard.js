@@ -6,6 +6,9 @@
 const API_BASE = 'http://192.168.101.30:7240';
 const PAGE_SIZE = 15;
 
+// 新API: status=1=待出餐, 3=已取消, 4=已完成
+const DISH_STATUS = { PENDING: 1, CANCELLED: 3, FINISHED: 4 };
+
 let currentTab = localStorage.getItem('dashboard_tab') || 'pending';
 let currentPage = parseInt(localStorage.getItem('dashboard_page')) || 1;
 let allOrders = [];
@@ -57,6 +60,13 @@ function clearAuth() {
     localStorage.removeItem('currentOrderId');
     localStorage.removeItem('dashboard_tab');
     localStorage.removeItem('dashboard_page');
+    // 清理本地菜品状态数据
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('order_dishes_') || key.startsWith('order_completed_at_'))) {
+            localStorage.removeItem(key);
+        }
+    }
 }
 
 /** 归一化订单字段名：兼容新旧 API 响应格式 */
@@ -76,6 +86,17 @@ function normalizeOrder(o) {
             status: d.status,
         }))
     };
+}
+
+/** 从 localStorage 读取本地保存的菜品状态（由 order-detail.js 写入） */
+function loadLocalDishStatuses(orderId) {
+    if (!orderId) return null;
+    try {
+        const data = localStorage.getItem('order_dishes_' + orderId);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 // ========== 页面初始化 ==========
@@ -107,9 +128,10 @@ async function fetchStatistics() {
     try {
         const res = await apiFetch('/api/Kitchen/today-statistics');
         const data = await parseApiResponse(res);
+        console.log('今日统计原始数据:', data);
         if (data) {
-            // 兼容新旧字段名
-            const amount = data.todayTotalAmount ?? data.totalAmount ?? data.total ?? 0;
+            // 兼容各种字段名
+            const amount = data.todayTotalAmount ?? data.totalAmount ?? data.total ?? data.sum ?? 0;
             document.getElementById('total-revenue').textContent = Number(amount).toFixed(2);
         }
     } catch (err) {
@@ -122,38 +144,64 @@ async function fetchOrders() {
     const orderList = document.getElementById('order-list');
 
     try {
-        const res = await apiFetch(`/api/Kitchen/order/list?type=${currentTab === 'pending' ? 2 : 4}`);
-        let data = await parseApiResponse(res);
-        allOrders = Array.isArray(data) ? data : [];
+        // 同时拉取待出餐(type=2)和已完成(type=4)的订单，合并后用本地状态重新分类
+        const [resPending, resCompleted] = await Promise.all([
+            apiFetch('/api/Kitchen/order/list?type=2'),
+            apiFetch('/api/Kitchen/order/list?type=4')
+        ]);
 
-        // 归一化字段名：兼容新旧 API (旧: id/no/time/table/total/items → 新: orderId/orderNo/createTime/tableNumber/totalAmount/dishList)
-        allOrders = allOrders.map(normalizeOrder);
+        let pendingData = await parseApiResponse(resPending);
+        let completedData = await parseApiResponse(resCompleted);
 
-        // 打印每个订单的菜品详细信息，排查新订单不显示的问题
-        console.log(`[调试] ${currentTab === 'pending' ? '待出餐' : '已出餐'} 接口返回 ${allOrders.length} 条订单`);
-        allOrders.forEach(o => {
-            const dishes = o.dishList || [];
-            const statuses = dishes.map(d => `${d.name}=${d.status}`);
-            console.log(`  ${o.orderNo} → 菜品状态: [${statuses.join(', ')}]`);
+        // 合并去重（以先出现的为准）
+        const orderMap = new Map();
+        (Array.isArray(pendingData) ? pendingData : []).forEach(o => {
+            const id = o.orderId ?? o.id;
+            if (id != null && !orderMap.has(id)) orderMap.set(id, o);
+        });
+        (Array.isArray(completedData) ? completedData : []).forEach(o => {
+            const id = o.orderId ?? o.id;
+            if (id != null && !orderMap.has(id)) orderMap.set(id, o);
         });
 
-        // === 客户端二次过滤 ===
-        if (currentTab === 'pending') {
-            const before = allOrders.length;
-            // 新API: status=2=待出餐, 3=已取消, 4=已完成
-            allOrders = allOrders.filter(o =>
-                (o.dishList || []).some(d => d.status === 2)
-            );
-            console.log(`[过滤] 待出餐: ${before}条 → ${allOrders.length}条`);
-        } else {
-            const before = allOrders.length;
-            // 已完成：没有待出餐(2)菜品的订单
-            allOrders = allOrders.filter(o => {
-                const dishes = o.dishList || [];
-                return dishes.length > 0 && !dishes.some(d => d.status === 2);
-            });
-            console.log(`[过滤] 已出餐: ${before}条 → ${allOrders.length}条`);
-        }
+        allOrders = [...orderMap.values()].map(normalizeOrder);
+
+        // 用本地保存的菜品状态覆盖 API 数据
+        allOrders.forEach(o => {
+            const localDishes = loadLocalDishStatuses(o.orderId);
+            if (localDishes && localDishes.length > 0) {
+                if (o.dishList.length === 0) {
+                    o.dishList = localDishes;
+                } else {
+                    const localMap = new Map();
+                    localDishes.forEach(d => {
+                        if (d.dishOrderDetailsId != null) localMap.set(d.dishOrderDetailsId, d);
+                    });
+                    o.dishList.forEach(d => {
+                        const local = localMap.get(d.dishOrderDetailsId);
+                        if (local && local.status !== undefined) d.status = local.status;
+                    });
+                }
+            }
+        });
+
+        // 根据本地菜品状态重新分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
+        const filtered = allOrders.filter(o => {
+            const dishes = o.dishList || [];
+            // 没有菜品数据时（从未操作过的订单），默认在待出餐显示
+            if (dishes.length === 0) return currentTab === 'pending';
+            const hasPending = dishes.some(d => d.status === DISH_STATUS.PENDING);
+            return currentTab === 'pending' ? hasPending : !hasPending;
+        });
+
+        console.log(`[${currentTab}] 合并后 ${allOrders.length} 条，过滤后 ${filtered.length} 条`);
+        filtered.forEach(o => {
+            const dishes = o.dishList || [];
+            const statuses = dishes.map(d => `${d.name}=${d.status}`);
+            console.log(`  ${o.orderNo} → [${statuses.join(', ')}]`);
+        });
+
+        allOrders = filtered;
 
         if (currentPage > Math.ceil(allOrders.length / PAGE_SIZE)) {
             currentPage = 1;
@@ -179,7 +227,7 @@ function renderOrders() {
     let orders = [...allOrders];
 
     if (!orders || orders.length === 0) {
-        const label = currentTab === 'pending' ? '待出餐' : '已出餐';
+        const label = currentTab === 'pending' ? '待出餐' : '已完成订单';
         orderList.innerHTML = `<div class="no-orders">暂无${label}订单</div>`;
         return;
     }
@@ -202,12 +250,16 @@ function renderOrders() {
     orderList.innerHTML = pageOrders.map(order => {
         const items = order.dishList || [];
         const total = items.length;
-        // 新API: status=2=待出餐, 3=已取消, 4=已完成
-        const finished = items.filter(it => it.status === 4).length;
-        const cancelled = items.filter(it => it.status === 3).length;
+        // 新API: status=1=待出餐, 3=已取消, 4=已完成
+        const finished = items.filter(it => it.status === DISH_STATUS.FINISHED).length;
+        const cancelled = items.filter(it => it.status === DISH_STATUS.CANCELLED).length;
 
         let progressText, progressClass;
-        if (currentTab === 'pending') {
+        if (total === 0) {
+            // 列表接口不返回菜品明细，使用简化状态
+            progressText = currentTab === 'pending' ? '待出餐' : '已出餐';
+            progressClass = currentTab === 'pending' ? '' : 'completed';
+        } else if (currentTab === 'pending') {
             progressText = cancelled > 0
                 ? `${finished}/${total} 已出餐，${cancelled} 已取消`
                 : `${finished}/${total} 已出餐`;
