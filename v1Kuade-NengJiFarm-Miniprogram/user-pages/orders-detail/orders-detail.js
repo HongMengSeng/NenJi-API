@@ -345,7 +345,7 @@ Page({
           orderData.qrcode = qrcodeData.qrCodeUrl;
           orderData.verifyCode = qrcodeData.verifyCode;
         } else {
-          orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+          orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
         }
         // 从核销接口提取核销时间
         const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
@@ -353,7 +353,7 @@ Page({
         this.setData({ order: orderData, loading: false });
       })
       .catch(() => {
-        orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
+        orderData.qrcode = 'https://api.nengjifarm.com/api/file/image/farm_000000000007.jpg';
         this.setData({ order: orderData, loading: false });
       });
   },
@@ -472,7 +472,7 @@ Page({
     // 构造商品列表
     const goodsList = (order.items || []).map(item => {
       const entry = { goodsName: item.name || '能记农场商品' };
-      if (item.image && !item.image.includes('192.168.')) {
+      if (item.image && (item.image.startsWith('http://') || item.image.startsWith('https://'))) {
         entry.goodsImgUrl = item.image;
       }
       return entry;
