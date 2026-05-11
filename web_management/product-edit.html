@@ -367,7 +367,7 @@
 					</header>
 					
 					<!-- 产品编辑页面 -->
-					<div>
+					<div class="form-scroll">
 						<div class="form-container">
 							<div v-if="loadError" style="margin-bottom: 16px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 8px 10px;">
 								{{ loadError }}
@@ -402,8 +402,8 @@
 									<label>产品封面</label>
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
-										<div class="image-item" v-if="productForm.coverImage">
-											<img :src="productForm.coverImage" alt="产品封面" />
+										<div class="image-item" v-if="productForm.coverImage || coverImagePreview">
+											<img :src="coverImagePreview || productForm.coverImage" alt="产品封面" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -418,11 +418,11 @@
 										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselFileUpload" style="display: none;" />
 										<div class="image-item" v-for="(item, index) in productForm.carouselMedia" :key="index">
 											<div v-if="item.type === 'image'" class="media-wrapper">
-												<img :src="item.url" alt="轮播图" @error="handleMediaLoadError($event)" />
+												<img :src="item.previewUrl || item.url" alt="轮播图" @error="handleMediaLoadError($event)" />
 											</div>
 											<div v-else class="video-thumb">
 												<div class="media-wrapper">
-													<img :src="item.thumb" alt="视频封面" @error="handleMediaLoadError($event)" />
+													<img :src="item.previewThumb || item.thumb || item.url" alt="视频封面" @error="handleMediaLoadError($event)" />
 												</div>
 												<span class="video-play-icon">▶</span>
 											</div>
@@ -481,7 +481,7 @@
 											style="display: none;"
 										/>
 										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
-											<img :src="image" alt="规格图片" />
+											<img :src="specImagePreviews[index] || image" alt="规格图片" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectSpecImage" v-if="productForm.specImages.length < 5">
@@ -506,12 +506,15 @@
 			const { createApp } = Vue
 			const PRODUCT_DETAIL_API = 'http://192.168.101.30:7240/api/product/detail';
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
+			const PRODUCT_IMAGE_BASE_URL = 'http://192.168.101.30:7240/image/';
 			
 			createApp({
 				data() {
 					return {
 						productId: '',
 						loadError: '',
+						coverImagePreview: '',
+						specImagePreviews: [],
 						// 产品表单
 						productForm: {
 							id: '',
@@ -550,6 +553,15 @@
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
+					},
+
+					// 选中文件后，按后端静态图片地址规则生成 URL：/image/文件名。
+					buildImageUrl(fileName) {
+						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
+					},
+
+					buildPreviewUrl(file) {
+						return URL.createObjectURL(file);
 					},
 					
 					resolveMediaUrl(value) {
@@ -632,6 +644,8 @@
 					},
 
 					fillProductForm(product) {
+						this.coverImagePreview = '';
+						this.specImagePreviews = [];
 						this.productForm = {
 							id: product.id || product.productId || this.productId,
 							name: product.name || product.productName || '',
@@ -686,11 +700,9 @@
 					handleCoverImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								this.productForm.coverImage = e.target.result;
-							};
-							reader.readAsDataURL(file);
+							this.productForm.coverImage = this.buildImageUrl(file.name);
+							this.coverImagePreview = this.buildPreviewUrl(file);
+							console.log('编辑产品封面地址:', this.productForm.coverImage);
 						}
 						// 重置文件输入，以便可以选择同一个文件
 						event.target.value = '';
@@ -699,6 +711,7 @@
 					// 移除封面图片
 					removeCoverImage() {
 						this.productForm.coverImage = '';
+						this.coverImagePreview = '';
 					},
 					
 					// 选择轮播图/视频
@@ -711,24 +724,17 @@
 						const file = event.target.files[0];
 						if (file) {
 							const isVideo = file.type.startsWith('video/');
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								if (this.productForm.carouselMedia.length < 5) {
-									if (isVideo) {
-										this.productForm.carouselMedia.push({
-											type: 'video',
-											url: e.target.result,
-											thumb: this.generateVideoThumb(file.name)
-										});
-									} else {
-										this.productForm.carouselMedia.push({
-											type: 'image',
-											url: e.target.result
-										});
-									}
-								}
-							};
-							reader.readAsDataURL(file);
+							if (this.productForm.carouselMedia.length < 5) {
+								const mediaItem = {
+									type: isVideo ? 'video' : 'image',
+									url: this.buildImageUrl(file.name),
+									thumb: '',
+									previewUrl: isVideo ? '' : this.buildPreviewUrl(file),
+									previewThumb: isVideo ? this.generateVideoThumb(file.name) : ''
+								};
+								this.productForm.carouselMedia.push(mediaItem);
+								console.log('编辑产品轮播媒体地址:', mediaItem.url);
+							}
 						}
 						// 重置文件输入
 						event.target.value = '';
@@ -768,13 +774,12 @@
 							.slice(0, remaining);
 
 						files.forEach(file => {
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								if (this.productForm.specImages.length < 5) {
-									this.productForm.specImages.push(e.target.result);
-								}
-							};
-							reader.readAsDataURL(file);
+							if (this.productForm.specImages.length < 5) {
+								const imageUrl = this.buildImageUrl(file.name);
+								this.productForm.specImages.push(imageUrl);
+								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								console.log('编辑产品规格图片地址:', imageUrl);
+							}
 						});
 						// 重置文件输入
 						event.target.value = '';
@@ -783,6 +788,7 @@
 					// 移除规格图片
 					removeSpecImage(index) {
 						this.productForm.specImages.splice(index, 1);
+						this.specImagePreviews.splice(index, 1);
 					},
 					
 					// 更新产品

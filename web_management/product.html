@@ -485,6 +485,10 @@
 			margin-right: 0;
 		}
 
+		.hidden-col{
+			display: none;
+		}
+
 		@media (max-width: 1200px){
 			.summary-grid{
 				grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -602,7 +606,6 @@
 							<!-- 操作按钮区域：负责新增、批量删除和刷新产品列表 -->
 							<div class="action-buttons">
 								<button class="btn btn-success" @click="navigateToAdd">新增</button>
-								<button class="btn btn-primary" @click="editProduct" :disabled="selectedProducts.length !== 1">编辑</button>
 								<button class="btn btn-danger" @click="deleteProduct" :disabled="selectedProducts.length === 0">删除</button>
 								<button class="btn btn-default" @click="refreshData">刷新数据</button>
 							</div>
@@ -624,7 +627,7 @@
 									<thead>
 										<tr>
 											<th><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-											<th>产品ID</th>
+											<th class="hidden-col">产品ID</th>
 											<th>产品封面</th>
 											<th>产品名称</th>
 											<th>上架时间</th>
@@ -638,7 +641,7 @@
 										<!-- 产品行：products 是当前页的数据，不是完整列表 -->
 										<tr v-for="product in products" :key="product.id">
 											<td><input type="checkbox" v-model="product.selected" @change="updateSelectedProduct" /></td>
-											<td>{{ product.id }}</td>
+											<td class="hidden-col">{{ product.id }}</td>
 											<td>
 												<img v-if="product.image" :src="product.image" alt="产品封面" class="product-image" />
 												<span v-else style="color: #718096;">无</span>
@@ -772,10 +775,10 @@
 						const totalStock = this.allProducts.reduce((sum, product) => sum + this.getStockValue(product.stock), 0);
 						const activeRatio = this.allProducts.length ? Math.round((activeProducts / this.allProducts.length) * 100) : 0;
 						return [
-							{ label: '产品总数', value: totalProducts, unit: '款', note: '当前列表内可管理的全部产品数量', tone: 'forest' },
-							{ label: '已上架', value: activeProducts, unit: '款', note: `上架占比 ${activeRatio}%`, tone: 'sky' },
-							{ label: '库存预警', value: lowStockProducts, unit: '款', note: '库存大于 0 且不超过 20 的产品', tone: 'sun' },
-							{ label: '库存总量', value: totalStock, unit: '件', note: '当前列表全部产品库存累计', tone: 'slate' }
+							{ label: '产品总数', value: totalProducts, unit: '款', note: '', tone: 'forest' },
+							{ label: '已上架', value: activeProducts, unit: '款', note: '', tone: 'sky' },
+							{ label: '小于20', value: lowStockProducts, unit: '款', note: '', tone: 'sun' },
+							{ label: '库存总量', value: totalStock, unit: '件', note: '', tone: 'slate' }
 						];
 					},
 
@@ -930,20 +933,20 @@
 						};
 					},
 
-					// 产品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
+					// 产品列表加载入口：先获取完整数据用于统计，再按分页显示。
 					async loadProducts(pageNum = 1) {
 						this.listError = '';
-						const params = new URLSearchParams();
-						params.set('pageNum', String(pageNum));
-						params.set('pageSize', String(this.pageSize));
-
 						const keyword = String(this.searchKeyword || '').trim();
-						if (keyword) {
-							params.set('keyword', keyword);
-						}
 
 						try {
-							const res = await fetch(`${PRODUCT_LIST_API}?${params.toString()}`, {
+							const listParams = new URLSearchParams();
+							listParams.set('pageNum', '1');
+							listParams.set('pageSize', '9999');
+							if (keyword) {
+								listParams.set('keyword', keyword);
+							}
+
+							const res = await fetch(`${PRODUCT_LIST_API}?${listParams.toString()}`, {
 								headers: window.Auth.getAuthHeaders()
 							});
 							const data = await res.json();
@@ -963,17 +966,22 @@
 								return;
 							}
 
-							const products = records.map(product => this.normalizeProduct(product));
-
-							this.products = products;
-							this.allProducts = products;
-							this.sourceProducts = products;
-							this.totalProducts = Number(pageData.total) || products.length;
-							this.totalPages = Math.max(Number(pageData.pages) || Math.ceil(this.totalProducts / this.pageSize) || 1, 1);
-							this.currentPage = Number(pageData.pageNum) || pageNum;
+							const allProducts = records.map(product => this.normalizeProduct(product));
+							this.sourceProducts = allProducts;
+							this.allProducts = allProducts;
+							this.totalProducts = Number(pageData.total) || allProducts.length;
+							this.totalPages = Math.max(Math.ceil(this.totalProducts / this.pageSize), 1);
+							this.currentPage = Math.min(Math.max(Number(pageNum), 1), this.totalPages);
 							this.jumpPage = this.currentPage;
 							this.selectAll = false;
 							this.selectedProduct = null;
+
+							const startIndex = (this.currentPage - 1) * this.pageSize;
+							const endIndex = startIndex + this.pageSize;
+							this.products = allProducts.slice(startIndex, endIndex).map(product => ({
+								...product,
+								selected: false
+							}));
 						} catch (error) {
 							console.error('获取产品列表失败:', error);
 							this.listError = '网络错误，请重试';

@@ -367,7 +367,7 @@
 					</header>
 					
 					<!-- 产品新增页面 -->
-					<div>
+					<div class="form-scroll">
 						<div class="form-container">
 							<div class="form-row">
 								<div class="form-group">
@@ -383,8 +383,11 @@
 									<input type="number" v-model="productForm.stock" />
 								</div>
 								<div class="form-group">
-									<label>类型</label>
-									<input type="text" v-model="productForm.type" placeholder="请输入类型" />
+									<label>状态</label>
+									<select v-model="productForm.status">
+										<option value="已上架">已上架</option>
+										<option value="已下架">已下架</option>
+									</select>
 								</div>
 							</div>
 							
@@ -393,8 +396,8 @@
 									<label>产品封面</label>
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
-										<div class="image-item" v-if="productForm.coverImage">
-											<img :src="productForm.coverImage" alt="产品封面" />
+										<div class="image-item" v-if="productForm.coverImage || coverImagePreview">
+											<img :src="coverImagePreview || productForm.coverImage" alt="产品封面" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -409,11 +412,11 @@
 										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselFileUpload" style="display: none;" />
 										<div class="image-item" v-for="(item, index) in productForm.carouselMedia" :key="index">
 											<div v-if="item.type === 'image'" class="media-wrapper">
-												<img :src="item.url" alt="轮播图" @error="handleMediaLoadError($event)" />
+												<img :src="item.previewUrl || item.url" alt="轮播图" @error="handleMediaLoadError($event)" />
 											</div>
 											<div v-else class="video-thumb">
 												<div class="media-wrapper">
-													<img :src="item.thumb" alt="视频封面" @error="handleMediaLoadError($event)" />
+													<img :src="item.previewThumb || item.thumb || item.url" alt="视频封面" @error="handleMediaLoadError($event)" />
 												</div>
 												<span class="video-play-icon">▶</span>
 											</div>
@@ -429,30 +432,26 @@
 							
 							<div class="form-row">
 								<div class="form-group">
-									<label>单次限购</label>
-									<input type="number" v-model="productForm.limitPerOrder" min="1" step="1" />
-								</div>
-								<div class="form-group">
-									<label>有效期</label>
+									<label>净含量</label>
 									<div class="weight-input-group">
-										<input type="number" v-model="productForm.validityPeriod" min="1" step="1" />
-										<select v-model="productForm.validityUnit">
-											<option value="天">天</option>
-											<option value="月">月</option>
-											<option value="年">年</option>
+										<input type="number" v-model="productForm.netWeight" />
+										<select v-model="productForm.weightUnit">
+											<option value="kg">kg</option>
+											<option value="g">g</option>
+											<option value="斤">斤</option>
 										</select>
 									</div>
 								</div>
 								<div class="form-group">
-									<label>退款规则</label>
-									<input type="text" v-model="productForm.refundRule" placeholder="请输入退款规则" />
+									<label>保存条件</label>
+									<input type="text" v-model="productForm.storageCondition" />
 								</div>
 							</div>
 
 							<div class="form-row">
 								<div class="form-group" style="flex: 2;">
-									<label>使用规则</label>
-									<textarea v-model="productForm.usageRules"></textarea>
+									<label>产品介绍</label>
+									<textarea v-model="productForm.description"></textarea>
 								</div>
 							</div>
 
@@ -472,7 +471,7 @@
 											style="display: none;"
 										/>
 										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
-											<img :src="image" alt="规格图片" />
+											<img :src="specImagePreviews[index] || image" alt="规格图片" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectSpecImage" v-if="productForm.specImages.length < 5">
@@ -498,23 +497,21 @@
 		
 		<script>
 			const { createApp } = Vue
+			const PRODUCT_IMAGE_BASE_URL = '/images/farm/';
 			
 			createApp({
 				data() {
 					return {
 						submitting: false,
 						submitMessage: '',
+						coverImagePreview: '',
+						specImagePreviews: [],
 						// 产品表单
 						productForm: {
 							name: '',
-							type: '',
 							price: '',
 							stock: '',
-							limitPerOrder: 1,
-							validityPeriod: 30,
-							validityUnit: '天',
-							refundRule: '',
-							usageRules: '',
+							status: '已上架',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -547,15 +544,10 @@
 						// 模拟产品数据
 						const productData = {
 							name: '苹果',
-							type: '采摘活动',
 							price: 5,
 							stock: 10000,
-							limitPerOrder: 1,
-							validityPeriod: 30,
-							validityUnit: '天',
-							refundRule: '支持未使用且未核销退款',
-							usageRules: '适用于农场采摘体验，需到店出示核销码后使用。',
-							coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=fresh%20red%20apples%2C%20high%20quality%20photograph&image_size=square',
+							status: '已上架',
+							coverImage: '',
 							carouselMedia: [],
 							netWeight: '1',
 							weightUnit: 'kg',
@@ -564,6 +556,15 @@
 							description: '新鲜苹果，口感甜美'
 						};
 						this.productForm = productData;
+					},
+
+					// 选中文件后，按后端约定生成相对图片地址：images/farm/文件名。
+					buildImageUrl(fileName) {
+						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
+					},
+
+					buildPreviewUrl(file) {
+						return URL.createObjectURL(file);
 					},
 					
 					// 选择封面图片
@@ -575,21 +576,17 @@
 					handleCoverImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								this.productForm.coverImage = e.target.result;
-								console.groupCollapsed('添加产品封面:', file.name);
-								console.log('图片信息:', {
-									name: file.name,
-									type: file.type,
-									size: file.size,
-									urlPreview: this.productForm.coverImage.slice(0, 80),
-									urlLength: this.productForm.coverImage.length
-								});
-								console.log('完整图片地址:', this.productForm.coverImage);
-								console.groupEnd();
-							};
-							reader.readAsDataURL(file);
+							this.productForm.coverImage = this.buildImageUrl(file.name);
+							this.coverImagePreview = this.buildPreviewUrl(file);
+							console.groupCollapsed('添加产品封面:', file.name);
+							console.log('图片信息:', {
+								name: file.name,
+								type: file.type,
+								size: file.size,
+								url: this.productForm.coverImage
+							});
+							console.log('完整图片地址:', this.productForm.coverImage);
+							console.groupEnd();
 						}
 						// 重置文件输入，以便可以选择同一个文件
 						event.target.value = '';
@@ -598,6 +595,7 @@
 					// 移除封面图片
 					removeCoverImage() {
 						this.productForm.coverImage = '';
+						this.coverImagePreview = '';
 					},
 					
 					// 选择轮播图/视频
@@ -610,44 +608,25 @@
 						const file = event.target.files[0];
 						if (file) {
 							const isVideo = file.type.startsWith('video/');
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								if (this.productForm.carouselMedia.length < 5) {
-									let mediaItem;
-									if (isVideo) {
-										mediaItem = {
-											type: 'video',
-											url: e.target.result,
-											thumb: this.generateVideoThumb(file.name)
-										};
-									} else {
-										mediaItem = {
-											type: 'image',
-											url: e.target.result
-										};
-									}
-									this.productForm.carouselMedia.push(mediaItem);
-									console.groupCollapsed('添加产品轮播媒体:', file.name);
-									console.log('媒体信息:', {
-										name: file.name,
-										type: file.type,
-										size: file.size,
-										media: {
-											type: mediaItem.type,
-											urlPreview: mediaItem.url.slice(0, 80),
-											urlLength: mediaItem.url.length,
-											thumbPreview: mediaItem.thumb ? mediaItem.thumb.slice(0, 80) : '',
-											thumbLength: mediaItem.thumb ? mediaItem.thumb.length : 0
-										}
-									});
-									console.log('完整媒体地址:', mediaItem.url);
-									if (mediaItem.thumb) {
-										console.log('完整视频缩略图地址:', mediaItem.thumb);
-									}
-									console.groupEnd();
-								}
-							};
-							reader.readAsDataURL(file);
+							if (this.productForm.carouselMedia.length < 5) {
+								const mediaItem = {
+									type: isVideo ? 'video' : 'image',
+									url: this.buildImageUrl(file.name),
+									thumb: '',
+									previewUrl: isVideo ? '' : this.buildPreviewUrl(file),
+									previewThumb: isVideo ? this.generateVideoThumb(file.name) : ''
+								};
+								this.productForm.carouselMedia.push(mediaItem);
+								console.groupCollapsed('添加产品轮播媒体:', file.name);
+								console.log('媒体信息:', {
+									name: file.name,
+									type: file.type,
+									size: file.size,
+									media: mediaItem
+								});
+								console.log('完整媒体地址:', mediaItem.url);
+								console.groupEnd();
+							}
 						}
 						// 重置文件输入
 						event.target.value = '';
@@ -687,23 +666,20 @@
 							.slice(0, remaining);
 
 						files.forEach(file => {
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								if (this.productForm.specImages.length < 5) {
-									this.productForm.specImages.push(e.target.result);
-									console.groupCollapsed('添加产品规格图片:', file.name);
-									console.log('图片信息:', {
-										name: file.name,
-										type: file.type,
-										size: file.size,
-										urlPreview: e.target.result.slice(0, 80),
-										urlLength: e.target.result.length
-									});
-									console.log('完整图片地址:', e.target.result);
-									console.groupEnd();
-								}
-							};
-							reader.readAsDataURL(file);
+							if (this.productForm.specImages.length < 5) {
+								const imageUrl = this.buildImageUrl(file.name);
+								this.productForm.specImages.push(imageUrl);
+								this.specImagePreviews.push(this.buildPreviewUrl(file));
+								console.groupCollapsed('添加产品规格图片:', file.name);
+								console.log('图片信息:', {
+									name: file.name,
+									type: file.type,
+									size: file.size,
+									url: imageUrl
+								});
+								console.log('完整图片地址:', imageUrl);
+								console.groupEnd();
+							}
 						});
 						// 重置文件输入
 						event.target.value = '';
@@ -712,6 +688,7 @@
 					// 移除规格图片
 					removeSpecImage(index) {
 						this.productForm.specImages.splice(index, 1);
+						this.specImagePreviews.splice(index, 1);
 					},
 					
 					// 转换数字字段，空值按 0 提交。
@@ -720,30 +697,24 @@
 						return Number.isFinite(numberValue) ? numberValue : 0;
 					},
 
-					toInteger(value) {
-						const numberValue = Number(value);
-						return Number.isFinite(numberValue) ? Math.round(numberValue) : 0;
-					},
-
-					// 按后端新增接口要求组装 body，只提交接口需要的字段。
+					// 按后端新增产品接口要求组装 body。
 					buildProductBody() {
 						return {
 							name: String(this.productForm.name || '').trim(),
-							type: String(this.productForm.type || '').trim(),
 							price: this.toNumber(this.productForm.price),
-							stock: this.toInteger(this.productForm.stock),
-							limitPerOrder: this.toInteger(this.productForm.limitPerOrder),
-							validityPeriod: this.toInteger(this.productForm.validityPeriod),
-							validityUnit: String(this.productForm.validityUnit || '').trim(),
-							refundRule: String(this.productForm.refundRule || '').trim(),
-							usageRules: String(this.productForm.usageRules || '').trim(),
-							image: this.productForm.coverImage,
+							stock: this.toNumber(this.productForm.stock),
+							status: this.productForm.status,
+							coverImage: this.productForm.coverImage,
 							carouselMedia: this.productForm.carouselMedia.map(item => ({
 								type: item.type || '',
 								url: item.url || '',
 								thumb: item.thumb || ''
 							})),
-							specImages: this.productForm.specImages
+							netWeight: this.toNumber(this.productForm.netWeight),
+							weightUnit: this.productForm.weightUnit,
+							storageCondition: String(this.productForm.storageCondition || '').trim(),
+							specImages: this.productForm.specImages,
+							description: String(this.productForm.description || '').trim()
 						};
 					},
 
@@ -754,11 +725,7 @@
 							this.submitMessage = '产品名称不能为空';
 							return;
 						}
-						if (!bodyData.type) {
-							this.submitMessage = '类型不能为空';
-							return;
-						}
-						if (!bodyData.image) {
+						if (!bodyData.coverImage) {
 							this.submitMessage = '请添加产品封面';
 							return;
 						}
@@ -767,6 +734,7 @@
 						this.submitMessage = '';
 
 						try {
+							console.log('新增产品请求body:', bodyData);
 							const res = await fetch('http://192.168.101.30:7240/api/product/add', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
@@ -788,8 +756,17 @@
 							}
 
 							this.submitMessage = data.message || '新增产品失败';
+							console.error('新增产品失败:', {
+								status: res.status,
+								statusText: res.statusText,
+								response: data,
+								body: bodyData
+							});
 						} catch (error) {
-							console.error('Add product failed:', error);
+							console.error('新增产品请求异常:', {
+								error,
+								body: bodyData
+							});
 							this.submitMessage = '网络错误，请重试';
 						} finally {
 							this.submitting = false;
