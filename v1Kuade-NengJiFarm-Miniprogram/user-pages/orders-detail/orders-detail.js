@@ -245,8 +245,9 @@ Page({
         // 加载物流信息（商品订单且非取消状态）- 异步加载补充数据
         if (orderData.isGoodsOrder && !orderData.isCancelledOrder &&
             (orderData.status === 'paid' || orderData.status === 'shipping' || orderData.status === 'completed')) {
-          // 始终加载物流轨迹，确保显示最新数据
-          this._loadLogisticsInfo(orderId);
+          // 物流接口 /api/logistics/{id} 需要内部数字 ID，传 orderData.id
+          const logisticsId = orderData.id || orderId;
+          this._loadLogisticsInfo(logisticsId);
         }
       })
       .catch((err) => {
@@ -387,47 +388,63 @@ Page({
     });
   },
 
-  // 模拟发货
-  markShipping() {
-    const { order } = this.data;
-    wx.showModal({
-      title: '确认发货',
-      content: `确定要标记此订单为已发货吗？\n收货地址：${order.shippingAddress ? order.shippingAddress.name + ' ' + order.shippingAddress.phone + ' ' + order.shippingAddress.address : '未设置'}`,
-      success: (res) => {
-        if (res.confirm) {
-          wx.showLoading({ title: '发货中...' });
-          api.order.updateStatus(order.id, 'shipped')
-            .then(() => {
-              wx.hideLoading();
-              wx.showToast({ title: '发货成功', icon: 'success' });
-              this.getOrderDetail(order.id);
-            })
-            .catch((err) => {
-              wx.hideLoading();
-              wx.showToast({ title: err.message || '发货失败', icon: 'none' });
-            });
-        }
-      }
-    });
+  // ========== 模拟发货 ==========
+  mockShipping() {
+    this.setData({ showMockConfirm: true });
+  },
+
+  cancelMockShipping() {
+    this.setData({ showMockConfirm: false });
+  },
+
+  confirmMockShipping() {
+    wx.showLoading({ title: '模拟发货中...' });
+
+    api.order.updateStatus(this.data.order.id, 'shipped')
+      .then(() => {
+        wx.hideLoading();
+        this.setData({ showMockConfirm: false });
+        wx.showToast({ title: '模拟发货成功', icon: 'success' });
+        this.getOrderDetail(this.data.order.id);
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        wx.showToast({ title: err.message || '模拟发货失败', icon: 'none' });
+      });
   },
 
   goToOrders() {
     wx.navigateTo({ url: '/user-pages/orders/orders' });
   },
 
-  // 跳转到物流详情（微信插件版）
+  // 跳转到物流详情
   goToLogisticsDetail() {
     const { order } = this.data;
     if (!order || !order.id) return;
 
+    // 没有物流信息时直接提示，不报错
+    const trackingNumber = order.trackingNumber || order.expressNo || order.waybillNo || '';
+    const logisticsCompany = order.logisticsCompany || order.expressCompany || '';
+    if (!trackingNumber || !logisticsCompany) {
+      wx.showToast({ title: '暂无物流信息', icon: 'none' });
+      return;
+    }
+
     // 从订单数据中获取物流信息
     const openId = wx.getStorageSync('openid') || wx.getStorageSync('openId') || '';
-    const waybillId = order.trackingNumber || '';
+    const waybillId = trackingNumber;
     const deliveryId = order.logisticsCompanyCode || '';
     const transId = order.transactionId || '';
     const receiverPhone = (order.shippingAddress && order.shippingAddress.phone) || '';
 
-    // 构造商品列表（图片是内网地址时不传，微信 API 无法访问）
+    // 校验手机号是否有效，避免无效数据触发后端物流 API 报错
+    const cleanedPhone = receiverPhone.replace(/[^0-9]/g, '');
+    if (!cleanedPhone || cleanedPhone.length !== 11 || !cleanedPhone.startsWith('1')) {
+      wx.showToast({ title: '暂无物流信息', icon: 'none' });
+      return;
+    }
+
+    // 构造商品列表
     const goodsList = (order.items || []).map(item => {
       const entry = { goodsName: item.name || '能记农场商品' };
       if (item.image && !item.image.includes('192.168.')) {
@@ -437,10 +454,7 @@ Page({
     });
 
     if (!waybillId || !deliveryId) {
-      // 缺少运单信息，跳转到物流查询页自动获取
-      wx.navigateTo({
-        url: `/user-pages/logistics-detail/logistics-detail?orderId=${order.id}&orderNo=${order.orderNumber || order.id}`
-      });
+      wx.showToast({ title: '暂无物流信息', icon: 'none' });
       return;
     }
 
@@ -448,10 +462,11 @@ Page({
 
     // 调用后端接口获取 waybill_token
     api.logistics.getWaybillToken({
+      orderId: order.orderNumber || order.orderNo || order.id,
       openId,
       waybillId,
-      deliveryId,
       receiverPhone,
+      deliveryId,
       transId,
       goodsList: goodsList.length > 0 ? goodsList : [{ goodsName: '能记农场商品', goodsImgUrl: '' }]
     })
@@ -467,22 +482,17 @@ Page({
             },
             fail(err) {
               console.error('打开物流详情失败：', err);
-              wx.showToast({ title: '物流打开失败', icon: 'none' });
+              wx.showToast({ title: '暂无物流信息', icon: 'none' });
             }
           });
         } else {
-          wx.showToast({ title: '获取物流信息失败', icon: 'none' });
+          wx.showToast({ title: '暂无物流信息', icon: 'none' });
         }
       })
       .catch(err => {
         wx.hideLoading();
-        console.error('请求异常：', err);
-        const msg = err.message || '';
-        if (msg.includes('access_token') || msg.includes('credential')) {
-          wx.showToast({ title: '物流服务配置异常，请联系管理员', icon: 'none', duration: 3000 });
-        } else {
-          wx.showToast({ title: msg || '网络异常', icon: 'none' });
-        }
+        console.error('请求物流异常：', err);
+        wx.showToast({ title: '暂无物流信息', icon: 'none' });
       });
   },
 

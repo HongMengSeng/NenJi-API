@@ -533,10 +533,12 @@
 								v-model.trim="searchKeyword"
 								class="search-input"
 								type="text"
-								placeholder="搜索券类（ID、名称、类型等）"
+								placeholder="搜索券类名称"
+								@keyup.enter="searchCoupons"
 							>
 							<button class="btn btn-default" @click="searchCoupons">搜索</button>
 						</div>
+						<div v-if="listError" style="margin-top: 10px; color: #dc2626; font-size: 14px;">{{ listError }}</div>
 					</div>
 
 					<div class="content-container">
@@ -564,10 +566,10 @@
 											<img class="coupon-thumb" :src="getDisplayImage(coupon.image, coupon.type)" :alt="coupon.name">
 										</td>
 										<td class="col-name">
-											<div class="name-text">{{ coupon.name }}</div>
-											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.createTime) }}</div>
+											<div class="name-text">{{ coupon.title }}</div>
+											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.date) }}</div>
 										</td>
-										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
+										<td class="col-type is-center"><span class="type-text">{{ coupon.categoryName }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
 										<td class="col-stock is-center">
 											<div class="metric-text">{{ coupon.stock }} 张</div>
@@ -643,6 +645,8 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
+		const COUPON_LIST_API = 'http://192.168.101.30:7240/api/activity';
+		const COUPON_API_ORIGIN = new URL(COUPON_LIST_API).origin;
 
 		createApp({
 			data() {
@@ -652,6 +656,7 @@
 					coupons: [],
 					originalCoupons: [],
 					searchKeyword: '',
+					listError: '',
 					currentPage: 1,
 					pageSize: 15,
 					pageSizeOptions: [5, 10, 15],
@@ -665,8 +670,8 @@
 			},
 
 			mounted() {
-				// 页面加载时先读取本地券数据，确保刷新后仍保留最新内容。
-				this.loadCouponsFromLocalStorage();
+				// 页面加载完成后请求券品列表接口。
+				this.loadCoupons();
 			},
 
 			computed: {
@@ -675,13 +680,13 @@
 					return this.coupons.filter(coupon => coupon.selected);
 				},
 
-				// 统计卡优先使用原始数据，避免搜索后统计结果变少。
+				// 统计卡使用接口返回的当前页数据汇总，券品总数优先使用接口 total。
 				summarySource() {
 					return this.originalCoupons.length ? this.originalCoupons : this.allCoupons;
 				},
 
 				totalCouponCount() {
-					return this.summarySource.length;
+					return this.totalCoupons || this.summarySource.length;
 				},
 
 				totalStock() {
@@ -756,6 +761,20 @@
 					return image && String(image).trim() ? String(image).trim() : this.generateSceneImage(type);
 				},
 
+				// 接口如果返回 /images/... 这类相对路径，就拼接成后端完整图片地址。
+				resolveImageUrl(value) {
+					const imageUrl = String(value || '').trim();
+					if (!imageUrl) {
+						return '';
+					}
+					if (/^(https?:)?\/\//i.test(imageUrl) || imageUrl.startsWith('data:')) {
+						return imageUrl;
+					}
+					return imageUrl.startsWith('/')
+						? `${COUPON_API_ORIGIN}${imageUrl}`
+						: `${COUPON_API_ORIGIN}/${imageUrl}`;
+				},
+
 				formatDateTime(date = new Date()) {
 					const pad = value => String(value).padStart(2, '0');
 					return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -784,7 +803,13 @@
 				},
 
 				formatPrice(price) {
-					return `￥${Number(price || 0).toFixed(2)}`;
+					const number = this.parsePriceNumber(price);
+					return `￥${Number.isFinite(number) ? number.toFixed(2) : '0.00'}`;
+				},
+
+				parsePriceNumber(value) {
+					const match = String(value ?? '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+					return match ? Number(match[0]) : NaN;
 				},
 
 				formatValidity(coupon) {
@@ -792,7 +817,7 @@
 				},
 
 				getDefaultUsageRules(type) {
-					if (type === '采摘券') {
+					if (type === '采摘活动') {
 						return '适用于农场指定采摘园区，每张限 1 人使用，到店出示券包核销码后核销，节假日以农场开放安排为准。';
 					}
 					return '适用于农场研学活动场次，需至少提前 1 天预约，到店后出示券包核销码签到使用。';
@@ -855,186 +880,158 @@
 				},
 
 				toPositivePrice(value, fallback) {
-					const number = Number(value);
-					return Number.isFinite(number) && number > 0 ? Number(number.toFixed(2)) : fallback;
+					const number = this.parsePriceNumber(value);
+					return Number.isFinite(number) && number >= 0 ? Number(number.toFixed(2)) : fallback;
 				},
 
 				// 默认券品数据用于首次进入页面或本地数据丢失时兜底展示。
 				getDefaultCoupons() {
 					return [
-						{
-							id: 'Q20260310071001',
-							name: '春日草莓采摘券',
-							type: '采摘券',
-							price: 68,
-							stock: 120,
-							limitPerOrder: 4,
-							validityPeriod: 30,
-							validityUnit: '天',
-							validity: '30天',
-							refundRule: '支持未使用且未核销退款',
-							usageRules: '适用于草莓采摘园区单人入园体验，需到店出示核销码后使用，节假日需提前预约。',
-							image: '',
-							soldCount: 86,
-							verifiedCount: 52,
-							createTime: '2026/03/10 17:07',
-							selected: false
-						},
-						{
-							id: 'Q20260312093002',
-							name: '周末亲子采摘券',
-							type: '采摘券',
-							price: 128,
-							stock: 80,
-							limitPerOrder: 2,
-							validityPeriod: 45,
-							validityUnit: '天',
-							validity: '45天',
-							refundRule: '需人工审核退款',
-							usageRules: '适用于 2 大 1 小亲子采摘体验，周末及节假日可用，需至少提前 1 天预约。',
-							image: '',
-							soldCount: 51,
-							verifiedCount: 30,
-							createTime: '2026/03/12 09:30',
-							selected: false
-						},
-						{
-							id: 'Q20260315114503',
-							name: '农耕研学半日营券',
-							type: '研学活动券',
-							price: 158,
-							stock: 60,
-							limitPerOrder: 6,
-							validityPeriod: 2,
-							validityUnit: '月',
-							validity: '2月',
-							refundRule: '支持未使用且未核销退款',
-							usageRules: '适用于农耕体验、田间课堂、喂养互动等半日研学活动场次，团体需提前沟通排期。',
-							image: '',
-							soldCount: 44,
-							verifiedCount: 18,
-							createTime: '2026/03/15 11:45',
-							selected: false
-						},
-						{
-							id: 'Q20260318153004',
-							name: '田园自然课堂研学券',
-							type: '研学活动券',
-							price: 198,
-							stock: 48,
-							limitPerOrder: 10,
-							validityPeriod: 3,
-							validityUnit: '月',
-							validity: '3月',
-							refundRule: '需人工审核退款',
-							usageRules: '适用于学校及机构自然课堂主题活动，需提前 3 天预约，到店统一扫码核销。',
-							image: '',
-							soldCount: 36,
-							verifiedCount: 24,
-							createTime: '2026/03/18 15:30',
-							selected: false
-						},
-						{
-							id: 'Q20260320102005',
-							name: '蓝莓采摘体验券',
-							type: '采摘券',
-							price: 88,
-							stock: 150,
-							limitPerOrder: 5,
-							validityPeriod: 1,
-							validityUnit: '月',
-							validity: '1月',
-							refundRule: '支持未使用且未核销退款',
-							usageRules: '适用于蓝莓成熟季单人采摘体验，现场称重另计，核销后当日有效。',
-							image: '',
-							soldCount: 72,
-							verifiedCount: 64,
-							createTime: '2026/03/20 10:20',
-							selected: false
-						},
-						{
-							id: 'Q20260322090006',
-							name: '小小农夫研学券',
-							type: '研学活动券',
-							price: 128,
-							stock: 96,
-							limitPerOrder: 8,
-							validityPeriod: 60,
-							validityUnit: '天',
-							validity: '60天',
-							refundRule: '支持未使用且未核销退款',
-							usageRules: '适用于儿童农事启蒙主题活动，包含农具体验与作物认知环节，核销后不可转赠。',
-							image: '',
-							soldCount: 63,
-							verifiedCount: 29,
-							createTime: '2026/03/22 09:00',
-							selected: false
-						},
-						{
-							id: 'Q20260325130007',
-							name: '葡萄采摘家庭套票',
-							type: '采摘券',
-							price: 199,
-							stock: 36,
-							limitPerOrder: 2,
-							validityPeriod: 2,
-							validityUnit: '月',
-							validity: '2月',
-							refundRule: '不支持退款',
-							usageRules: '适用于家庭套票入园采摘体验，含指定斤数果品额度，超出部分按门店规则补差。',
-							image: '',
-							soldCount: 18,
-							verifiedCount: 17,
-							createTime: '2026/03/25 13:00',
-							selected: false
-						},
-						{
-							id: 'Q20260327160008',
-							name: '节气主题研学活动券',
-							type: '研学活动券',
-							price: 218,
-							stock: 42,
-							limitPerOrder: 12,
-							validityPeriod: 90,
-							validityUnit: '天',
-							validity: '90天',
-							refundRule: '需人工审核退款',
-							usageRules: '适用于节气课程、植物观察及手作课程组合活动，需由农场确认场次后统一核销。',
-							image: '',
-							soldCount: 27,
-							verifiedCount: 12,
-							createTime: '2026/03/27 16:00',
-							selected: false
-						}
 					];
 				},
 
 				// 兼容旧字段结构，并为缺失值补齐默认值。
 				normalizeCoupon(coupon, index) {
-					const type = this.normalizeType(coupon.type, coupon.name);
-					const validityInfo = this.parseValidity(coupon.validity, coupon.validityPeriod, coupon.validityUnit);
-					const price = this.toPositivePrice(coupon.price, type === '采摘券' ? 68 : 128);
-					const soldCount = this.toPositiveInt(coupon.soldCount, 0);
-					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount, 0), soldCount);
+					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
+					const name = coupon.name || coupon.couponName || couponInfo.name || couponInfo.couponName || '';
+					const type = this.normalizeType(coupon.type || coupon.couponType || couponInfo.type || couponInfo.couponType, name);
+					const validityInfo = this.parseValidity(
+						coupon.validity ?? couponInfo.validity,
+						coupon.validityPeriod ?? couponInfo.validityPeriod,
+						coupon.validityUnit ?? couponInfo.validityUnit
+					);
+					const price = this.toPositivePrice(coupon.price ?? couponInfo.price, 0);
+					const soldCount = this.toPositiveInt(coupon.soldCount ?? couponInfo.soldCount ?? coupon.salesCount ?? couponInfo.salesCount ?? coupon.sold ?? couponInfo.sold, 0);
+					const verifiedCount = Math.min(this.toPositiveInt(coupon.verifiedCount ?? couponInfo.verifiedCount ?? coupon.usedCount ?? couponInfo.usedCount ?? coupon.verifyCount ?? couponInfo.verifyCount, 0), soldCount);
 
 					return {
-						id: coupon.id || this.createCouponId(index),
-						name: coupon.name || `${type}${index + 1}`,
+						...couponInfo,
+						...coupon,
+						id: coupon.id || coupon.couponId || couponInfo.id || couponInfo.couponId || this.createCouponId(index),
+						name: name || `${type}${index + 1}`,
 						type,
 						price,
-						stock: this.toPositiveInt(coupon.stock ?? coupon.inventory, 100),
-						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder, 1)),
+						stock: this.toPositiveInt(coupon.stock ?? couponInfo.stock ?? coupon.inventory ?? couponInfo.inventory ?? coupon.remainingStock ?? couponInfo.remainingStock, 100),
+						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder ?? couponInfo.limitPerOrder ?? coupon.limit ?? couponInfo.limit ?? coupon.maxPerOrder ?? couponInfo.maxPerOrder, 1)),
 						validityPeriod: validityInfo.period,
 						validityUnit: validityInfo.unit,
 						validity: `${validityInfo.period}${validityInfo.unit}`,
-						refundRule: this.normalizeRefundRule(coupon.refundRule),
-						usageRules: coupon.usageRules || this.getDefaultUsageRules(type),
-						image: coupon.image || '',
+						refundRule: this.normalizeRefundRule(coupon.refundRule || couponInfo.refundRule),
+						usageRules: coupon.usageRules || couponInfo.usageRules || this.getDefaultUsageRules(type),
+						image: this.resolveImageUrl(coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || ''),
 						soldCount,
 						verifiedCount,
-						createTime: this.formatDisplayTime(coupon.createTime || this.formatDateTime()),
+						createTime: this.formatDisplayTime(coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
 						selected: false
 					};
+				},
+
+				// 兼容常见分页返回结构，支持 records/list/rows 或直接数组。
+				getCouponListPayload(data) {
+					const pageData = data && typeof data === 'object' && !Array.isArray(data)
+						? (data.data || data)
+						: data;
+					const records = Array.isArray(pageData?.records)
+						? pageData.records
+						: (Array.isArray(pageData?.list)
+							? pageData.list
+							: (Array.isArray(pageData?.rows)
+								? pageData.rows
+								: (Array.isArray(pageData) ? pageData : [])));
+					return {
+						records,
+						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
+						pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
+					};
+				},
+
+				// 兼容后端返回 code=200、code=0、success=true 或 message=success/成功 等成功格式。
+				isSuccessResponse(data) {
+					const codeText = String(data?.code ?? '').toLowerCase();
+					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+					return data?.code == null
+						|| Number(data.code) === 200
+						|| Number(data.code) === 0
+						|| codeText === 'success'
+						|| data?.success === true
+						|| message === 'success'
+						|| message.includes('成功');
+				},
+
+				getErrorMessage(data, fallback) {
+					const message = String(data?.message || data?.msg || '').trim();
+					if (!message || /^success$/i.test(message) || message.includes('成功')) {
+						return fallback;
+					}
+					return message;
+				},
+
+				// 券品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
+				async loadCoupons(pageNum = 1) {
+					this.listError = '';
+					const params = new URLSearchParams();
+					params.set('pageNum', String(pageNum));
+					params.set('pageSize', String(this.pageSize));
+
+					const keyword = String(this.searchKeyword || '').trim();
+					if (keyword) {
+						params.set('keyword', keyword);
+					}
+
+					try {
+						const res = await fetch(`${COUPON_LIST_API}?${params.toString()}`, {
+							headers: window.Auth.getAuthHeaders()
+						});
+						const data = await res.json();
+						const pageData = this.getCouponListPayload(data);
+						const records = pageData.records;
+						const successCode = this.isSuccessResponse(data);
+
+						if (!res.ok || !successCode) {
+							this.listError = this.getErrorMessage(data, '获取券品列表失败');
+							this.coupons = [];
+							this.allCoupons = [];
+							this.originalCoupons = [];
+							this.totalCoupons = 0;
+							this.totalPages = 1;
+							this.currentPage = 1;
+							this.jumpPage = 1;
+							this.selectAll = false;
+							this.selectedCoupon = null;
+							return;
+						}
+
+						const coupons = records.map((coupon, index) => this.normalizeCoupon(coupon, index));
+						this.coupons = coupons;
+						this.allCoupons = coupons;
+						this.originalCoupons = coupons;
+						this.totalCoupons = Number(pageData.total) || coupons.length;
+						this.totalPages = Math.max(Number(pageData.pages) || Math.ceil(this.totalCoupons / this.pageSize) || 1, 1);
+						this.currentPage = Number(pageData.pageNum) || pageNum;
+						this.jumpPage = this.currentPage;
+						this.selectAll = false;
+						this.selectedCoupon = null;
+						console.log('券品列表请求成功:', {
+							message: data.message || data.msg || '',
+							total: this.totalCoupons,
+							pageNum: this.currentPage,
+							pageSize: this.pageSize,
+							records: coupons
+						});
+					} catch (error) {
+						console.error('获取券品列表失败:', error);
+						this.listError = '网络错误，请重试';
+						this.coupons = [];
+						this.allCoupons = [];
+						this.originalCoupons = [];
+						this.totalCoupons = 0;
+						this.totalPages = 1;
+						this.currentPage = 1;
+						this.jumpPage = 1;
+						this.selectAll = false;
+						this.selectedCoupon = null;
+					}
 				},
 
 				// 从本地存储读取券数据，不存在时自动回退到默认数据。
@@ -1077,7 +1074,6 @@
 						}
 					});
 					this.updateSelectedCoupon();
-					this.saveCouponsToLocalStorage();
 				},
 
 				// 根据当前勾选结果维护单条编辑对象和全选状态。
@@ -1095,7 +1091,6 @@
 							this.originalCoupons[originalIndex].selected = coupon.selected;
 						}
 					});
-					this.saveCouponsToLocalStorage();
 				},
 
 				editCoupon(coupon = this.selectedCoupon) {
@@ -1120,7 +1115,7 @@
 					this.showDeleteModal = false;
 				},
 
-				// 删除单条或批量选中的券品，并同步更新本地存储。
+				// 当前仅从前端列表移除选中项；后续接删除接口时可在这里调用后端删除。
 				confirmDelete() {
 					if (!this.selectedCoupon) {
 						return;
@@ -1132,19 +1127,19 @@
 
 					this.allCoupons = this.allCoupons.filter(coupon => !selectedIds.includes(coupon.id));
 					this.originalCoupons = this.originalCoupons.filter(coupon => !selectedIds.includes(coupon.id));
+					this.coupons = this.coupons.filter(coupon => !selectedIds.includes(coupon.id));
+					this.totalCoupons = Math.max(this.totalCoupons - selectedIds.length, 0);
 					this.selectedCoupon = null;
 					this.selectAll = false;
 					this.showDeleteModal = false;
-					this.saveCouponsToLocalStorage();
-					this.updatePagination();
 				},
 
 				refreshData() {
 					this.searchKeyword = '';
-					this.loadCouponsFromLocalStorage();
+					this.loadCoupons(1);
 				},
 
-				// 搜索时只匹配列表页展示相关字段，避免把明细字段混进结果。
+				// 保留给本地数据兜底筛选使用，接口搜索走 searchCoupons 重新请求后端。
 				buildSearchText(coupon) {
 					return [
 						coupon.id,
@@ -1159,36 +1154,12 @@
 					].join(' ').toLowerCase();
 				},
 
-				// 按关键字筛选券品，筛选后重新计算分页和勾选状态。
+				// 按当前关键字重新请求券品列表接口。
 				searchCoupons() {
-					if (!this.searchKeyword) {
-						this.allCoupons = JSON.parse(JSON.stringify(this.originalCoupons)).map(coupon => ({
-							...coupon,
-							selected: false
-						}));
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-						return;
-					}
-
-					try {
-						const keyword = this.searchKeyword.toLowerCase();
-						this.allCoupons = this.originalCoupons
-							.filter(coupon => this.buildSearchText(coupon).includes(keyword))
-							.map(coupon => ({ ...coupon, selected: false }));
-						this.currentPage = 1;
-						this.selectAll = false;
-						this.selectedCoupon = null;
-						this.updatePagination();
-					} catch (error) {
-						console.error('搜索失败:', error);
-						alert('搜索失败，请重试');
-					}
+					this.loadCoupons(1);
 				},
 
-				// 根据当前页码重新切片出列表展示数据。
+				// 本地数据兜底分页方法；接口分页由 loadCoupons 直接更新当前页。
 				updatePagination() {
 					this.totalCoupons = this.allCoupons.length;
 					this.totalPages = Math.ceil(this.totalCoupons / this.pageSize) || 1;
@@ -1203,22 +1174,20 @@
 
 				changePage(page) {
 					if (page >= 1 && page <= this.totalPages) {
-						this.currentPage = page;
-						this.updatePagination();
+						this.loadCoupons(page);
 					}
 				},
 
 				jumpToPage() {
 					if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-						this.currentPage = this.jumpPage;
-						this.updatePagination();
+						this.loadCoupons(this.jumpPage);
 					}
 				},
 
 				changePageSize() {
 					this.currentPage = 1;
 					this.jumpPage = 1;
-					this.updatePagination();
+					this.loadCoupons(1);
 				}
 			}
 		}).mount('#app');

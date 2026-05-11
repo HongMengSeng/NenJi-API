@@ -156,7 +156,7 @@ Page({
     }
   },
 
-  searchOrders() {
+  searchOrders({ _isPullRefresh } = {}) {
     const keyword = this.data.searchKeyword?.trim();
     if (!keyword) {
       // 清除搜索状态，重新加载订单列表
@@ -170,17 +170,21 @@ Page({
         hasMore: true,
         isRequesting: false
       });
-      this.getOrders();
-      return;
+      return this.getOrders({ _isPullRefresh });
     }
 
     // 防抖处理：如果正在请求中，先清除之前的请求状态
     if (this.data.isRequesting) {
       console.log('搜索请求正在进行中，跳过本次搜索');
-      return;
+      return Promise.resolve();
     }
 
-    this.setData({ isRequesting: true, loading: true, searching: true });
+    // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
+    if (_isPullRefresh) {
+      this.setData({ isRequesting: true, searching: true });
+    } else {
+      this.setData({ isRequesting: true, loading: true, searching: true });
+    }
 
     // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
     let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
@@ -212,13 +216,25 @@ Page({
     }
 
     const self = this;
-    api.order.searchOrders({
+    const searchParams = {
       keyword,
       status: status || 'all',
       type: orderType || 'all',
       page: 1,
-      pageSize: 20
-    })
+      pageSize: 20,
+      sortBy: 'createTime',
+      sortOrder: 'desc'
+    };
+    // 下拉刷新时不显示 loading 遮罩
+    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+
+    // 请求超时兜底：15秒无响应则主动超时
+    const apiPromise = api.order.searchOrders(searchParams, reqOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
+    });
+
+    return Promise.race([apiPromise, timeoutPromise])
       .then((data) => {
         let list = [];
         // 支持多种数据结构
@@ -441,13 +457,18 @@ Page({
   // ======== 分页加载核心 ========
 
   // 首次加载 / 切换tab
-  getOrders() {
+  getOrders({ _isPullRefresh } = {}) {
     if (this.data.isRequesting) {
       console.log('请求中，忽略重复调用');
-      return;
+      return Promise.resolve();
     }
 
-    this.setData({ isRequesting: true, loading: true, searching: true });
+    // 下拉刷新时不切换 loading，避免 scroll-view 布局抖动
+    if (_isPullRefresh) {
+      this.setData({ isRequesting: true, searching: true });
+    } else {
+      this.setData({ isRequesting: true, loading: true, searching: true });
+    }
 
     // 确定订单类型：优先使用类型标签，其次使用状态标签中的类型
     let orderType = this.data.activeTypeTab !== 'all' ? this.data.activeTypeTab : this.data.currentOrderType;
@@ -468,14 +489,24 @@ Page({
     }
 
     const self = this;
-    api.order.getList({
+    const reqParams = {
       type: orderType || 'all',
       status: status || 'all',
       page: 1,
       pageSize: PAGE_SIZE,
       sortBy: 'createTime',
       sortOrder: 'desc'
-    })
+    };
+    // 下拉刷新时不显示 loading 遮罩，避免干扰 scroll-view 的 refresher 状态机
+    const reqOptions = _isPullRefresh ? { showLoading: false } : {};
+
+    // 请求超时兜底：15秒无响应则主动超时，避免三个点一直转
+    const apiPromise = api.order.getList(reqParams, reqOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject({ code: -1, message: '请求超时' }), 15000);
+    });
+
+    return Promise.race([apiPromise, timeoutPromise])
       .then((data) => {
         console.log('getOrders - 原始数据:', data);
 
@@ -588,7 +619,7 @@ Page({
     this.setData({ loadingMore: true, isRequesting: true });
 
     // 使用原有分页逻辑
-    let params = { page: nextPage, pageSize: PAGE_SIZE };
+    let params = { page: nextPage, pageSize: PAGE_SIZE, sortBy: 'createTime', sortOrder: 'desc' };
     const activeTab = this.data.activeTab;
     const activeTypeTab = this.data.activeTypeTab;
 
@@ -890,7 +921,11 @@ Page({
 
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
+    // 查找订单，使用订单号(orderNumber)作为导航标识
+    // 后端列表接口返回的 id 字段可能与 orderNumber 不一致，直接用 id 会跳到错误订单
+    const order = this.data.orders.find(o => o.id === id || o.orderNumber === id || o.orderNo === id);
+    const navId = (order && (order.orderNumber || order.orderNo)) || id;
+    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${navId}` });
   },
 
   applyRefund(e) {
@@ -939,6 +974,27 @@ Page({
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
 
+  // 下拉刷新（模仿活动页）
+  onPullDownRefresh() {
+    this.setData({
+      currentPage: 1,
+      hasMore: true,
+      isRequesting: false,
+      loadingMore: false
+    });
+
+    const promise = this.data.searchKeyword?.trim()
+      ? this.searchOrders({ _isPullRefresh: true })
+      : this.getOrders({ _isPullRefresh: true });
+
+    Promise.resolve(promise).then(() => {
+      wx.stopPullDownRefresh();
+    }).catch(() => {
+      wx.stopPullDownRefresh();
+      this.setData({ isRequesting: false, searching: false, loading: false });
+    });
+  },
+
   // 根据订单类型获取退款原因列表
   _getRefundReasonsByType(type) {
     const goodsReasons = [
@@ -968,34 +1024,4 @@ Page({
     return goodsReasons;
   },
 
-  onPullDownRefresh() {
-    console.log('下拉刷新触发');
-
-    // 重置分页状态
-    this.setData({
-      currentPage: 1,
-      hasMore: true,
-      isRequesting: false,
-      loadingMore: false
-    });
-
-    // 执行刷新操作
-    const refreshPromise = this.data.searchKeyword?.trim()
-      ? this.searchOrders()
-      : this.getOrders();
-
-    // 确保在请求完成后停止下拉刷新
-    if (refreshPromise && refreshPromise.then) {
-      refreshPromise.finally(() => {
-        wx.stopPullDownRefresh();
-        this.setData({ isRequesting: false });
-      });
-    } else {
-      // 如果没有返回 Promise，使用延迟停止
-      setTimeout(() => {
-        wx.stopPullDownRefresh();
-        this.setData({ isRequesting: false });
-      }, 1500);
-    }
-  }
 });

@@ -331,10 +331,10 @@ const api = {
   order: {
     // ========== 统一订单管理 API ==========
     // 获取订单列表 (支持 type: all/goods/food/activity, status: all/pending/paid/shipping/completed/cancelled)
-    getList: (params = {}) => get('/api/orders', params),
+    getList: (params = {}, options = {}) => get('/api/orders', params, options),
 
     // 订单搜索 (支持关键词搜索、状态过滤、类型过滤)
-    searchOrders: (params = {}) => get('/api/orders/search', params),
+    searchOrders: (params = {}, options = {}) => get('/api/orders/search', params, options),
 
     // 获取订单数量统计
     getCounts: (params = {}) => get('/api/orders/counts', params),
@@ -343,7 +343,13 @@ const api = {
     getDetail: (id) => get(`/api/orders/${id}`),
 
     // 更新订单状态
-    updateStatus: (id, status, reason) => put(`/api/orders/${id}/status`, { status, reason }),
+    // 发货时 extra 可传 { trackingNumber, trackingTypeId, trackingTypeName, deliveryId }
+    updateStatus: (id, status, extra = {}) => {
+      const payload = typeof extra === 'string'
+        ? { status, reason: extra }
+        : { status, ...extra };
+      return put(`/api/orders/${id}/status`, payload);
+    },
 
     // 取消订单
     cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
