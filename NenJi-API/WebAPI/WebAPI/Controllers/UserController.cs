@@ -155,6 +155,7 @@ public class UserController : ControllerBase
                     City = x.City,
                     District = x.MunicipalDistrict,
                     Address = x.Addres,
+                    Detail = x.Detail,
                     FullAddress = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
                     IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
                 })
@@ -196,6 +197,7 @@ public class UserController : ControllerBase
                     City = x.City,
                     District = x.MunicipalDistrict,
                     Address = x.Addres,
+                    Detail = x.Detail,
                     FullAddress = $"{x.Province}{x.City}{x.MunicipalDistrict}{x.Addres}",
                     IsDefault = EF.Property<bool>(x, DefaultFlagProperty)
                 })
@@ -251,6 +253,7 @@ public class UserController : ControllerBase
                 City = request.City.Trim(),
                 MunicipalDistrict = request.District.Trim(),
                 Addres = request.Address.Trim(),
+                Detail = request.Detail.Trim(),
                 Town = town,
                 HouseNumber = houseNumber
             };
@@ -332,6 +335,7 @@ public class UserController : ControllerBase
             address.City = updateRequest.City.Trim();
             address.MunicipalDistrict = updateRequest.District.Trim();
             address.Addres = updateRequest.Address.Trim();
+            address.Detail = updateRequest.Detail.Trim();
             address.Town = town;
             address.HouseNumber = houseNumber;
             SetDefaultFlag(address, updateRequest.IsDefault);
@@ -613,6 +617,7 @@ public class UserController : ControllerBase
         public string City { get; set; } = string.Empty;
         public string District { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
     }
 
@@ -643,6 +648,7 @@ public class UserController : ControllerBase
         public string City { get; set; } = string.Empty;
         public string District { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
         public string FullAddress { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
     }

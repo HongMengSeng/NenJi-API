@@ -126,8 +126,9 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Fail("该券状态不支持核销", 409));
         }
 
-        // 检查有效期：自购买之日起 30 天有效
-        var expireTime = order.CreateTime.AddDays(30);
+        // 检查有效期：使用活动的核销时长（默认 30 天）
+        var validDays = activity?.Duration > 0 ? activity.Duration : 30;
+        var expireTime = order.CreateTime.AddDays(validDays);
         if (expireTime < DateTime.Now)
         {
             return Ok(ApiResult.Fail($"该券已过期，有效期至 {expireTime:yyyy-MM-dd HH:mm:ss}", 403));

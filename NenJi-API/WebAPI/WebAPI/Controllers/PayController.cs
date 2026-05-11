@@ -175,44 +175,6 @@ public class PayController : ControllerBase
         }
     }
 
-    [Authorize]
-    [HttpPost("query-payment-status")]
-    public async Task<IActionResult> QueryPaymentStatusAsync(
-        [FromBody] QueryPaymentStatusRequest? request,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var orderKey = request?.GetOrderKey();
-            if (string.IsNullOrWhiteSpace(orderKey))
-            {
-                return Ok(ApiResult.Fail("请求参数不正确", 400));
-            }
-
-            var userId = GetCurrentUserId();
-            var splitOrder = await FindSplitPayOrderAsync(orderKey, userId, request!.Type, cancellationToken);
-            if (splitOrder is not null)
-            {
-                if (splitOrder.StatusId == 1)
-                {
-                    var splitWeChatResult = await _weChatPayService.QueryPaymentStatusAsync(splitOrder.OrderNo, cancellationToken);
-                    if (splitWeChatResult.IsSuccess)
-                    {
-                        await MarkSplitOrderPaidAsync(splitOrder, splitWeChatResult.TotalFeeFen, splitWeChatResult.TransactionId, cancellationToken);
-                        splitOrder = await FindSplitPayOrderAsync(orderKey, userId, splitOrder.Type, cancellationToken) ?? splitOrder;
-                    }
-                }
-
-                return Ok(ApiResult.Success(BuildSplitPaymentStatusResponse(splitOrder)));
-            }
-
-            return Ok(ApiResult.Fail("订单不存在", 404));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail($"查询支付状态失败：{ex.Message}"));
-        }
-    }
 
     [AllowAnonymous]
     [HttpPost("notify")]
@@ -537,7 +499,7 @@ public class PayController : ControllerBase
     }
 
     private async Task<SplitPayOrder?> FindSplitPayOrderByOrderNoAsync(string orderNo, CancellationToken cancellationToken)
-    {
+    { 
         if (string.IsNullOrWhiteSpace(orderNo))
         {
             return null;
@@ -880,20 +842,6 @@ public class PayController : ControllerBase
         public string? OrderNo { get; set; }
         public string? OrderNumber { get; set; }
         public string Description { get; set; } = string.Empty;
-        public string? Type { get; set; }
-
-        public string? GetOrderKey()
-        {
-            return FirstNonEmpty(OrderId, Id, OrderNo, OrderNumber);
-        }
-    }
-
-    public sealed class QueryPaymentStatusRequest
-    {
-        public object? OrderId { get; set; }
-        public object? Id { get; set; }
-        public string? OrderNo { get; set; }
-        public string? OrderNumber { get; set; }
         public string? Type { get; set; }
 
         public string? GetOrderKey()

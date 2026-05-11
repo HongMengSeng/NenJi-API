@@ -45,4 +45,8 @@ public class ShippingAddress
 
     [Column("is_default")]
     public bool IsDefault { get; set; }
+
+    [Column("detail")]
+    [MaxLength(500)]
+    public string Detail { get; set; } = string.Empty;
 }

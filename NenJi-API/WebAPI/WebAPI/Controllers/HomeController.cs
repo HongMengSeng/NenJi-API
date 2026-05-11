@@ -75,7 +75,7 @@ public class HomeController : ControllerBase
             var farmGoodsRows = await _dbContext.Commodities
                 .AsNoTracking()
                 .Where(x => (x.ProductStatus ?? 0) == 1
-                    && (x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword)))
+                    && x.ProductName.Contains(keyword))
                 .OrderByDescending(x => x.ProductName.Contains(keyword))
                 .ThenByDescending(x => x.CommodityId)
                 .Select(x => new

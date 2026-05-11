@@ -56,4 +56,8 @@ public class ActivityEntity
 
     [Column("type_id")]
     public int TypeId { get; set; }
+
+    /// <summary>核销有效期（天），自购买之日起算</summary>
+    [Column("duration")]
+    public int Duration { get; set; } = 30;
 }

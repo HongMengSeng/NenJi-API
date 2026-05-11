@@ -231,7 +231,8 @@ public class ActivityController : ControllerBase
                 x.StartDate,
                 x.EndDate,
                 x.ImageUrl,
-                x.TypeId
+                x.TypeId,
+                x.Duration
             })
             .ToListAsync(cancellationToken);
 
@@ -244,7 +245,8 @@ public class ActivityController : ControllerBase
             StartDate = $"{x.StartDate:yyyy-MM-dd HH:mm}",
             EndDate = $"{x.EndDate:yyyy-MM-dd HH:mm}",
             Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
-            CategoryName = typeMap?.GetValueOrDefault(x.TypeId)
+            CategoryName = typeMap?.GetValueOrDefault(x.TypeId),
+            Duration = x.Duration
         }).ToList();
     }
 

@@ -12,6 +12,7 @@ public class ActivitySummaryDto
     public string EndDate { get; set; } = string.Empty;
     public string Image { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
+    public int Duration { get; set; }
 }
 
 public class ActivityListDto
