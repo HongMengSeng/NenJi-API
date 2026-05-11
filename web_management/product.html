@@ -540,7 +540,7 @@
 					<div class="product-page">
 						<div class="page-fixed-panel">
 							<div class="visual-panel">
-								<!-- 统计卡片区域：根据当前产品列表动态计算总数、上架数、库存预警和库存总量 -->
+								<!-- 统计卡片区域：根据当前产品列表动态计算总数、上架数、库存告警和库存总量 -->
 								<div class="summary-grid">
 									<div class="summary-card" :class="item.tone" v-for="item in dashboardCards" :key="item.label">
 										<div class="summary-card-label">{{ item.label }}</div>
@@ -777,7 +777,7 @@
 						return [
 							{ label: '产品总数', value: totalProducts, unit: '款', note: '', tone: 'forest' },
 							{ label: '已上架', value: activeProducts, unit: '款', note: '', tone: 'sky' },
-							{ label: '小于20', value: lowStockProducts, unit: '款', note: '', tone: 'sun' },
+							{ label: '库存告警', value: lowStockProducts, unit: '款', note: '', tone: 'sun' },
 							{ label: '库存总量', value: totalStock, unit: '件', note: '', tone: 'slate' }
 						];
 					},

@@ -497,7 +497,7 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_IMAGE_BASE_URL = '/images/farm/';
+			const PRODUCT_IMAGE_BASE_URL = 'images/farm/';
 			
 			createApp({
 				data() {
@@ -563,6 +563,10 @@
 						return PRODUCT_IMAGE_BASE_URL + String(fileName || '').trim();
 					},
 
+					isBlockedImageName(fileName) {
+						return String(fileName || '').trim().toLowerCase() === 'swk.png';
+					},
+
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
 					},
@@ -576,6 +580,11 @@
 					handleCoverImageUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
+							if (this.isBlockedImageName(file.name)) {
+								this.submitMessage = '请不要使用 swk.png 作为产品图片';
+								event.target.value = '';
+								return;
+							}
 							this.productForm.coverImage = this.buildImageUrl(file.name);
 							this.coverImagePreview = this.buildPreviewUrl(file);
 							console.groupCollapsed('添加产品封面:', file.name);
@@ -607,6 +616,11 @@
 					handleCarouselFileUpload(event) {
 						const file = event.target.files[0];
 						if (file) {
+							if (this.isBlockedImageName(file.name)) {
+								this.submitMessage = '已跳过 swk.png，请选择实际产品图片';
+								event.target.value = '';
+								return;
+							}
 							const isVideo = file.type.startsWith('video/');
 							if (this.productForm.carouselMedia.length < 5) {
 								const mediaItem = {
@@ -661,9 +675,16 @@
 							return;
 						}
 
-						const files = Array.from(event.target.files || [])
+						const selectedFiles = Array.from(event.target.files || []);
+						const hasBlockedImage = selectedFiles.some(file => this.isBlockedImageName(file.name));
+						const files = selectedFiles
 							.filter(file => file && file.type && file.type.startsWith('image/'))
+							.filter(file => !this.isBlockedImageName(file.name))
 							.slice(0, remaining);
+
+						if (hasBlockedImage) {
+							this.submitMessage = '已跳过 swk.png，请选择实际产品图片';
+						}
 
 						files.forEach(file => {
 							if (this.productForm.specImages.length < 5) {
