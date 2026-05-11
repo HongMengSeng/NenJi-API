@@ -27,8 +27,25 @@
   </view>
 
 
-  <!-- 订单列表 -->
-  <scroll-view class="order-list" scroll-y="true" bindscrolltolower="onReachBottom" lower-threshold="100">
+  <!-- 订单类型标签栏 -->
+  <view class="type-tab-bar" wx:if="{{!searchKeyword || !searching}}">
+    <scroll-view scroll-x enable-flex scroll-with-animation>
+      <view class="type-tab-list">
+        <view
+          class="type-tab-item {{activeTypeTab === item.key ? 'active' : ''}}"
+          wx:for="{{typeTabs}}"
+          wx:key="key"
+          bindtap="switchTypeTab"
+          data-type-tab="{{item.key}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 订单列表（使用原生页面滚动，支持 pull-down-refresh） -->
+  <view class="order-list">
     <!-- 加载中 -->
     <view wx:if="{{loading}}" class="loading">
       <view class="loading-spinner"></view>
@@ -164,5 +181,5 @@
         <text class="pull-text">上拉加载更多</text>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </view>

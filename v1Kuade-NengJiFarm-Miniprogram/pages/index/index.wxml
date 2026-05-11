@@ -98,7 +98,10 @@
         <view class="goods-tags">
           <view class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">{{tag}}</view>
         </view>
-        <view class="goods-price">￥{{item.price}}</view>
+        <view class="goods-price-row">
+          <view class="goods-price">￥{{item.price}}</view>
+          <view class="goods-sales" wx:if="{{item.sold || item.sales || item.soldCount}}">已售{{item.sold || item.sales || item.soldCount}}份</view>
+        </view>
       </view>
     </view>
   </view>

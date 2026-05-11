@@ -46,8 +46,11 @@ Page({
   },
 
   // 获取首页数据
-  getHomeData: function () {
-    wx.showLoading({ title: '加载中...' })
+  getHomeData: function (options = {}) {
+    const showLoading = options.showLoading !== false;
+    if (showLoading) {
+      wx.showLoading({ title: '加载中...' })
+    }
     
     const api = require('../../utils/api')
     api.get('/api/home', { page: 1, pageSize: 4 })
@@ -95,11 +98,15 @@ Page({
         page: 1,
         hasMore: true
       })
-      wx.hideLoading()
+      if (showLoading) {
+        wx.hideLoading()
+      }
     })
     .catch(err => {
       console.error('获取首页数据失败:', err)
-      wx.hideLoading()
+      if (showLoading) {
+        wx.hideLoading()
+      }
       wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       this.setData({ loading: false })
     })
@@ -321,9 +328,11 @@ Page({
     }
   },
 
-  // 页面显示时更新购物车计数 + 初始化自定义 tabBar
+  // 页面显示时更新购物车计数 + 静默刷新首页数据 + 初始化自定义 tabBar
   onShow() {
     this.updateCartCount();
+    // 静默刷新首页数据（购买返回后更新库存等）
+    this.getHomeData({ showLoading: false });
     // 检查员工角色
     const role = wx.getStorageSync('user_role');
     this.setData({ isStaff: role === 'staff' });

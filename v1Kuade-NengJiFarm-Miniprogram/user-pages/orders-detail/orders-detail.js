@@ -11,8 +11,10 @@ Page({
       paymentTime: null,
       shippingTime: null,
       completeTime: null,
+      verifyTime: '',
       totalPrice: 0,
       diningTableNo: '',
+      duration: 30,
       shippingAddress: {
         name: '',
         phone: '',
@@ -61,13 +63,27 @@ Page({
     this.stopGlobalTimer();
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    if (this.data.order && this.data.order.id) {
+      this.getOrderDetail(this.data.order.id, { showLoading: false });
+    }
+    // 请求完成后关闭刷新指示器
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  },
+
   processImageUrl: function (imageUrl) {
     const utils = require('../../utils/utils');
     return utils.media.processUrl(imageUrl);
   },
 
-  getOrderDetail(orderId) {
-    wx.showLoading({ title: '加载中...' });
+  getOrderDetail(orderId, options = {}) {
+    const showLoading = options.showLoading !== false;
+    if (showLoading) {
+      wx.showLoading({ title: '加载中...' });
+    }
 
     api.order.getDetail(orderId)
       .then((orderData) => {
@@ -144,6 +160,9 @@ Page({
         // 处理 verified 字段（活动订单核销状态）
         orderData.verified = orderData.verified || false;
 
+        // 统一核销时间字段
+        orderData.verifyTime = orderData.verifyTime || orderData.verifiedTime || orderData.verificationTime || orderData.verify_time || '';
+
         // 处理有效期字段（仅活动订单）
         if (orderData.validity) {
           orderData.validity.startTime = orderData.validity.startTime || '';
@@ -151,6 +170,8 @@ Page({
           orderData.validity.isValid = orderData.validity.isValid || false;
           orderData.validity.expired = orderData.validity.expired || false;
         }
+        // duration 兜底
+        orderData.duration = orderData.duration || 30;
 
         // 处理物流信息 - 兼容多种字段名
         console.log('原始物流数据:', {
@@ -256,7 +277,9 @@ Page({
         wx.showToast({ title: '获取订单详情失败', icon: 'none' });
       })
       .finally(() => {
-        wx.hideLoading();
+        if (showLoading) {
+          wx.hideLoading();
+        }
       });
   },
 
@@ -325,6 +348,9 @@ Page({
         } else {
           orderData.qrcode = 'http://192.168.203.56/api/file/image/farm_000000000007.jpg';
         }
+        // 从核销接口提取核销时间
+        const vt = qrcodeData.verifyTime || qrcodeData.verifiedTime || qrcodeData.verificationTime || qrcodeData.verify_time || '';
+        if (vt) orderData.verifyTime = vt;
         this.setData({ order: orderData, loading: false });
       })
       .catch(() => {

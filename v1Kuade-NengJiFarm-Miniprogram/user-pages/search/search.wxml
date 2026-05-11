@@ -5,7 +5,6 @@
       <input class="search-input" placeholder="请输入商品名称" value="{{keyword}}" bindinput="onInputChange" />
       <view class="search-btn" bindtap="search">搜索</view>
     </view>
-    <view class="cancel-btn" bindtap="goBack">取消</view>
   </view>
 
   <!-- 搜索历史 -->

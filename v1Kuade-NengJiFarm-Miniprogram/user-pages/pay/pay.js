@@ -254,33 +254,17 @@ Page({
     });
   },
 
-  // 支付成功后的处理
+  // 支付成功后的处理（不自动跳转，用户手动操作）
   afterPaySuccess: function() {
     // 清空购物车中已选中的商品
     this.clearCartAfterPay();
-    
-    // 如果是活动订单，跳转回活动详情并显示二维码
-    if (this.data.activityId) {
-      setTimeout(() => {
-        wx.redirectTo({
-          url: `/user-pages/activity-detail/activity-detail?id=${this.data.activityId}&paid=true&orderId=${this.data.orderId}`
-        });
-      }, 1500);
-    } else if (this.data.from === 'cart') {
-      // 如果是从购物车过来的，支付成功后返回到购物车
-      setTimeout(() => {
-        wx.switchTab({
-          url: '/pages/cart/cart'
-        });
-      }, 1500);
-    } else {
-      // 普通订单跳转到订单列表
-      setTimeout(() => {
-        wx.redirectTo({
-          url: '/user-pages/orders/orders?tab=paid'
-        });
-      }, 1500);
-    }
+
+    // 不再自动跳转，让用户手动点击按钮导航
+    wx.showToast({
+      title: '支付成功',
+      icon: 'success',
+      duration: 2000
+    });
   },
 
   // 支付成功后清空购物车中已选中的商品

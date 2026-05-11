@@ -375,6 +375,77 @@ Page({
     this.syncCart(cartList);
   },
 
+  // ========== 手动输入数量 ==========
+  handleQuantityInput(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const type = e.currentTarget.dataset.type;
+    const cartList = this.data.cartList;
+    const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
+    if (index === -1) return;
+
+    // 将输入值转为整数，过滤非数字字符
+    let val = parseInt(e.detail.value.replace(/\D/g, ''), 10);
+    if (isNaN(val) || val < 1) val = 1;
+
+    // 检查库存上限
+    const stock = cartList[index].stock;
+    if (stock && val > stock) {
+      val = stock;
+      wx.showToast({ title: '库存不足', icon: 'none' });
+    }
+
+    cartList[index].count = val;
+    cartList[index].quantity = val;
+    this.setData({ cartList });
+    this.groupItemsByRegion(cartList);
+    this.calcTotal();
+    this.syncCart(cartList);
+  },
+
+  // ========== 数量输入失焦验证 ==========
+  handleQuantityBlur(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const type = e.currentTarget.dataset.type;
+    const cartList = this.data.cartList;
+    const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
+    if (index === -1) return;
+
+    let val = parseInt(e.detail.value.replace(/\D/g, ''), 10);
+    if (isNaN(val) || val < 1) {
+      // 无效输入时回退到 1
+      val = 1;
+      cartList[index].count = 1;
+      cartList[index].quantity = 1;
+    } else {
+      const stock = cartList[index].stock;
+      if (stock && val > stock) {
+        val = stock;
+        cartList[index].count = stock;
+        cartList[index].quantity = stock;
+      }
+    }
+
+    this.setData({ cartList });
+    this.groupItemsByRegion(cartList);
+    this.calcTotal();
+    this.syncCart(cartList);
+  },
+
+  // ========== 单独删除商品 ==========
+  handleRemoveItem(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const type = e.currentTarget.dataset.type;
+    const cartList = this.data.cartList;
+    const index = cartList.findIndex(i => String(i.id) === id && i.type === type);
+    if (index === -1) return;
+
+    cartList.splice(index, 1);
+    this.setData({ cartList });
+    this.groupItemsByRegion(cartList);
+    this.calcTotal();
+    this.syncCart(cartList);
+  },
+
   // ========== 加载桌号 ==========
   loadTableNumber() {
     const tableNumber = wx.getStorageSync('tableNumber');

@@ -64,12 +64,13 @@
             <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
           </view>
 
-          <!-- 数量加减 -->
+          <!-- 数量加减 + 删除 -->
           <view class="item-count">
             <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
-            <view class="count-num">{{item.count}}</view>
+            <input type="number" class="count-input" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
             <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
           </view>
+          <view class="delete-btn" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
         </view>
       </view>
     </view>
@@ -109,12 +110,13 @@
             <view class="item-stock" wx:if="{{item.stock}}">仅剩{{item.stock}}件</view>
           </view>
 
-          <!-- 数量加减 -->
+          <!-- 数量加减 + 删除 -->
           <view class="item-count">
             <view class="count-btn" catchtap="handleMinus" data-id="{{item.id}}" data-type="{{item.type}}">-</view>
-            <view class="count-num">{{item.count}}</view>
+            <input type="number" class="count-input" value="{{item.count}}" data-id="{{item.id}}" data-type="{{item.type}}" bindinput="handleQuantityInput" bindblur="handleQuantityBlur" />
             <view class="count-btn" catchtap="handlePlus" data-id="{{item.id}}" data-type="{{item.type}}">+</view>
           </view>
+          <view class="delete-btn" catchtap="handleRemoveItem" data-id="{{item.id}}" data-type="{{item.type}}">✕</view>
         </view>
       </view>
     </view>
@@ -135,7 +137,7 @@
 
 </view>
 
-<!-- 🌟 结算弹窗：是否确认购买 -->
+<!-- 结算弹窗：是否确认购买 -->
 <view class="modal" wx:if="{{showModal}}">
   <view class="modal-mask" bindtap="handleCancelModal"></view>
   <view class="modal-content">
@@ -203,7 +205,7 @@
   </view>
 </view>
 
-<!-- 🌟 购物车详情弹窗 -->
+<!-- 购物车详情弹窗 -->
 <view class="modal" wx:if="{{showCartDetail}}">
   <view class="modal-mask" bindtap="handleCloseCartDetail"></view>
   <view class="modal-content cart-detail-modal">
@@ -239,7 +241,7 @@
   </view>
 </view>
 
-<!-- 🌟 分别结算弹窗 -->
+<!-- 分别结算弹窗 -->
 <view class="modal" wx:if="{{showSeparateSettleModal}}">
   <view class="modal-mask" bindtap="handleCloseSeparateSettleModal"></view>
   <view class="modal-content separate-settle-modal">

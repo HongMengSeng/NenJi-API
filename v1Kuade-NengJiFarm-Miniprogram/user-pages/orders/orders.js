@@ -52,7 +52,6 @@ Page({
 
   searchTimer: null,
   countdownTimer: null,
-  refreshTimer: null,
   debounceTimer: null, // 搜索防抖定时器
 
   onLoad(options) {
@@ -72,7 +71,6 @@ Page({
     this.initPageState();
     this.setData({ isPageVisible: true });
     this.startCountdownUpdate();
-    this.startOrderRefresh();
 
     // 使用 hasLoaded 标志位避免重复请求
     if (this.data.hasLoaded && this.data.orders.length > 0) {
@@ -106,7 +104,6 @@ Page({
   onHide() {
     this.setData({ isPageVisible: false });
     this.stopCountdownUpdate();
-    this.stopOrderRefresh();
     // 清除防抖定时器
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
@@ -116,7 +113,6 @@ Page({
 
   onUnload() {
     this.stopCountdownUpdate();
-    this.stopOrderRefresh();
     // 清除防抖定时器
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
@@ -855,21 +851,6 @@ Page({
     if (this.processingTimeoutOrders && this.processingTimeoutOrders.has(orderId)) return;
     this.processingTimeoutOrders.add(orderId);
     orderTimer.handleTimeout(orderId, (id) => { this.getOrders(); });
-  },
-
-  startOrderRefresh() {
-    this.stopOrderRefresh();
-    // 每60秒自动刷新一次，避免过于频繁的请求
-    this.refreshTimer = setInterval(() => {
-      if (!this.data.isRequesting && this.data.isPageVisible && !this.data.searchKeyword?.trim()) {
-        console.log('自动刷新订单列表...');
-        this.refreshOrders();
-      }
-    }, 60000);
-  },
-
-  stopOrderRefresh() {
-    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null; }
   },
 
   cancelOrder(e) {

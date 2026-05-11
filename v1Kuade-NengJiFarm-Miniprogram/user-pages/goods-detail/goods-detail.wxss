@@ -81,6 +81,12 @@ page {
   margin-top: 8rpx;
 }
 
+.stock-info {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
 .goods-tags {
   display: flex;
   gap: 10rpx;

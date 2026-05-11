@@ -46,6 +46,7 @@
     <view class="goods-name">{{goods.name}}</view>
     <view wx:if="{{goods.stock <= 0}}" class="stock-empty">库存不足</view>
     <view wx:elif="{{goods.stock <= 5}}" class="stock-low">仅剩 {{goods.stock}} 件</view>
+    <view wx:else class="stock-info">还剩 {{goods.stock}} 份</view>
    
     <view class="goods-description">
       {{goods.description}}

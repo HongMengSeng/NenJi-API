@@ -122,3 +122,9 @@
 .activity-date {
   color: #999;
 }
+
+.activity-validity {
+  font-size: 22rpx;
+  color: #D4A76A;
+  margin-top: 8rpx;
+}

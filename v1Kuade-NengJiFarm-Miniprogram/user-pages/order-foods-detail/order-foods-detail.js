@@ -15,7 +15,16 @@ Page({
   onLoad(options) {
     const id = options.id;
     if (id) {
+      this.setData({ _foodId: id });
       this.getFoodDetail(id);
+    }
+    this.updateCartCount();
+  },
+
+  onShow() {
+    // 从其他页面返回时刷新数据和购物车
+    if (this.data._foodId) {
+      this.getFoodDetail(this.data._foodId);
     }
     this.updateCartCount();
   },
@@ -168,7 +177,7 @@ Page({
 
   confirmTableModal() {
     this.setData({ showTableModal: false });
-    wx.switchTab({ url: '/pages/index/index' });
+    wx.navigateTo({ url: '/user-pages/order/order' });
   },
 
   previewSwiperImage(e) {

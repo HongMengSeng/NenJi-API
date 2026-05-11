@@ -192,7 +192,11 @@ Page({
             const dMatch = rest.match(/^(.+?区|.+?县|.+?市|.+?旗|.+?特区|.+?林区)/);
             if (dMatch) {
               district = dMatch[0];
+              rest = rest.substring(district.length);
             }
+
+            // 4. 剩余部分作为详细地址，加上 POI 名称
+            detail = (rest.trim() + ' ' + (name || '')).trim();
           }
           
           return { province, city, district, detail };
@@ -207,7 +211,8 @@ Page({
           'formData.province': parsed.province,
           'formData.city': parsed.city,
           'formData.district': parsed.district,
-          'formData.address': regionAddress
+          'formData.address': regionAddress,
+          'formData.detail': parsed.detail
         });
       }
     });

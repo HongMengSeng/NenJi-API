@@ -39,17 +39,21 @@
     </view>
 
     <!-- 活动有效期信息 -->
-    <view wx:if="{{order.isActivityOrder && order.validity}}" class="card validity-card">
+    <view wx:if="{{order.isActivityOrder && order.validity && order.status !== 'verified'}}" class="card validity-card">
       <view class="card-title">
         <view class="card-title-left">
           <view class="card-title-bar"></view>
-          <text class="card-title-text">有效期</text>
+          <text class="card-title-text">核销有效期</text>
         </view>
         <view class="validity-status {{order.validity.expired ? 'expired' : order.validity.isValid ? 'valid' : 'pending'}}">
           {{order.validity.expired ? '已过期' : order.validity.isValid ? '有效' : '未开始'}}
         </view>
       </view>
       <view class="card-body validity-body">
+        <view class="validity-row">
+          <text class="validity-label">有效期限</text>
+          <text class="validity-value">{{order.duration || 30}}天（从购买起算）</text>
+        </view>
         <view class="validity-row">
           <text class="validity-label">开始时间</text>
           <text class="validity-value">{{order.validity.startTime}}</text>
@@ -263,6 +267,22 @@
           </view>
         </block>
 
+        <!-- 已核销订单（活动）：显示核销时间 -->
+        <block wx:elif="{{order.status === 'verified'}}">
+          <view class="row" wx:if="{{order.createTime}}">
+            <text class="row-lbl">下单时间</text>
+            <text class="row-val">{{order.createTime}}</text>
+          </view>
+          <view class="row" wx:if="{{order.paymentTime}}">
+            <text class="row-lbl">支付时间</text>
+            <text class="row-val">{{order.paymentTime}}</text>
+          </view>
+          <view class="row" wx:if="{{order.verifyTime || order.verifiedTime}}">
+            <text class="row-lbl">核销时间</text>
+            <text class="row-val">{{order.verifyTime || order.verifiedTime}}</text>
+          </view>
+        </block>
+
         <!-- 已完成订单：显示完整信息包括交易流水号 -->
         <block wx:elif="{{order.status === 'completed'}}">
           <view class="row" wx:if="{{order.createTime}}">
@@ -297,7 +317,7 @@
             <text class="row-lbl">支付时间</text>
             <text class="row-val">{{order.paymentTime}}</text>
           </view>
-          <view class="row" wx:if="{{order.shippingTime}}">
+          <view class="row" wx:if="{{order.shippingTime && !order.isActivityOrder}}">
             <text class="row-lbl">发货时间</text>
             <text class="row-val">{{order.shippingTime}}</text>
           </view>
@@ -310,6 +330,7 @@
             <text class="row-val row-val-sm">{{order.transactionId}}</text>
           </view>
         </block>
+
       </view>
     </view>
 

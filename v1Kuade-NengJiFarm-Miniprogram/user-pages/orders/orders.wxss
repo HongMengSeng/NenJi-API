@@ -138,7 +138,7 @@
 .type-tab-bar {
   background-color: #f8f8f8;
   position: fixed;
-  top: 332rpx;
+  top: 176rpx;
   left: 0;
   right: 0;
   z-index: 997;
@@ -170,10 +170,8 @@
 
 /* 订单列表 */
 .order-list {
-  /* 动态计算：搜索栏(96) + 状态标签(68) + 间距(20) */
-  padding: 184rpx 24rpx 24rpx;
-  /* 确保列表有足够高度可以滚动 */
-  height: 100vh;
+  /* 页面级滚动，用 padding-top 避开固定栏 */
+  padding: 264rpx 24rpx 24rpx;
   box-sizing: border-box;
 }
 

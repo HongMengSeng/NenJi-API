@@ -67,6 +67,10 @@
       <view class="detail-value">{{activity.date}}</view>
     </view>
     <view class="detail-item">
+      <view class="detail-label">核销有效期</view>
+      <view class="detail-value">报名后{{activity.duration || 30}}天内有效</view>
+    </view>
+    <view class="detail-item">
       <view class="detail-label">活动地点</view>
       <view class="detail-value">{{activity.location}}</view>
     </view>
