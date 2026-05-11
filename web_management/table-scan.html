@@ -206,14 +206,6 @@
 
 				<div class="info-grid" id="infoGrid">
 					<div class="info-item">
-						<span class="info-label">区域</span>
-						<div class="info-value" id="area">--</div>
-					</div>
-					<div class="info-item">
-						<span class="info-label">餐桌类型</span>
-						<div class="info-value" id="type">--</div>
-					</div>
-					<div class="info-item">
 						<span class="info-label">容纳人数</span>
 						<div class="info-value" id="capacity">--</div>
 					</div>
@@ -237,8 +229,6 @@
 			(function () {
 				const params = new URLSearchParams(window.location.search);
 				const tableId = params.get('tableId') || '';
-				const area = params.get('area') || '';
-				const type = params.get('type') || '';
 				const capacity = params.get('capacity') || '';
 				const status = params.get('status') || '';
 				const isWeChat = /MicroMessenger/i.test(window.navigator.userAgent);
@@ -247,8 +237,6 @@
 				const title = document.getElementById('title');
 				const subtitle = document.getElementById('subtitle');
 				const tableIdEl = document.getElementById('tableId');
-				const areaEl = document.getElementById('area');
-				const typeEl = document.getElementById('type');
 				const capacityEl = document.getElementById('capacity');
 				const statusEl = document.getElementById('status');
 				const notice = document.getElementById('notice');
@@ -272,8 +260,6 @@
 				title.textContent = isWeChat ? '微信扫码成功' : '餐桌扫码成功';
 				subtitle.textContent = '已为你识别当前餐桌，可用于点餐、核桌和后续订单流程。';
 				tableIdEl.textContent = tableId;
-				areaEl.textContent = area || '未设置';
-				typeEl.textContent = type || '未设置';
 				capacityEl.textContent = capacity ? `${capacity} 人` : '未设置';
 				statusEl.textContent = status || '未设置';
 				notice.textContent = `当前餐桌为 ${tableId}，微信扫一扫已可直接打开本页。后续如需继续接用户点餐、购物车、微信支付，可在本页继续扩展。`;

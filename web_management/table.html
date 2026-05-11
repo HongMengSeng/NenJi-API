@@ -633,7 +633,7 @@
 											<button class="btn btn-default" @click="refreshTableData">刷新数据</button>
 										</div>
 										<div class="search-container">
-											<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号/区域/类型搜索" @keyup.enter="searchTables" />
+											<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号搜索" @keyup.enter="searchTables" />
 											<button class="btn btn-primary" @click="searchTables">搜索</button>
 										</div>
 									</div>
@@ -642,11 +642,9 @@
 											<tr>
 												<th><input type="checkbox" v-model="tableSelectAll" @change="toggleSelectAllTables" /></th>
 												<th>餐桌编号</th>
-												<th>区域</th>
-												<th>餐桌类型</th>
 												<th>容纳人数</th>
 												<th>状态</th>
-												<th>更新时间</th>
+												<th>创建时间</th>
 												<th>操作</th>
 											</tr>
 										</thead>
@@ -654,11 +652,9 @@
 											<tr v-for="table in tables" :key="table.id">
 												<td><input type="checkbox" v-model="table.selected" @change="updateSelectedTable" /></td>
 												<td>{{ table.id }}</td>
-												<td>{{ table.area }}</td>
-												<td><span class="table-chip">{{ table.type }}</span></td>
 												<td>{{ table.capacity }} 人</td>
 												<td><span :class="['table-status', getTableStatusClass(table.status)]">{{ table.status }}</span></td>
-												<td>{{ table.updateTime }}</td>
+												<td>{{ table.createTime }}</td>
 												<td>
 													<div class="table-actions">
 														<button class="btn btn-primary" @click="editTable(table)">编辑</button>
@@ -712,20 +708,16 @@
 									<div class="detail-content">{{ tableDetailItem.id }}</div>
 								</div>
 								<div class="detail-item">
-									<span class="detail-label">区域</span>
-									<div class="detail-content">{{ tableDetailItem.area }}</div>
-								</div>
-								<div class="detail-item">
-									<span class="detail-label">餐桌类型</span>
-									<div class="detail-content">{{ tableDetailItem.type }}</div>
-								</div>
-								<div class="detail-item">
 									<span class="detail-label">容纳人数</span>
 									<div class="detail-content">{{ tableDetailItem.capacity }} 人</div>
 								</div>
 								<div class="detail-item">
 									<span class="detail-label">状态</span>
 									<div class="detail-content">{{ tableDetailItem.status }}</div>
+								</div>
+								<div class="detail-item">
+									<span class="detail-label">创建时间</span>
+									<div class="detail-content">{{ tableDetailItem.createTime }}</div>
 								</div>
 								<div class="detail-item" style="grid-column: 1 / -1;">
 									<span class="detail-label">餐桌详情</span>
@@ -904,48 +896,30 @@
 					},
 					getDefaultTables() {
 						return [
-							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, status: '停用', updateTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
+							{ id: 'A01', capacity: 4, status: '空闲', createTime: '2026-03-31 09:10', selected: false },
+							{ id: 'A02', capacity: 4, status: '使用中', createTime: '2026-03-31 11:25', selected: false },
+							{ id: 'A03', capacity: 6, status: '空闲', createTime: '2026-03-31 10:40', selected: false },
+							{ id: 'B01', capacity: 2, status: '停用', createTime: '2026-03-30 16:20', selected: false },
+							{ id: 'B02', capacity: 4, status: '空闲', createTime: '2026-03-31 08:50', selected: false },
+							{ id: 'VIP01', capacity: 8, status: '使用中', createTime: '2026-03-31 12:05', selected: false },
+							{ id: 'T01', capacity: 2, status: '空闲', createTime: '2026-03-31 09:35', selected: false }
 						];
 					},
 					normalizeTableRecord(table) {
 						return {
 							id: table.id,
-							area: table.area,
-							type: this.inferTableType(table),
 							capacity: Number(table.capacity || 0) || 4,
 							status: table.status || '空闲',
-							updateTime: this.formatDisplayTime(table.updateTime),
+							createTime: this.formatDisplayTime(table.createTime || table.createdAt || table.createDate) || this.getCurrentTime(),
 							detail: this.inferTableDetail(table),
 							selected: Boolean(table.selected)
 						};
 					},
-					inferTableType(table) {
-						if (table.type) return table.type;
-						const area = String(table.area || '');
-						const capacity = Number(table.capacity || 0);
-						if (area.includes('包厢')) return '包厢桌';
-						if (area.includes('露台')) return '露台桌';
-						if (capacity <= 2) return '双人桌';
-						if (capacity <= 4) return '四人桌';
-						if (capacity <= 6) return '六人桌';
-						return '多人桌';
-					},
 					inferTableDetail(table) {
 						if (table.detail) return table.detail;
-						const area = String(table.area || '');
-						const type = String(table.type || this.inferTableType(table));
-						if (area.includes('包厢')) return '独立包厢，可提供更私密的就餐环境。';
-						if (area.includes('露台')) return '户外露台位，通风较好，适合休闲用餐。';
-						if (type.includes('双人')) return '适合双人就餐，翻台灵活。';
-						if (type.includes('四人')) return '适合家庭或朋友聚餐。';
-						if (type.includes('六人')) return '适合多人聚餐，可灵活拼桌。';
-						return '标准散台，可按现场接待灵活安排。';
+						const capacity = Number(table.capacity || 0);
+						if (capacity > 0) return `可容纳 ${capacity} 人用餐。`;
+						return '标准餐桌，可按现场接待灵活安排。';
 					},
 					loadDishesFromLocalStorage() {
 						try {
@@ -984,9 +958,7 @@
 						const keyword = this.tableSearchKeyword.trim().toLowerCase();
 						if (!keyword) return this.allTables;
 						return this.allTables.filter(table =>
-							String(table.id).toLowerCase().includes(keyword) ||
-							String(table.area).toLowerCase().includes(keyword) ||
-							String(table.type).toLowerCase().includes(keyword)
+							String(table.id).toLowerCase().includes(keyword)
 						);
 					},
 					applyDishFilter() {
@@ -1125,8 +1097,6 @@
 					buildTableScanUrl(table) {
 						const targetUrl = new URL('table-scan.html', window.location.href);
 						targetUrl.searchParams.set('tableId', table.id);
-						targetUrl.searchParams.set('area', table.area);
-						targetUrl.searchParams.set('type', table.type);
 						targetUrl.searchParams.set('capacity', table.capacity);
 						targetUrl.searchParams.set('status', table.status);
 						return targetUrl.toString();
@@ -1140,7 +1110,6 @@
 					openTableDetail(table) {
 						this.tableDetailItem = {
 							...table,
-							type: this.inferTableType(table),
 							detail: this.inferTableDetail(table)
 						};
 						this.tableQrPayload = this.buildTableQrPayload(this.tableDetailItem);
@@ -1211,11 +1180,9 @@
 						}
 
 						table.status = status;
-						table.updateTime = this.getCurrentTime();
 
 						if (this.tableDetailItem && this.tableDetailItem.id === table.id) {
 							this.tableDetailItem.status = status;
-							this.tableDetailItem.updateTime = table.updateTime;
 						}
 
 						this.saveTablesToLocalStorage();

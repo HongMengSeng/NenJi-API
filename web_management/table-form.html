@@ -238,7 +238,7 @@
 					<div class="form-container">
 						<div class="form-header">
 							<div class="form-title">{{ formTitle }}</div>
-							<div class="form-subtitle">支持维护餐桌编号、区域、类型、状态和餐桌详情，保存后会同步回餐桌管理列表。</div>
+							<div class="form-subtitle">支持维护餐桌编号、容纳人数、状态和餐桌详情，保存后会同步回餐桌管理列表。</div>
 						</div>
 
 						<div class="form-row">
@@ -248,21 +248,6 @@
 									<input type="text" v-model.trim="tableForm.id" placeholder="例如 A01 / VIP01" />
 								</div>
 								<div class="field-tip">餐桌编号请手动填写且需唯一，编辑时如修改编号会覆盖原编号。</div>
-							</div>
-							<div class="form-group">
-								<label>区域</label>
-								<select v-model="tableForm.area">
-									<option v-for="item in areaOptions" :key="item" :value="item">{{ item }}</option>
-								</select>
-							</div>
-						</div>
-
-						<div class="form-row">
-							<div class="form-group">
-								<label>餐桌类型</label>
-								<select v-model="tableForm.type">
-									<option v-for="item in typeOptions" :key="item" :value="item">{{ item }}</option>
-								</select>
 							</div>
 							<div class="form-group">
 								<label>容纳人数</label>
@@ -285,7 +270,7 @@
 							<div class="form-group">
 								<label>餐桌详情</label>
 								<textarea v-model.trim="tableForm.detail" placeholder="例如：靠窗位，适合四人用餐，可直接用于查看明细页展示。"></textarea>
-								<div class="field-tip">如不填写，系统会按区域和类型自动补默认说明。</div>
+								<div class="field-tip">如不填写，系统会按容纳人数自动补默认说明。</div>
 							</div>
 						</div>
 
@@ -306,12 +291,8 @@
 					return {
 						isEditMode: false,
 						editingTableId: '',
-						areaOptions: ['大厅A区', '大厅B区', '包厢', '露台'],
-						typeOptions: ['双人桌', '四人桌', '六人桌', '包厢桌', '露台桌', '多人桌'],
 						tableForm: {
 							id: '',
-							area: '大厅A区',
-							type: '四人桌',
 							capacity: 4,
 							status: '空闲',
 							detail: ''
@@ -350,52 +331,32 @@
 					},
 					getDefaultTables() {
 						return [
-							{ id: 'A01', area: '大厅A区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', area: '大厅A区', type: '四人桌', capacity: 4, status: '使用中', updateTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', area: '大厅A区', type: '六人桌', capacity: 6, status: '空闲', updateTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', area: '大厅B区', type: '双人桌', capacity: 2, status: '停用', updateTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', area: '大厅B区', type: '四人桌', capacity: 4, status: '空闲', updateTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', area: '包厢', type: '包厢桌', capacity: 8, status: '使用中', updateTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', area: '露台', type: '露台桌', capacity: 2, status: '空闲', updateTime: '2026-03-31 09:35', selected: false }
+							{ id: 'A01', capacity: 4, status: '空闲', createTime: '2026-03-31 09:10', selected: false },
+							{ id: 'A02', capacity: 4, status: '使用中', createTime: '2026-03-31 11:25', selected: false },
+							{ id: 'A03', capacity: 6, status: '空闲', createTime: '2026-03-31 10:40', selected: false },
+							{ id: 'B01', capacity: 2, status: '停用', createTime: '2026-03-30 16:20', selected: false },
+							{ id: 'B02', capacity: 4, status: '空闲', createTime: '2026-03-31 08:50', selected: false },
+							{ id: 'VIP01', capacity: 8, status: '使用中', createTime: '2026-03-31 12:05', selected: false },
+							{ id: 'T01', capacity: 2, status: '空闲', createTime: '2026-03-31 09:35', selected: false }
 						];
 					},
 					normalizeTableRecord(table) {
 						return {
 							id: table.id,
-							area: table.area,
-							type: this.inferTableType(table),
 							capacity: Number(table.capacity || 0) || 4,
 							status: table.status || '空闲',
-							updateTime: table.updateTime || '',
+							createTime: table.createTime || table.createdAt || table.createDate || this.getCurrentTime(),
 							detail: this.inferTableDetail(table),
 							selected: Boolean(table.selected)
 						};
-					},
-					inferTableType(table) {
-						if (table.type) {
-							return table.type;
-						}
-						const area = String(table.area || '');
-						const capacity = Number(table.capacity || 0);
-						if (area.includes('包厢')) return '包厢桌';
-						if (area.includes('露台')) return '露台桌';
-						if (capacity <= 2) return '双人桌';
-						if (capacity <= 4) return '四人桌';
-						if (capacity <= 6) return '六人桌';
-						return '多人桌';
 					},
 					inferTableDetail(table) {
 						if (table.detail) {
 							return table.detail;
 						}
-						const area = String(table.area || '');
-						const type = String(table.type || this.inferTableType(table));
-						if (area.includes('包厢')) return '独立包厢，可提供更私密的就餐环境。';
-						if (area.includes('露台')) return '户外露台位，通风较好，适合休闲用餐。';
-						if (type.includes('双人')) return '适合双人就餐，翻台灵活。';
-						if (type.includes('四人')) return '适合家庭或朋友聚餐。';
-						if (type.includes('六人')) return '适合多人聚餐，可灵活拼桌。';
-						return '标准散台，可按现场接待灵活安排。';
+						const capacity = Number(table.capacity || 0);
+						if (capacity > 0) return `可容纳 ${capacity} 人用餐。`;
+						return '标准餐桌，可按现场接待灵活安排。';
 					},
 					getStoredTables() {
 						try {
@@ -420,8 +381,6 @@
 						}
 						this.tableForm = {
 							id: currentTable.id,
-							area: currentTable.area,
-							type: this.inferTableType(currentTable),
 							capacity: Number(currentTable.capacity || 0) || 4,
 							status: currentTable.status || '空闲',
 							detail: this.inferTableDetail(currentTable)
@@ -429,19 +388,9 @@
 					},
 					saveTable() {
 						const tableId = this.tableForm.id.trim();
-						const area = this.tableForm.area.trim();
-						const type = this.tableForm.type.trim();
 						const capacity = Number(this.tableForm.capacity);
 						if (!tableId) {
 							alert('请输入餐桌编号');
-							return;
-						}
-						if (!area) {
-							alert('请选择餐桌区域');
-							return;
-						}
-						if (!type) {
-							alert('请选择餐桌类型');
 							return;
 						}
 						if (!capacity || capacity < 1) {
@@ -456,19 +405,16 @@
 							return;
 						}
 
+						const oldTable = this.isEditMode ? tables.find(table => table.id === this.editingTableId) : null;
 						const tableRecord = {
 							id: tableId,
-							area,
-							type,
 							capacity,
 							status: this.tableForm.status,
 							detail: this.inferTableDetail({
-								area,
-								type,
 								capacity,
 								detail: this.tableForm.detail
 							}),
-							updateTime: this.getCurrentTime(),
+							createTime: oldTable && oldTable.createTime ? oldTable.createTime : this.getCurrentTime(),
 							selected: false
 						};
 
