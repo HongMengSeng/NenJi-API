@@ -511,12 +511,11 @@
 								class="search-input"
 								type="text"
 								v-model.trim="searchKeyword"
-								placeholder="电话号码搜索"
+								placeholder="昵称/电话号码搜索"
 								@keyup.enter="searchUsers"
 							>
 							<select class="filter-select" v-model="roleFilter" @change="searchUsers">
 								<option value="">全部用户</option>
-								<option value="普通用户">普通用户</option>
 								<option value="员工">员工</option>
 								<option value="厨师">厨师</option>
 							</select>
@@ -551,7 +550,7 @@
 										<td>{{ user.wxOpenid || '无' }}</td>
 										<td>{{ user.phone || '无' }}</td>
 										<td class="is-center">
-											<span :class="['role-tag', user.role === '普通用户' ? 'user' : (user.role === '厨师' ? 'chef' : 'employee')]">{{ user.roleText }}</span>
+											<span :class="['role-tag', user.role === '员工' ? 'user' : (user.role === '厨师' ? 'chef' : 'employee')]">{{ user.roleText }}</span>
 										</td>
 										<td class="is-center">
 											<div class="table-actions">
