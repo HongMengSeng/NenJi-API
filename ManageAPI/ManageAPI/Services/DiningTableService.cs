@@ -1,84 +1,174 @@
 using Microsoft.EntityFrameworkCore;
 
+using QRCoder;
+
 using ManageAPI.Data;
 using ManageAPI.Dtos;
 using ManageAPI.Entity;
-
-using QRCoder;
 
 namespace ManageAPI.Services;
 
 public class DiningTableService : IDiningTableService
 {
-    private readonly AppDbContext _context;
+    private readonly AppDbContext _dbContext;
     private readonly ILogger<DiningTableService> _logger;
-    private static readonly string QrCodeDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "qrcodes");
 
-    private static readonly Dictionary<int, string> StatusNameMap = new()
+    public DiningTableService(AppDbContext dbContext, ILogger<DiningTableService> logger)
     {
-        { 1, "空闲" },
-        { 2, "停用" },
-        { 3, "使用中" }
-    };
-
-    private static readonly Dictionary<string, int> StatusValueMap = new()
-    {
-        { "空闲", 1 },
-        { "停用", 2 },
-        { "使用中", 3 }
-    };
-
-    public DiningTableService(AppDbContext context, ILogger<DiningTableService> logger)
-    {
-        _context = context;
+        _dbContext = dbContext;
         _logger = logger;
     }
 
-    public async Task<(List<TableListItemDto> Records, int Total)> GetTableListAsync(
-        int pageNum, int pageSize, string? keyword, string? statusFilter,
-        CancellationToken cancellationToken = default)
+    // ========== 通用辅助方法 ==========
+
+    /// <summary>获取状态字典 (statusId → statusName)</summary>
+    private async Task<Dictionary<int, string>> GetStatusMapAsync(CancellationToken ct)
     {
-        var query = _context.DiningTables.AsNoTracking();
+        return await _dbContext.Set<DiningTableStatusDict>()
+            .AsNoTracking()
+            .ToDictionaryAsync(s => s.TableStatusId, s => s.StatusName, ct);
+    }
+
+    /// <summary>根据状态名称查询 statusId</summary>
+    private async Task<int?> ResolveStatusIdAsync(string? statusName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(statusName)) return null;
+        return await _dbContext.Set<DiningTableStatusDict>()
+            .AsNoTracking()
+            .Where(s => s.StatusName == statusName.Trim())
+            .Select(s => (int?)s.TableStatusId)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
+    private async Task<string> GenerateQrCodeAsync(string tableno, string baseUrl, CancellationToken ct)
+    {
+        var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var qrDir = Path.Combine(wwwroot, "qrcodes");
+        Directory.CreateDirectory(qrDir);
+
+        var contentUrl = $"{baseUrl}/table/{tableno}";
+        var fileName = $"{tableno}.png";
+        var filePath = Path.Combine(qrDir, fileName);
+
+        using var generator = new QRCodeGenerator();
+        using var qrData = generator.CreateQrCode(contentUrl, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrData);
+        var bytes = qrCode.GetGraphic(20);
+        await File.WriteAllBytesAsync(filePath, bytes, ct);
+
+        _logger.LogInformation("二维码已生成: {FilePath}", filePath);
+        return $"{baseUrl}/qrcodes/{fileName}";
+    }
+
+    // =====================================================
+    //  DiningTableController (api/dining-table)
+    // =====================================================
+
+    public async Task<(List<DiningTableListItemDto> Records, int Total)> GetListAsync(
+        int pageNum, int pageSize, string? keyword, CancellationToken ct)
+    {
+        var query = _dbContext.DiningTables.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            var kw = keyword.Trim();
-            query = query.Where(t => t.TableNo.Contains(kw));
-        }
+            query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
 
-        if (!string.IsNullOrWhiteSpace(statusFilter))
-        {
-            if (StatusValueMap.TryGetValue(statusFilter.Trim(), out var statusValue))
-            {
-                query = query.Where(t => t.TableStatus == statusValue);
-            }
-        }
+        var total = await query.CountAsync(ct);
 
-        var total = await query.CountAsync(cancellationToken);
-
-        var raw = await query
-            .OrderBy(t => t.TableNo)
+        var tables = await query
+            .OrderByDescending(t => t.CreatedAt)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
-        var records = raw.Select(t => new TableListItemDto
+        var statusMap = await GetStatusMapAsync(ct);
+
+        var records = tables.Select(t => new DiningTableListItemDto
         {
-            Id = t.TableNo,
-            Tableno = t.TableNo,
-            Capacity = t.SeatCount,
-            Status = StatusNameMap.GetValueOrDefault(t.TableStatus, "未知"),
-            CreateTime = t.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+            Id = t.DiningTableId,
+            TableNo = t.TableNo,
+            SeatCount = t.SeatCount,
+            TableStatus = t.TableStatus,
+            StatusName = statusMap.GetValueOrDefault(t.TableStatus, "未知"),
+            QrCodeImageUrl = t.QrCodeImageUrl,
+            CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         }).ToList();
 
         return (records, total);
     }
 
-    public async Task<TableDetailDto?> GetTableDetailAsync(string tableNo, CancellationToken cancellationToken = default)
+    public async Task<long> CreateAsync(CreateDiningTableDto dto, CancellationToken ct)
     {
-        var table = await _context.DiningTables
+        var entity = new DiningTables
+        {
+            TableNo = dto.TableNo,
+            SeatCount = dto.SeatCount,
+            TableStatus = dto.TableStatus,
+            QrCodeImageUrl = dto.QrCodeImageUrl,
+            CreatedAt = DateTime.Now,
+        };
+
+        _dbContext.DiningTables.Add(entity);
+        await _dbContext.SaveChangesAsync(ct);
+        return entity.DiningTableId;
+    }
+
+    public async Task<bool> DeleteAsync(long id, CancellationToken ct)
+    {
+        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.DiningTableId == id, ct);
+        if (table is null) return false;
+
+        _dbContext.DiningTables.Remove(table);
+        await _dbContext.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // =====================================================
+    //  TableController (api/table)
+    // =====================================================
+
+    public async Task<(List<TableListItemDto> Records, int Total)> GetTableListAsync(
+        int pageNum, int pageSize, string? keyword, string? status, CancellationToken ct)
+    {
+        var query = _dbContext.DiningTables.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+            query = query.Where(t => t.TableNo.Contains(keyword.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var statusId = await ResolveStatusIdAsync(status, ct);
+            if (statusId.HasValue)
+                query = query.Where(t => t.TableStatus == statusId.Value);
+        }
+
+        var total = await query.CountAsync(ct);
+
+        var tables = await query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((pageNum - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var statusMap = await GetStatusMapAsync(ct);
+
+        var records = tables.Select(t => new TableListItemDto
+        {
+            Id = t.TableNo,
+            Tableno = t.TableNo,
+            Capacity = t.SeatCount,
+            Status = statusMap.GetValueOrDefault(t.TableStatus, "未知"),
+            CreateTime = t.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        }).ToList();
+
+        return (records, total);
+    }
+
+    public async Task<TableDetailDto?> GetTableDetailAsync(string id, CancellationToken ct)
+    {
+        var table = await _dbContext.DiningTables
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.TableNo == tableNo, cancellationToken);
+            .FirstOrDefaultAsync(t => t.TableNo == id, ct);
 
         if (table is null) return null;
 
@@ -89,174 +179,114 @@ public class DiningTableService : IDiningTableService
             Capacity = table.SeatCount,
             Status = table.TableStatus,
             CreateTime = table.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-            QrCodeUrl = table.QrCodeImageUrl
+            QrCodeUrl = table.QrCodeImageUrl,
         };
     }
 
-    public async Task<TableMutationResponseDto?> CreateTableAsync(
-        CreateTableRequestDto dto, string baseUrl,
-        CancellationToken cancellationToken = default)
+    public async Task<TableMutationResponseDto> CreateTableAsync(
+        CreateTableRequestDto dto, string baseUrl, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.Tableno))
-            throw new ArgumentException("餐桌号不能为空");
+        // 检查餐桌号是否已存在
+        var exists = await _dbContext.DiningTables.AnyAsync(t => t.TableNo == dto.Tableno, ct);
+        if (exists)
+            throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
 
         if (dto.Capacity < 1 || dto.Capacity > 30)
             throw new ArgumentException("容纳人数必须在 1-30 之间");
 
-        var exists = await _context.DiningTables
-            .AnyAsync(t => t.TableNo == dto.Tableno.Trim(), cancellationToken);
-
-        if (exists)
-            throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
+        // 生成二维码
+        var qrUrl = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
 
         var status = dto.Status ?? 1;
 
-        var tableNo = dto.Tableno.Trim();
-        var qrCodeUrl = GenerateQrCode(tableNo, baseUrl);
-
         var entity = new DiningTables
         {
-            TableNo = tableNo,
+            TableNo = dto.Tableno,
             SeatCount = dto.Capacity,
             TableStatus = status,
-            QrCodeImageUrl = qrCodeUrl,
-            CreatedAt = DateTime.Now
+            QrCodeImageUrl = qrUrl,
+            CreatedAt = DateTime.Now,
         };
 
-        _context.DiningTables.Add(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        _dbContext.DiningTables.Add(entity);
+        await _dbContext.SaveChangesAsync(ct);
 
-        _logger.LogInformation("新增餐桌成功 - TableNo: {TableNo}, Capacity: {Capacity}", tableNo, dto.Capacity);
+        _logger.LogInformation("新增餐桌成功: {Tableno}, 容量: {Capacity}", dto.Tableno, dto.Capacity);
 
         return new TableMutationResponseDto
         {
-            Id = tableNo,
-            Tableno = tableNo,
+            Id = dto.Tableno,
+            Tableno = dto.Tableno,
             Capacity = dto.Capacity,
             Status = status,
-            QrCodeUrl = qrCodeUrl
+            QrCodeUrl = qrUrl,
         };
     }
 
     public async Task<TableMutationResponseDto?> UpdateTableAsync(
-        UpdateTableRequestDto dto, string baseUrl,
-        CancellationToken cancellationToken = default)
+        UpdateTableRequestDto dto, string baseUrl, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.Id))
-            throw new ArgumentException("餐桌ID不能为空");
-
-        var table = await _context.DiningTables
-            .FirstOrDefaultAsync(t => t.TableNo == dto.Id.Trim(), cancellationToken);
-
+        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Id, ct);
         if (table is null) return null;
 
-        if (!string.IsNullOrWhiteSpace(dto.Tableno) && dto.Tableno.Trim() != table.TableNo)
+        // 如果餐桌号变更，检查新号是否被占用
+        if (!string.IsNullOrWhiteSpace(dto.Tableno) && dto.Tableno != dto.Id)
         {
-            var newNo = dto.Tableno.Trim();
-            var conflict = await _context.DiningTables
-                .AnyAsync(t => t.TableNo == newNo, cancellationToken);
-
-            if (conflict)
-                throw new InvalidOperationException($"餐桌号 '{newNo}' 已存在");
-
-            table.TableNo = newNo;
-            table.QrCodeImageUrl = GenerateQrCode(newNo, baseUrl);
+            var exists = await _dbContext.DiningTables.AnyAsync(t => t.TableNo == dto.Tableno, ct);
+            if (exists)
+                throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
         }
 
-        if (dto.Capacity.HasValue)
-        {
-            if (dto.Capacity.Value < 1 || dto.Capacity.Value > 30)
-                throw new ArgumentException("容纳人数必须在 1-30 之间");
+        // 更新字段
+        var newTableno = dto.Tableno ?? table.TableNo;
+        var newCapacity = dto.Capacity ?? table.SeatCount;
+        var newStatus = dto.Status ?? table.TableStatus;
 
-            table.SeatCount = dto.Capacity.Value;
+        // 如果餐桌号变了，重新生成二维码
+        if (dto.Tableno != null && dto.Tableno != table.TableNo)
+        {
+            table.QrCodeImageUrl = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
         }
 
-        if (dto.Status.HasValue)
-        {
-            table.TableStatus = dto.Status.Value;
-        }
+        table.TableNo = newTableno;
+        table.SeatCount = newCapacity;
+        table.TableStatus = newStatus;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(ct);
 
-        _logger.LogInformation("更新餐桌成功 - Id: {Id}, NewTableNo: {TableNo}", dto.Id, table.TableNo);
+        _logger.LogInformation("更新餐桌成功: {OldId} → {NewTableno}", dto.Id, newTableno);
 
         return new TableMutationResponseDto
         {
-            Id = table.TableNo,
-            Tableno = table.TableNo,
-            Capacity = table.SeatCount,
-            Status = table.TableStatus,
-            QrCodeUrl = table.QrCodeImageUrl
+            Id = newTableno,
+            Tableno = newTableno,
+            Capacity = newCapacity,
+            Status = newStatus,
+            QrCodeUrl = table.QrCodeImageUrl,
         };
     }
 
-    public async Task<bool> DeleteTableAsync(string tableNo, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteTableAsync(string id, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(tableNo))
-            throw new ArgumentException("餐桌ID不能为空");
-
-        var table = await _context.DiningTables
-            .FirstOrDefaultAsync(t => t.TableNo == tableNo.Trim(), cancellationToken);
-
+        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == id, ct);
         if (table is null) return false;
 
-        _context.DiningTables.Remove(table);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("删除餐桌成功 - TableNo: {TableNo}", tableNo);
-
+        _dbContext.DiningTables.Remove(table);
+        await _dbContext.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<object?> UpdateTableStatusAsync(
-        UpdateTableStatusRequestDto dto, CancellationToken cancellationToken = default)
+    public async Task<UpdateTableStatusRequestDto?> UpdateTableStatusAsync(
+        UpdateTableStatusRequestDto dto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.Tableno))
-            throw new ArgumentException("餐桌号不能为空");
-
-        if (dto.Status < 1 || dto.Status > 3)
-            throw new ArgumentException("状态值不正确，仅支持 1=空闲, 2=停用, 3=使用中");
-
-        var table = await _context.DiningTables
-            .FirstOrDefaultAsync(t => t.TableNo == dto.Tableno.Trim(), cancellationToken);
-
+        var table = await _dbContext.DiningTables.FirstOrDefaultAsync(t => t.TableNo == dto.Tableno, ct);
         if (table is null) return null;
 
         table.TableStatus = dto.Status;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(ct);
 
-        _logger.LogInformation("更新餐桌状态成功 - TableNo: {TableNo}, Status: {Status}", dto.Tableno, dto.Status);
+        _logger.LogInformation("更新餐桌状态: {Tableno} → Status={Status}", dto.Tableno, dto.Status);
 
-        return new { tableno = dto.Tableno.Trim(), status = dto.Status };
-    }
-
-    private string GenerateQrCode(string tableNo, string baseUrl)
-    {
-        try
-        {
-            if (!Directory.Exists(QrCodeDir))
-                Directory.CreateDirectory(QrCodeDir);
-
-            var scanUrl = $"{baseUrl.TrimEnd('/')}/table/scan/{tableNo}";
-
-            using var qrGenerator = new QRCodeGenerator();
-            using var qrData = qrGenerator.CreateQrCode(scanUrl, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new PngByteQRCode(qrData);
-            var qrBytes = qrCode.GetGraphic(20);
-
-            var fileName = $"{tableNo}.png";
-            var filePath = Path.Combine(QrCodeDir, fileName);
-            File.WriteAllBytes(filePath, qrBytes);
-
-            var qrCodeUrl = $"{baseUrl.TrimEnd('/')}/qrcodes/{fileName}";
-            _logger.LogInformation("二维码生成成功 - URL: {QrCodeUrl}", qrCodeUrl);
-
-            return qrCodeUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "二维码生成失败，将使用占位URL");
-            return $"{baseUrl.TrimEnd('/')}/qrcodes/{tableNo}.png";
-        }
+        return dto;
     }
 }

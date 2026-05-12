@@ -15,10 +15,10 @@ namespace ManageAPI.Entity
         [Column("seat_count")]
         public int SeatCount { get; set; }
 
-        [Column("table_status")]
+        [Column("table_status_id")]
         public int TableStatus { get; set; }
 
-        [Column("qr_code_image_url")]
+        [Column("qrcode_image_url")]
         public string QrCodeImageUrl { get; set; } = string.Empty;
 
         [Column("created_at")]

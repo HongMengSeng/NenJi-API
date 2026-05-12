@@ -159,6 +159,29 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // 服务菜品图片
+        var iconsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Kude-NenJi-Api", "DemoAPI", "WebAPI", "WebAPI", "wwwroot", "icons"));
+        if (Directory.Exists(iconsPath))
+        {
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(iconsPath),
+                RequestPath = "/icons"
+            });
+        }
+
+        // 服务前端页面
+        var frontendPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "web_management"));
+        if (Directory.Exists(frontendPath))
+        {
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendPath),
+                RequestPath = ""
+            });
+        }
+
         app.UseStaticFiles();
         app.UseMiddleware<TokenMiddleware>();
 
