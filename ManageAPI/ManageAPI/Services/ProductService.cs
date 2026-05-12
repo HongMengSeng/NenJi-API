@@ -45,6 +45,7 @@ public class ProductService : IProductService
                 Stock = c.InStock ?? 0,
                 Status = (c.CommodityStatusId ?? 0) == 1 ? "已上架" : "已下架",
                 Image = c.ImageUrl ?? string.Empty,
+                UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
             })
             .ToListAsync(cancellationToken);
 
@@ -112,6 +113,7 @@ public class ProductService : IProductService
             StorageCondition = commodity.StorageCondition,
             SpecImages = specImages.Take(5).ToList(),
             Description = commodity.SpecDescription,
+            UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
         };
     }
 

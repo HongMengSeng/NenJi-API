@@ -1,41 +1,33 @@
 using Microsoft.EntityFrameworkCore;
+
 using ManageAPI.Data;
 using ManageAPI.Dtos;
-using ManageAPI.Entity;
 using ManageAPI.Entity;
 
 namespace ManageAPI.Services;
 
 /// <summary>
-/// »î¶¯/È¯Æ·¹ÜÀí·şÎñ
+/// æ´»åŠ¨/åˆ¸å“ç®¡ç†æœåŠ¡
 /// </summary>
 public class ActivityService : IActivityService
 {
     private readonly AppDbContext _dbContext;
     private readonly ILogger<ActivityService> _logger;
-    private readonly IInventoryStatsService _inventoryStatsService;
 
-    public ActivityService(
-        AppDbContext dbContext, 
-        ILogger<ActivityService> logger,
-        IInventoryStatsService inventoryStatsService)
+    public ActivityService(AppDbContext dbContext, ILogger<ActivityService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
-        _inventoryStatsService = inventoryStatsService;
     }
 
-    /// <summary>
-    /// »ñÈ¡»î¶¯·ÖÒ³ÁĞ±í
-    /// </summary>
-    public async Task<(List<ActivitySummaryDto> Records, int Total)> GetActivityListAsync(
+    public async Task<(List<CouponListItemDto> Records, int Total)> GetActivityListAsync(
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Activities
             .AsNoTracking()
-            .Where(a => a.StatusId == 1);  // ÅÅ³ıÒÑÉ¾³ı£¨StatusId = 1±íÊ¾ÒÑÉ¾³ı£©
+            .Include(a => a.ActivityMaterials)
+            .Where(a => a.StatusId > 1);
 
-        // ¹Ø¼ü´ÊËÑË÷
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             var kw = keyword.Trim();
@@ -45,220 +37,312 @@ public class ActivityService : IActivityService
         var total = await query.CountAsync(cancellationToken);
 
         var activities = await query
-            .OrderBy(a => a.SortOrder)
-            .ThenBy(a => a.ActivityId)
+            .OrderByDescending(a => a.SortOrder)
+            .ThenByDescending(a => a.ActivityId)
             .Skip((pageNum - 1) * pageSize)
             .Take(pageSize)
-            .Select(a => new
-            {
-                a.ActivityId,
-                a.Title,
-                a.Price,
-                a.ImageUrl,
-                a.StartDate,
-                a.EndDate,
-                a.TypeId
-            })
             .ToListAsync(cancellationToken);
 
-        var records = activities.Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price, 
-            a.ImageUrl, a.StartDate, a.EndDate, a.TypeId)).ToList();
+        var records = activities.Select(MapToListItem).ToList();
 
         return (records, total);
     }
 
-    /// <summary>
-    /// »ñÈ¡»î¶¯ÏêÇé
-    /// </summary>
-    public async Task<ActivityDetailDto?> GetActivityDetailAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<CouponDetailDto?> GetActivityDetailAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId == 1, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
 
         if (activity is null)
             return null;
 
-        // »ñÈ¡²ÎÓëÍ³¼Æ£¨Èç¹ûĞèÒª£©
-        var stats = (await _inventoryStatsService.GetActivityStatsAsync(
-            new[] { (int)activity.ActivityId }, cancellationToken))
-            .GetValueOrDefault((int)activity.ActivityId);
+        var materials = activity.ActivityMaterials
+            .OrderBy(m => m.SortOrder)
+            .ToList();
 
-        // ¹¹½¨ÏêÇé
-        var detail = new ActivityDetailDto
-        {
-            Id = (int)activity.ActivityId,
-            Title = activity.Title,
-            Price = $"?{activity.Price}",
-            Date = FormatDateRange(activity.StartDate, activity.EndDate),
-            Image = activity.ImageUrl ?? string.Empty,
-            CategoryName = ResolveCategoryName(activity.Title),
-            Description = activity.Title,
-            Location = "Å©³¡ÓÅÑ¡ÉúÌ¬Å©³¡",
-            People = "²»ÏŞ",
-            Content = "Ïê¼û»î¶¯ËµÃ÷",
-            Images = ExtractMediaUrls(activity.ActivityMaterials)
-                .Take(4)
-                .ToList()
-        };
-
-        // È·±£ÖÁÉÙÓĞ4ÕÅÍ¼
-        while (detail.Images.Count > 0 && detail.Images.Count < 4)
-        {
-            detail.Images.Add(detail.Images[detail.Images.Count - 1]);
-        }
-
-        if (detail.Images.Count == 0 && !string.IsNullOrEmpty(detail.Image))
-        {
-            detail.Images = Enumerable.Repeat(detail.Image, 4).ToList();
-        }
-
-        return detail;
+        return MapToDetail(activity, materials);
     }
 
-    /// <summary>
-    /// »î¶¯±¨Ãû
-    /// </summary>
-    public ActivityRegisterResponse RegisterActivity(long activityId)
+    public async Task<long> CreateActivityAsync(CreateCouponDto dto, CancellationToken cancellationToken = default)
     {
-        var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        return new ActivityRegisterResponse
+        var startDate = DateTime.Now;
+        var endDate = dto.ValidityUnit switch
         {
-            Id = orderId,
-            OrderId = orderId,
-            ActivityId = activityId,
-            PaymentStatus = "pending_payment"
+            "å¤©" => startDate.AddDays(dto.ValidityPeriod),
+            "æœˆ" => startDate.AddMonths(dto.ValidityPeriod),
+            "å¹´" => startDate.AddYears(dto.ValidityPeriod),
+            _ => startDate.AddDays(30)
         };
+
+        var activity = new ActivityEntity
+        {
+            Title = dto.Name,
+            Price = dto.Price,
+            StartDate = startDate,
+            EndDate = endDate,
+            ImageUrl = dto.Image ?? string.Empty,
+            StatusId = 2,
+            TypeId = GetTypeIdFromType(dto.Type),
+            SortOrder = 999,
+            Stock = dto.Stock,
+            LimitPerOrder = dto.LimitPerOrder,
+            RefundRule = dto.RefundRule,
+            UsageRules = dto.UsageRules,
+            ActivityMaterials = []
+        };
+
+        _dbContext.Activities.Add(activity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation($"åˆ¸å“åˆ›å»ºæˆåŠŸ - ActivityId: {activity.ActivityId}, Title: {activity.Title}");
+
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            var materials = dto.CarouselMedia
+                .Select((m, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = m.Url.EndsWith(".mp4") ? "2" : "0",
+                    MaterialUrl = m.Url,
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(materials);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return activity.ActivityId;
     }
 
-    /// <summary>
-    /// »ñÈ¡ËùÓĞ»î¶¯£¨°´·ÖÀà£©
-    /// </summary>
-    public async Task<Dictionary<string, List<ActivitySummaryDto>>> GetAllActivitiesAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateActivityAsync(long id, UpdateCouponDto dto, CancellationToken cancellationToken = default)
+    {
+        var activity = await _dbContext.Activities
+            .Include(a => a.ActivityMaterials)
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
+
+        if (activity is null)
+            return false;
+
+        activity.Title = dto.Name;
+        activity.Price = dto.Price;
+        activity.ImageUrl = dto.Image ?? string.Empty;
+        activity.TypeId = GetTypeIdFromType(dto.Type);
+        activity.Stock = dto.Stock;
+        activity.LimitPerOrder = dto.LimitPerOrder;
+        activity.RefundRule = dto.RefundRule;
+        activity.UsageRules = dto.UsageRules;
+
+        var startDate = DateTime.Now;
+        var endDate = dto.ValidityUnit switch
+        {
+            "å¤©" => startDate.AddDays(dto.ValidityPeriod),
+            "æœˆ" => startDate.AddMonths(dto.ValidityPeriod),
+            "å¹´" => startDate.AddYears(dto.ValidityPeriod),
+            _ => startDate.AddDays(30)
+        };
+
+        activity.StartDate = startDate;
+        activity.EndDate = endDate;
+
+        var oldMaterials = activity.ActivityMaterials.ToList();
+        foreach (var material in oldMaterials)
+        {
+            _dbContext.ActivityMaterials.Remove(material);
+        }
+
+        if (dto.CarouselMedia?.Count > 0)
+        {
+            var materials = dto.CarouselMedia
+                .Select((m, idx) => new ActivityMaterial
+                {
+                    ActivityId = activity.ActivityId,
+                    MaterialType = m.Url.EndsWith(".mp4") ? "2" : "0",
+                    MaterialUrl = m.Url,
+                    SortOrder = idx,
+                    CreatedAt = DateTime.UtcNow
+                })
+                .ToList();
+
+            _dbContext.ActivityMaterials.AddRange(materials);
+        }
+
+        _dbContext.Activities.Update(activity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation($"åˆ¸å“ç¼–è¾‘æˆåŠŸ - ActivityId: {id}");
+
+        return true;
+    }
+
+    public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var activity = await _dbContext.Activities
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.StatusId > 1, cancellationToken);
+
+        if (activity is null)
+            return false;
+
+        activity.StatusId = 1;
+        _dbContext.Activities.Update(activity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation($"åˆ¸å“åˆ é™¤æˆåŠŸ - ActivityId: {id}");
+
+        return true;
+    }
+
+    public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
     {
         var activities = await _dbContext.Activities
-            .AsNoTracking()
-            .Where(a => a.StatusId != 1)
-            .OrderBy(a => a.SortOrder)
-            .ThenBy(a => a.ActivityId)
-            .Select(a => new
-            {
-                a.ActivityId,
-                a.Title,
-                a.Price,
-                a.ImageUrl,
-                a.StartDate,
-                a.EndDate,
-                a.TypeId
-            })
+            .Where(a => ids.Contains(a.ActivityId) && a.StatusId > 1)
             .ToListAsync(cancellationToken);
 
-        var all = activities
-            .Select(a => MapToActivitySummary(a.ActivityId, a.Title, a.Price, 
-                a.ImageUrl, a.StartDate, a.EndDate, a.TypeId))
-            .ToList();
+        if (activities.Count == 0)
+            return false;
 
-        var result = new Dictionary<string, List<ActivitySummaryDto>>
+        foreach (var activity in activities)
         {
-            ["all"] = all
-        };
+            activity.StatusId = 1;
+        }
 
-        // °´ÀàĞÍ·Ö×é
-        var picking = all.Where(x => IsPickingActivity(x.Title)).ToList();
-        if (picking.Count > 0)
-            result["picking"] = picking;
+        _dbContext.Activities.UpdateRange(activities);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var camping = all.Where(x => IsCampingActivity(x.Title)).ToList();
-        if (camping.Count > 0)
-            result["camping"] = camping;
+        _logger.LogInformation($"æ‰¹é‡åˆ é™¤åˆ¸å“æˆåŠŸ - æ•°é‡: {activities.Count}");
 
-        return result;
+        return true;
     }
 
-    /// <summary>
-    /// »ñÈ¡»î¶¯ËØ²ÄURL
-    /// </summary>
-    private static List<string> ExtractMediaUrls(ICollection<ActivityMaterial> materials)
+    private CouponListItemDto MapToListItem(ActivityEntity activity)
     {
-        return materials
-            .Where(m => m.MaterialType == "0")  // 0=Í¼Æ¬
+        var validity = CalculateValidityText(activity.StartDate, activity.EndDate);
+        var (period, unit) = ParseValidityText(validity);
+        var couponType = GetCouponTypeFromTypeId(activity.TypeId);
+
+        var carouselMedia = activity.ActivityMaterials
+            .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
             .OrderBy(m => m.SortOrder)
-            .Select(m => m.MaterialUrl)
-            .Where(url => !string.IsNullOrEmpty(url))
+            .Select(m => new CarouselMediaDto
+            {
+                Type = m.MaterialType == "2" ? "video" : "image",
+                Url = m.MaterialUrl,
+                Thumb = null
+            })
+            .Take(5)
             .ToList();
-    }
 
-    /// <summary>
-    /// Ó³ÉäÎª»î¶¯ÕªÒª
-    /// </summary>
-    private static ActivitySummaryDto MapToActivitySummary(long id, string title, decimal price, 
-        string? imageUrl, DateTime startDate, DateTime endDate, int typeId)
-    {
-        return new ActivitySummaryDto
+        return new CouponListItemDto
         {
-            Id = (int)id,
-            Title = title,
-            Price = $"?{price}",
-            Date = FormatDateRange(startDate, endDate),
-            Image = imageUrl ?? string.Empty,
-            CategoryName = ResolveCategoryName(title)
+            Id = activity.ActivityId,
+            Name = activity.Title,
+            Type = couponType,
+            Price = activity.Price,
+            Stock = activity.Stock,
+            LimitPerOrder = activity.LimitPerOrder,
+            ValidityPeriod = period,
+            ValidityUnit = unit,
+            Validity = validity,
+            RefundRule = activity.RefundRule ?? "æœªä½¿ç”¨å¯é€€æ¬¾",
+            UsageRules = activity.UsageRules ?? string.Empty,
+            Image = activity.ImageUrl,
+            CarouselMedia = carouselMedia,
+            SoldCount = 0,
+            VerifiedCount = 0,
+            CreateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
         };
     }
 
-    /// <summary>
-    /// ¸ñÊ½»¯ÈÕÆÚ·¶Î§
-    /// </summary>
-    private static string FormatDateRange(DateTime startDate, DateTime endDate)
+    private CouponDetailDto MapToDetail(ActivityEntity activity, List<ActivityMaterial> materials)
     {
-        return $"{startDate:yyyy.M.d}-{endDate:yyyy.M.d}";
+        var validity = CalculateValidityText(activity.StartDate, activity.EndDate);
+        var (period, unit) = ParseValidityText(validity);
+        var couponType = GetCouponTypeFromTypeId(activity.TypeId);
+
+        var carouselMedia = materials
+            .Where(m => m.MaterialType == "0" || m.MaterialType == "2")
+            .Select(m => new CarouselMediaDto
+            {
+                Type = m.MaterialType == "2" ? "video" : "image",
+                Url = m.MaterialUrl,
+                Thumb = null
+            })
+            .Take(5)
+            .ToList();
+
+        return new CouponDetailDto
+        {
+            Id = activity.ActivityId,
+            Name = activity.Title,
+            Type = couponType,
+            Price = activity.Price,
+            Stock = activity.Stock,
+            LimitPerOrder = activity.LimitPerOrder,
+            ValidityPeriod = period,
+            ValidityUnit = unit,
+            Validity = validity,
+            RefundRule = activity.RefundRule ?? "æœªä½¿ç”¨å¯é€€æ¬¾",
+            UsageRules = activity.UsageRules ?? string.Empty,
+            Image = activity.ImageUrl,
+            ImageName = Path.GetFileName(activity.ImageUrl),
+            CarouselMedia = carouselMedia,
+            SoldCount = 0,
+            VerifiedCount = 0,
+            CreateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+        };
     }
 
-    /// <summary>
-    /// ´Ó±êÌâÍÆ¶Ï·ÖÀà
-    /// </summary>
-    private static string ResolveCategoryName(string? title)
+    private static string CalculateValidityText(DateTime startDate, DateTime endDate)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            return "»î¶¯";
+        var days = (endDate - startDate).Days;
 
-        if (IsPickingActivity(title))
-            return "²ÉÕª»î¶¯";
-
-        if (IsCampingActivity(title))
-            return "Â¶Óª";
-
-        return "»î¶¯";
+        if (days % 365 == 0)
+            return $"{days / 365}å¹´";
+        else if (days % 30 == 0)
+            return $"{days / 30}æœˆ";
+        else
+            return $"{days}å¤©";
     }
 
-    /// <summary>
-    /// ÊÇ·ñÎª²ÉÕª»î¶¯
-    /// </summary>
-    private static bool IsPickingActivity(string title)
+    private static (int period, string unit) ParseValidityText(string validity)
     {
-        return title.Contains("²ÉÕª", StringComparison.OrdinalIgnoreCase) ||
-               title.Contains("picking", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(validity))
+            return (30, "å¤©");
+
+        var numberStr = new string(validity.Where(char.IsDigit).ToArray());
+        var unit = "å¤©";
+
+        if (!int.TryParse(numberStr, out var period))
+            period = 30;
+
+        if (validity.Contains("å¹´"))
+            unit = "å¹´";
+        else if (validity.Contains("æœˆ"))
+            unit = "æœˆ";
+
+        return (period, unit);
     }
 
-    /// <summary>
-    /// ÊÇ·ñÎªÂ¶Óª»î¶¯
-    /// </summary>
-    private static bool IsCampingActivity(string title)
+    private int GetTypeIdFromType(string type)
     {
-        return title.Contains("Â¶Óª", StringComparison.OrdinalIgnoreCase) ||
-               title.Contains("camping", StringComparison.OrdinalIgnoreCase);
+        return type switch
+        {
+            "é‡‡æ‘˜åˆ¸" => 1,
+            "ç ”å­¦æ´»åŠ¨åˆ¸" => 2,
+            _ => 3
+        };
     }
-}
 
-/// <summary>
-/// »î¶¯±¨ÃûÏìÓ¦
-/// </summary>
-public class ActivityRegisterResponse
-{
-    public long Id { get; set; }
-    public long OrderId { get; set; }
-    public long ActivityId { get; set; }
-    public string PaymentStatus { get; set; } = string.Empty;
+    private string GetCouponTypeFromTypeId(int typeId)
+    {
+        return typeId switch
+        {
+            1 => "é‡‡æ‘˜åˆ¸",
+            2 => "ç ”å­¦æ´»åŠ¨åˆ¸",
+            _ => "æ´»åŠ¨åˆ¸"
+        };
+    }
 }

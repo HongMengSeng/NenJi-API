@@ -108,7 +108,7 @@ namespace ManageAPI.Services
                 gender = u.gender ?? "保密",
                 role = u.role ?? "普通用户",
                 selected = u.selected,
-                userType = u.userType
+                userType = u.userType, loginTime = u.loginTime.HasValue ? u.loginTime.Value.ToString("yyyy-MM-dd HH:mm") : null
             });
 
             return result;
@@ -206,22 +206,14 @@ namespace ManageAPI.Services
 
         public async Task<UserDetailDto?> GetUserDetailAsync(string id)
         {
-            // 根据 WxOpenId 查询
+            if (!int.TryParse(id, out var userId)) return null;
             var user = await _dbContext.Users
-                .FirstOrDefaultAsync(u => u.WxOpenId == id);
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
 
             if (user == null) return null;
 
-            // 映射为 DTO
-            return new UserDetailDto
-            {
-                Guid = user.UserGuid,
-                phone = user.PhoneNumber,
-                nickname = user.RealName,
-                avatar = user.WxImage ?? "https://example.com/default-avatar.jpg", // 处理空头像
-                gender = user.Gender ?? "未知",
-                loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录"
-            };
+            return MapUserToDetailDto(user);
         }
 
         /// <summary>
@@ -357,12 +349,16 @@ namespace ManageAPI.Services
         {
             return new UserDetailDto
             {
+                id = user.UserId,
                 Guid = user.UserGuid,
                 phone = user.PhoneNumber ?? string.Empty,
-                nickname = user.WxName ?? string.Empty,
+                nickname = user.RealName ?? user.WxName ?? string.Empty,
                 avatar = user.WxImage ?? "https://example.com/default-avatar.jpg",
                 gender = user.Gender ?? "未设置",
-                loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录"
+                loginTime = user.RegisterTime?.ToString("yyyy年MM月dd日 HH:mm") ?? "无记录",
+                realName = user.RealName ?? string.Empty,
+                wxOpenId = user.WxOpenId ?? string.Empty,
+                roleId = user.RoleId,
             };
         }
     }

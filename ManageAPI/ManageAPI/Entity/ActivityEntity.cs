@@ -16,10 +16,10 @@ public class ActivityEntity
     public string Title { get; set; } = null!;
 
     [Column("price")]
-    public decimal Price { get; set; } // Êý¾Ý¿âÊÇ decimal(10,2)£¬ÕâÀï¸ÄÓÃ decimal
+    public decimal Price { get; set; } // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ decimal(10,2)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ decimal
 
     [Column("start_date")]
-    public DateTime StartDate { get; set; } // Êý¾Ý¿âÊÇ datetime
+    public DateTime StartDate { get; set; } // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ datetime
 
     [Column("end_date")]
     public DateTime EndDate { get; set; }
@@ -28,7 +28,7 @@ public class ActivityEntity
     public string ImageUrl { get; set; } = null!;
 
     [Column("status_id")]
-    public int StatusId { get; set; } // ¶ÔÓ¦Êý¾Ý¿â status_id
+    public int StatusId { get; set; } // ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ý¿ï¿½ status_id
 
     [Column("sort_order")]
     public int SortOrder { get; set; }
@@ -36,9 +36,23 @@ public class ActivityEntity
     [Column("type_id")]
     public int TypeId { get; set; }
 
-    [InverseProperty("Activity")] // ¶ÔÓ¦ ActivityMaterial ÀïµÄ Activity ÊôÐÔ
+    [Column("stock")]
+    public int Stock { get; set; }
+
+    [Column("limit_per_order")]
+    public int LimitPerOrder { get; set; }
+
+    [Column("refund_rule")]
+    [MaxLength(100)]
+    public string? RefundRule { get; set; }
+
+    [Column("usage_rules")]
+    [MaxLength(500)]
+    public string? UsageRules { get; set; }
+
+    [InverseProperty("Activity")] // ï¿½ï¿½Ó¦ ActivityMaterial ï¿½ï¿½ï¿½ Activity ï¿½ï¿½ï¿½ï¿½
     public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
 
-    [InverseProperty("Activity")] // ¶ÔÓ¦ ActivityOrderDetail ÀàÀïµÄ Activity ÊôÐÔÃû
+    [InverseProperty("Activity")] // ï¿½ï¿½Ó¦ ActivityOrderDetail ï¿½ï¿½ï¿½ï¿½ï¿½ Activity ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public virtual ICollection<ActivityOrderDetail> ActivityOrderDetails { get; set; } = new List<ActivityOrderDetail>();
 }

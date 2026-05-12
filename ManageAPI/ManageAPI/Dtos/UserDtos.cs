@@ -33,6 +33,7 @@ namespace ManageAPI.Dtos
         /// 用户类型 - 区分平台的工作人员(staff)或者平台外的微信用户(user)
         /// </summary>
         public string userType { get; set; } = null!;
+        public string? loginTime { get; set; }
     }
 
     /// <summary>
@@ -87,6 +88,11 @@ namespace ManageAPI.Dtos
         public string avatar { get; set; } = "";
         public string gender { get; set; } = "";
         public string loginTime { get; set; } = "";
+        public int id { get; set; }
+        public string realName { get; set; } = "";
+        public string? wxOpenId { get; set; }
+        public int roleId { get; set; }
+        public string roleName { get; set; } = "";
     }
 
     /// <summary>
