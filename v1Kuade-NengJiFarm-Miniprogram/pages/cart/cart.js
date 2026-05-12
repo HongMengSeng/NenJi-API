@@ -756,10 +756,10 @@ Page({
     const api = require('../../utils/api').api || require('../../utils/api');
     api.order.createCommodityV2(payload)
       .then((data) => {
-        const orderId = data.orderId || data.id;
-        console.log('[cart] 订单创建成功, orderId:', orderId);
-        
-        if (!orderId) {
+        const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
+        console.log('[cart] 订单创建成功, orderNo:', orderNo);
+
+        if (!orderNo) {
           wx.showToast({ title: '创建订单失败', icon: 'none' });
           return;
         }
@@ -779,7 +779,7 @@ Page({
         // 关闭弹窗并跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
         this.setData({ showModal: false });
         wx.navigateTo({
-          url: `/user-pages/pay/pay?orderId=${orderId}&type=goods&totalPrice=${totalPrice}&from=cart`
+          url: `/user-pages/pay/pay?orderNo=${orderNo}&type=goods&totalPrice=${totalPrice}&from=cart`
         });
       })
       .catch((err) => {

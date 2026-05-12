@@ -270,8 +270,8 @@ Page({
 
     promise
       .then((data) => {
-        const orderId = data.orderId || data.id;
-        if (!orderId) {
+        const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
+        if (!orderNo) {
           wx.showToast({ title: '下单失败', icon: 'none' });
           this.setData({ loading: false, isCreatingOrder: false });
           return;
@@ -288,7 +288,7 @@ Page({
         setTimeout(() => {
           // 跳转到支付页面，使用 navigateTo 保留页面栈，并添加 from 参数
           wx.navigateTo({
-            url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}&from=cart`
+            url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${this.data.orderInfo.totalPrice}&type=${orderType}&from=cart`
           });
         }, 1500);
       })

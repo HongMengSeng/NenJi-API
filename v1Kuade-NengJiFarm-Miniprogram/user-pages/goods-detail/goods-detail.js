@@ -362,8 +362,8 @@ Page({
     api.order.createCommodityV2(payload)
     .then(data => {
       wx.hideLoading();
-      const orderId = data.orderId || data.id;
-      if (!orderId) {
+      const orderNo = data.orderNo || data.orderId || data.orderNumber || data.id;
+      if (!orderNo) {
         wx.showToast({ title: '创建订单失败', icon: 'none' });
         return;
       }
@@ -384,7 +384,7 @@ Page({
       setTimeout(() => {
         const totalPrice = (this.data.goods.price * this.data.quantity).toFixed(2);
         wx.navigateTo({
-          url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice}&type=goods`
+          url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${totalPrice}&type=goods`
         });
       }, 500);
     })

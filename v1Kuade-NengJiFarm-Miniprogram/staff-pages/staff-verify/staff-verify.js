@@ -102,12 +102,15 @@ Page({
         const isAlreadyVerified = data.alreadyVerified || false;
         const isVerified = data.verified || false;
 
+        // 用 API 返回的核销时间（如果已核销可能已有 verifyTime，新核销用当前时间兜底）
+        const verifyTime = data.verifyTime || null;
+
         // 构建券信息展示
         const voucherInfo = {
-          typeName: data.typeName||'活动券',
+          typeName: data.typeName || (data.voucherType === 'pick' ? '采摘券' : '活动券'),
           userName: data.userName || '未知用户',
-          content: data.content || data.message || '-',
-          useTime: this.formatTime(new Date()),
+          content: data.content || data.title || data.message || '-',
+          useTime: verifyTime ? this.formatTime(new Date(verifyTime)) : this.formatTime(new Date()),
           participantCount: data.participantCount || data.count || data.verifiedCount || data.numberOfDiners || 1
         };
 
@@ -144,13 +147,22 @@ Page({
         let title = '核销失败';
         let msg = (err && err.message) || '该券无效或已被使用';
 
-        // 如果是后端返回的错误信息，友好展示
-        if (err && err.code === 404) {
-          msg = '未找到该券信息，请确认二维码是否正确';
-        } else if (err && err.code === 409) {
-          msg = '该券已被使用，不能重复核销';
+        // 根据文档错误码处理
+        if (err && err.code === 400) {
+          msg = '券码不能为空';
+        } else if (err && err.code === 404) {
+          msg = '未找到该券码，请确认二维码是否正确';
         } else if (err && err.code === 403) {
-          msg = err.message || '无权操作';
+          // 优化过期错误提示：显示具体过期时间
+          if (err.message && err.message.includes('有效期至')) {
+            msg = err.message; // 后端返回的完整提示，如 "该券已过期，有效期至 2026-05-15 23:59:59"
+          } else if (err.message && err.message.includes('无权限')) {
+            msg = err.message;
+          } else if (err.message && (err.message.includes('未支付') || err.message.includes('已取消'))) {
+            msg = err.message;
+          } else {
+            msg = '该券已过期，无法核销';
+          }
         }
 
         this.setData({

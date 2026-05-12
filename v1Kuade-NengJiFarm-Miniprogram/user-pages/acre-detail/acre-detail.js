@@ -182,14 +182,14 @@ Page({
         })
           .then((orderData) => {
             wx.hideLoading();
-            const orderId = orderData.orderId || orderData.id;
-            if (!orderId) {
+            const orderNo = orderData.orderNo || orderData.orderId || orderData.id;
+            if (!orderNo) {
               wx.showToast({ title: '创建订单失败', icon: 'none' });
               return;
             }
             // 跳转到支付页面
             wx.redirectTo({
-              url: `/user-pages/pay/pay?orderId=${orderId}&totalPrice=${totalPrice}&type=acre`
+              url: `/user-pages/pay/pay?orderNo=${orderNo}&totalPrice=${totalPrice}&type=acre`
             });
           })
           .catch((err) => {

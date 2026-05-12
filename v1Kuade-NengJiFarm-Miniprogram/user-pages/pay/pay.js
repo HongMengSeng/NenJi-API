@@ -2,7 +2,9 @@ const { api, request } = require('../../utils/api');
 
 Page({
   data: {
-    // 订单ID
+    // 订单号 (orderNo)
+    orderNo: '',
+    // 订单ID (兼容旧版)
     orderId: '',
     // 订单类型 (goods/food/activity)
     orderType: '',
@@ -24,7 +26,8 @@ Page({
     // 初始化页面状态
     this.initPageState();
 
-    const orderId = options.orderId || '';
+    const orderNo = options.orderNo || '';
+    const orderId = options.orderId || '';  // 兼容旧版传参
     const totalPrice = Number(options.totalPrice || 0);
     const activityId = options.activityId || '';
     // 订单类型：从参数获取，默认自动识别
@@ -32,9 +35,9 @@ Page({
     const clearCartList = options.clearCartList === '1';
     const from = options.from || '';
 
-    if (!orderId) {
+    if (!orderNo && !orderId) {
       wx.showToast({
-        title: '缺少订单ID',
+        title: '缺少订单号',
         icon: 'none'
       });
       this.setData({ payStatus: 'failed' });
@@ -42,6 +45,7 @@ Page({
     }
 
     this.setData({
+      orderNo,
       orderId,
       totalPrice,
       activityId,
@@ -66,7 +70,8 @@ Page({
   ensurePayAmountAndStart: function () {
     wx.showLoading({ title: '加载订单中...' });
 
-    api.order.getDetail(this.data.orderId)
+    const detailId = this.data.orderNo || this.data.orderId;
+    api.order.getDetail(detailId)
       .then((orderData) => {
         console.log('[支付页] 订单详情:', orderData);
 
@@ -107,8 +112,11 @@ Page({
           this.setData({ orderType: order.type });
         }
 
+        // 获取订单号用于支付
+        const orderNo = order.orderNumber || order.orderNo;
+
         this.setData(
-          { totalPrice: Number(amount.toFixed(2)) },
+          { totalPrice: Number(amount.toFixed(2)), orderNo },
           () => this.startPayment()
         );
       })
@@ -133,7 +141,7 @@ Page({
 
   // 开始支付
   startPayment: function () {
-    if (!this.data.orderId) {
+    if (!this.data.orderNo) {
       this.setData({ loading: false, payStatus: 'failed' });
       wx.showToast({ title: '支付参数错误', icon: 'none' });
       return;
@@ -149,8 +157,7 @@ Page({
 
     // 调用后端 JSAPI 支付接口
     api.pay.createJsapi({
-      orderId: this.data.orderId,
-      id: this.data.orderId,
+      orderNo: this.data.orderNo,
       type: this.data.orderType || undefined
     })
       .then((payParams) => {

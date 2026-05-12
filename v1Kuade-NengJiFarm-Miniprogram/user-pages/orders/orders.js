@@ -892,17 +892,13 @@ Page({
 
     // 跳转到支付页面
     wx.navigateTo({
-      url: `/user-pages/pay/pay?orderId=${id}&totalPrice=${order.totalPrice}&type=${order.type || 'goods'}`
+      url: `/user-pages/pay/pay?orderNo=${order.orderNumber || order.orderNo}&totalPrice=${order.totalPrice}&type=${order.type || 'goods'}`
     });
   },
 
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    // 查找订单，使用订单号(orderNumber)作为导航标识
-    // 后端列表接口返回的 id 字段可能与 orderNumber 不一致，直接用 id 会跳到错误订单
-    const order = this.data.orders.find(o => o.id === id || o.orderNumber === id || o.orderNo === id);
-    const navId = (order && (order.orderNumber || order.orderNo)) || id;
-    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${navId}` });
+    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
   },
 
   applyRefund(e) {

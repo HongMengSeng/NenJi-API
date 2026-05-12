@@ -204,14 +204,14 @@ Page({
         })
           .then(orderData => {
             wx.hideLoading();
-            const orderId = orderData.orderId || orderData.id;
-            if (!orderId) {
+            const orderNo = orderData.orderNo || orderData.orderId || orderData.id;
+            if (!orderNo) {
               wx.showToast({ title: '下单失败', icon: 'none' });
               return;
             }
             // 跳转支付
             wx.redirectTo({
-              url: `/user-pages/pay/pay?orderId=${orderId}&type=activity&activityId=${that.data.activity.id}`
+              url: `/user-pages/pay/pay?orderNo=${orderNo}&type=activity&activityId=${that.data.activity.id}`
             });
           })
           .catch(err => {
