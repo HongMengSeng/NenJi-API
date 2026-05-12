@@ -142,6 +142,7 @@ public class Program
 
         builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
+        builder.Services.AddHostedService<OrderTimeoutService>();
         //builder.Services.AddScoped<AppDataSeeder>();
 
 
