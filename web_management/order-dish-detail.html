@@ -172,14 +172,12 @@
 
 		.detail-table{
 			width: 100%;
-			min-width: 1280px;
 			border-collapse: collapse;
 		}
 		
 		.detail-table th,
 		.detail-table td{
-			padding: 12px;
-			text-align: left;
+			padding: 14px 16px;
 			border-bottom: 1px solid #e2e8f0;
 		}
 		
@@ -188,6 +186,7 @@
 			font-weight: bold;
 			color: #4a5568;
 			font-size: 14px;
+			text-align: center;
 		}
 		
 		.detail-table td{
@@ -199,25 +198,43 @@
 			background: #f7fafc;
 		}
 
-		.dish-thumb{
-			width: 56px;
-			height: 56px;
-			border-radius: 8px;
-			object-fit: cover;
-			display: block;
+		.detail-table td:first-child,
+		.detail-table th:first-child{
+			width: 60px;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		.detail-table td:nth-child(2),
+		.detail-table th:nth-child(2){
+			text-align: left;
+			width: auto;
+		}
+
+		.detail-table td:nth-child(3),
+		.detail-table th:nth-child(3){
+			width: 80px;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		.detail-table td:nth-child(4),
+		.detail-table th:nth-child(4){
+			width: 120px;
+			text-align: right;
+			white-space: nowrap;
+		}
+
+		.detail-table td:nth-child(5),
+		.detail-table th:nth-child(5){
+			width: 120px;
+			text-align: right;
+			white-space: nowrap;
 		}
 
 		.dish-name{
 			font-weight: 600;
 			color: #1f2937;
-			margin-bottom: 4px;
-		}
-
-		.dish-desc,
-		.cell-note{
-			font-size: 12px;
-			line-height: 1.6;
-			color: #718096;
 		}
 		
 		/* 合计行样式 */
@@ -371,7 +388,6 @@
 								<thead>
 								<tr>
 									<th>序号</th>
-									<th>菜品图片</th>
 									<th>菜品名称</th>
 									<th>数量</th>
 									<th>单价(元)</th>
@@ -381,11 +397,7 @@
 							<tbody>
 								<tr v-for="(item, index) in orderItems" :key="item.name + '-' + index">
 									<td>{{ index + 1 }}</td>
-									<td><img :src="item.image" :alt="item.name" class="dish-thumb" /></td>
-									<td>
-										<div class="dish-name">{{ item.name }}</div>
-										<div class="dish-desc">{{ item.description }}</div>
-									</td>
+									<td><div class="dish-name">{{ item.name }}</div></td>
 									<td>{{ item.quantity }}</td>
 									<td>¥{{ formatAmount(item.price) }}</td>
 									<td>¥{{ formatAmount(item.subtotal) }}</td>
@@ -709,14 +721,9 @@
 						const price = Number(config.price != null ? config.price : dish.price || 0);
 						const quantity = Number(config.quantity || 1);
 						return {
-							image: config.image || dish.image || '',
 							name: config.name || dish.name || '未知菜品',
-							description: config.description || dish.description || '现场点餐菜品',
-							remark: config.remark || '无',
-							cookingNote: config.cookingNote || '按标准出品',
 							quantity: quantity,
 							price: price,
-							dishStatus: config.dishStatus || dish.status || '已上架',
 							subtotal: Number((price * quantity).toFixed(2))
 						};
 					});
