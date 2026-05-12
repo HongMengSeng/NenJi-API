@@ -580,9 +580,7 @@ public class OrderController : ControllerBase
 
         return Ok(ApiResult.Success(new
         {
-            id = order.OrderNo,
-            orderId = order.OrderNo,
-            orderNumber = order.OrderNo,
+            orderNo = order.OrderNo,
             orderType = "goods",
             status = "pending",
             totalPrice = order.TotalAmount,
@@ -817,9 +815,7 @@ public class OrderController : ControllerBase
 
         return Ok(ApiResult.Success(new
         {
-            orderId = dishOrder.OrderId.ToString(),
-            id = dishOrder.OrderId.ToString(),
-            orderNumber = dishOrder.OrderNo,
+            orderNo = dishOrder.OrderNo,
             status = "pending",
             orderStatus = "pending",
             totalPrice = totalAmount,

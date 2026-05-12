@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -428,12 +427,9 @@ public class PayController : ControllerBase
         }
 
         var value = orderKey.Trim();
-        if (long.TryParse(value, out var orderId) && orderId > 0)
-        {
-            return await FindSplitPayOrderAsync(orderId, userId, type, cancellationToken);
-        }
-
         var normalizedType = NormalizeSplitOrderType(type);
+
+        if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
 
         if (string.IsNullOrWhiteSpace(normalizedType) || normalizedType == "goods")
         {
@@ -837,53 +833,14 @@ public class PayController : ControllerBase
 
     public sealed class CreateJsApiPayRequest
     {
-        public object? OrderId { get; set; }
-        public object? Id { get; set; }
         public string? OrderNo { get; set; }
-        public string? OrderNumber { get; set; }
         public string Description { get; set; } = string.Empty;
         public string? Type { get; set; }
 
         public string? GetOrderKey()
         {
-            return FirstNonEmpty(OrderId, Id, OrderNo, OrderNumber);
+            return string.IsNullOrWhiteSpace(OrderNo) ? null : OrderNo.Trim();
         }
-    }
-
-    private static string? FirstNonEmpty(params object?[] values)
-    {
-        foreach (var value in values)
-        {
-            var text = ToRequestString(value);
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                return text.Trim();
-            }
-        }
-
-        return null;
-    }
-
-    private static string? ToRequestString(object? value)
-    {
-        if (value is null)
-        {
-            return null;
-        }
-
-        if (value is JsonElement json)
-        {
-            return json.ValueKind switch
-            {
-                JsonValueKind.String => json.GetString(),
-                JsonValueKind.Number => json.GetRawText(),
-                JsonValueKind.Null => null,
-                JsonValueKind.Undefined => null,
-                _ => json.GetRawText()
-            };
-        }
-
-        return value.ToString();
     }
 
     private sealed class SplitPayOrder
