@@ -13,7 +13,8 @@
       "Bash(powershell -Command \"Get-Process ManageAPI -ErrorAction SilentlyContinue | Stop-Process -Force\")",
       "Bash(sed -i 's/Stock = activity.Stock,/Stock = activity.Stock ?? 0,/' Services/ActivityService.cs)",
       "Bash(sed -i 's/LimitPerOrder = activity.LimitPerOrder,/LimitPerOrder = activity.LimitPerOrder ?? 0,/' Services/ActivityService.cs)",
-      "Bash(taskkill /F /PID 57320)"
+      "Bash(taskkill /F /PID 57320)",
+      "Bash(taskkill /F /IM ManageAPI.exe)"
     ]
   }
 }
