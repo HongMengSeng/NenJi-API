@@ -1,0 +1,13 @@
+using ManageAPI.Dtos;
+
+namespace ManageAPI.Services;
+
+public interface IActivityOrderService
+{
+    Task<(List<ActivityOrderListItemDto> Records, int Total)> GetOrderListAsync(
+        int pageNum, int pageSize, string? keyword, int? statusId, CancellationToken cancellationToken = default);
+
+    Task<ActivityOrderFullDetailDto?> GetOrderDetailAsync(long orderId, CancellationToken cancellationToken = default);
+
+    Task<bool> VerifyOrderDetailAsync(long activityOrderDetailsId, CancellationToken cancellationToken = default);
+}

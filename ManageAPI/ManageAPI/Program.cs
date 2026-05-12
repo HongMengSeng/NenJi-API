@@ -111,12 +111,14 @@ public class Program
         builder.Services.AddScoped<IPasswordService, PasswordService>();
         builder.Services.AddScoped<IKitchenService, KitchenService>();
         builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<IDishService, DishService>();
         builder.Services.AddScoped<IActivityService, ActivityService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
         builder.Services.AddScoped<IDiningTableService, DiningTableService>();
         builder.Services.AddScoped<IDishOrderService, DishOrderService>();
         builder.Services.AddScoped<IProductOrderService, ProductOrderService>();
+        builder.Services.AddScoped<IActivityOrderService, ActivityOrderService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
