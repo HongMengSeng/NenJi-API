@@ -3,13 +3,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using WebAPI.Data;
-using WebAPI.Dtos;
-using WebAPI.Dtos.Kitchen;
-using WebAPI.Entities;
-using WebAPI.PasswordHash;
+using ManageAPI.Data;
+using ManageAPI.Dtos;
+using ManageAPI.Dtos;
+using ManageAPI.Entity;
+using ManageAPI.PasswordHash;
 
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
 public class KitchenService : IKitchenService
 {

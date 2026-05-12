@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using WebAPI.Common;
-using WebAPI.Data;
-using WebAPI.Entities;
-using WebAPI.Services;
+using ManageAPI.Common;
+using ManageAPI.Data;
+using ManageAPI.Entity;
+using ManageAPI.Services;
 
-namespace WebAPI.Controllers;
+namespace ManageAPI.Controllers;
 
 [ApiController]
 [Authorize]

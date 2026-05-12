@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebAPI.Entities
+namespace ManageAPI.Entity
 {
     [Table("dining_table")]
     public class DiningTables

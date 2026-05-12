@@ -1,6 +1,6 @@
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
-using WebAPI.Dtos;
+using ManageAPI.Dtos;
 
 /// <summary>
 /// 产品管理服务接口

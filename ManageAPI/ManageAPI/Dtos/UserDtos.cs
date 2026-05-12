@@ -1,4 +1,4 @@
-namespace WebAPI.DTOs
+namespace ManageAPI.Dtos
 {
     /// <summary>
     /// 用户列表项对应DTO，用于API的数据返回

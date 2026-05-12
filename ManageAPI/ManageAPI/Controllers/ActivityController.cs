@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using WebAPI.Common;
-using WebAPI.Dtos;
-using WebAPI.Services;
+using ManageAPI.Common;
+using ManageAPI.Dtos;
+using ManageAPI.Services;
 
-namespace WebAPI.Controllers;
+namespace ManageAPI.Controllers;
 
 /// <summary>
 /// 活动/券品控制器

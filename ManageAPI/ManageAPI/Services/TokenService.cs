@@ -5,9 +5,9 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-using WebAPI.Configuration;
+using ManageAPI.Configuration;
 
-namespace WebAPI.Services
+namespace ManageAPI.Services
 {
     /// <summary>
     /// Token 服务实现（JWT 方案）

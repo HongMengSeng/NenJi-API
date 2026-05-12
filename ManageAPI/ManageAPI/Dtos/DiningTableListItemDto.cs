@@ -1,4 +1,4 @@
-namespace WebAPI.Dtos;
+namespace ManageAPI.Dtos;
 
 /// <summary>
 /// ²Í×ÀÁĞ±íÏî

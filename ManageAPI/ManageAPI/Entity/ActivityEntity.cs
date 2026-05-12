@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-using WebAPI.Entities.Entities;
+using ManageAPI.Entity;
 
-namespace WebAPI.Entities;
+namespace ManageAPI.Entity;
 
 [Table("activity")]
 public class ActivityEntity

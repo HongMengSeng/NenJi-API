@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace WebAPI.Entities.Entities;
+namespace ManageAPI.Entity;
 
 /// <summary>
 /// 桌位状态表

@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using WebAPI.Data;
-using WebAPI.Dtos;
-using WebAPI.Entities;
-using WebAPI.Entities.Entities;
+using ManageAPI.Data;
+using ManageAPI.Dtos;
+using ManageAPI.Entity;
+using ManageAPI.Entity;
 
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
 /// <summary>
 /// 活动/券品管理服务

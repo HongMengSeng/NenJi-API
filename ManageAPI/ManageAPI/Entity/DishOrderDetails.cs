@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace WebAPI.Entities
+namespace ManageAPI.Entity
 {
     [Table("dish_order_details")]
     public class DishOrderDetails

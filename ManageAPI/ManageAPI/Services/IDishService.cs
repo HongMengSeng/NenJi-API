@@ -1,6 +1,6 @@
-using WebAPI.Dtos;
+using ManageAPI.Dtos;
 
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
 /// <summary>
 /// 菜品管理服务接口

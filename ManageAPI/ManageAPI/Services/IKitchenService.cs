@@ -1,6 +1,6 @@
-using WebAPI.Dtos.Kitchen;
+using ManageAPI.Dtos;
 
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
 public interface IKitchenService
 {

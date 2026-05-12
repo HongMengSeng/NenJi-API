@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-using WebAPI.Entities;
+using ManageAPI.Entity;
 
 namespace WebAdminApi.Controllers
 {

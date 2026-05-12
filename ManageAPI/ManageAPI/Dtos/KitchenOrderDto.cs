@@ -1,4 +1,4 @@
-namespace WebAPI.Dtos.Kitchen;
+namespace ManageAPI.Dtos;
 
 
 public class KitchenOrderListItemDto

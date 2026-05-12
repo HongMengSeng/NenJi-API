@@ -1,6 +1,6 @@
-using WebAPI.Dtos;
+using ManageAPI.Dtos;
 
-namespace WebAPI.Services;
+namespace ManageAPI.Services;
 
 /// <summary>
 /// 活动/券品管理服务接口

@@ -2,13 +2,13 @@
 
 using Microsoft.EntityFrameworkCore;
 
-using WebAPI.Data;
+using ManageAPI.Data;
 
-using WebAPI.DTOs;
-using WebAPI.Entities;
-using WebAPI.PasswordHash;
+using ManageAPI.Dtos;
+using ManageAPI.Entity;
+using ManageAPI.PasswordHash;
 
-namespace WebAPI.Services
+namespace ManageAPI.Services
 {
     /// <summary>
     /// 用户服务实现类

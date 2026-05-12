@@ -1,4 +1,4 @@
-namespace WebAPI.Services
+namespace ManageAPI.Services
 {
     public interface ITokenService
     {

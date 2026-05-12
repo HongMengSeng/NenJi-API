@@ -1,4 +1,4 @@
-namespace WebAPI.DTOs
+namespace ManageAPI.Dtos
 {
     public class ApiResponses<T>
     {

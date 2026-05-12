@@ -1,6 +1,6 @@
-using WebAPI.DTOs;
+using ManageAPI.Dtos;
 
-namespace WebAPI.Services
+namespace ManageAPI.Services
 {
     public interface IUserService
     {
