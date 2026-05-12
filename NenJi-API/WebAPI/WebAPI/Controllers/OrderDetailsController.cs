@@ -1222,7 +1222,7 @@ public class OrderDetailsController : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private string NormalizeMediaUrl(string? media) => MediaUrlHelper.NormalizeFull(media, Request);
+    private static string NormalizeMediaUrl(string? media) => MediaUrlHelper.Normalize(media);
 
     private static string GenerateCommodityOrderNo()
     {

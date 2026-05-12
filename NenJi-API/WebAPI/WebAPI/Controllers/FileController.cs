@@ -90,6 +90,9 @@ public class FileController : ControllerBase
         var filePath = ResolveSafeFile(fileName, [UploadPath]);
         if (filePath is null)
         {
+            var fallback = Path.Combine(IconPath, "user.png");
+            if (System.IO.File.Exists(fallback))
+                return PhysicalFile(fallback, GetContentType(fallback));
             return NotFound("file not found");
         }
 

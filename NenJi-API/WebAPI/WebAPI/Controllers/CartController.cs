@@ -459,7 +459,7 @@ public class CartController : ControllerBase
         };
     }
 
-    private string? NormalizeImageUrl(string? imageUrl) => MediaUrlHelper.NormalizeFull(imageUrl, Request) is { Length: > 0 } r ? r : null;
+    private static string? NormalizeImageUrl(string? imageUrl) => MediaUrlHelper.Normalize(imageUrl) is { Length: > 0 } r ? r : null;
 
     public sealed class CartSyncRequest
     {

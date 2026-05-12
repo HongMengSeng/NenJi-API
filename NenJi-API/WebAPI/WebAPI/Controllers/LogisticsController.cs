@@ -467,6 +467,17 @@ public class LogisticsController : ControllerBase
                 (result, errCode, errMsg) = await RetryWithNewTokenAsync(url, body, ct);
         }
 
+        // 图片 URL 错误 → 移除 goods_info 重试（数据库中存储的图片可能已被清理或无法访问）
+        if (errCode != 0 && errMsg is not null && errMsg.Contains("图片url错误", StringComparison.Ordinal))
+        {
+            Console.WriteLine($"[GetWaybillToken] image url error, retrying without goods_info");
+            body.Remove("goods_info");
+            (result, errCode, errMsg) = await PostWechatAsync(url, body, ct);
+
+            if (IsTokenError(errCode))
+                (result, errCode, errMsg) = await RetryWithNewTokenAsync(url, body, ct);
+        }
+
         if (errCode != 0)
             return (false, null, errMsg);
 
@@ -578,21 +589,19 @@ public class LogisticsController : ControllerBase
         {
             var rawUrl = d.image?.Trim().Trim('`', '"', '\'') ?? string.Empty;
 
+            // 先通过 MediaUrlHelper 归一化（旧格式 /images/farm/ → /api/file/image/）
+            var normalized = MediaUrlHelper.Normalize(rawUrl);
+
             // 将相对路径转为完整 URL 传给微信，确保微信服务器可访问
             string goodsImgUrl;
-            if (string.IsNullOrWhiteSpace(rawUrl))
+            if (string.IsNullOrWhiteSpace(normalized))
             {
                 goodsImgUrl = string.Empty;
             }
-            else if (rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-                     || rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            else if (normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                     || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                // 已经是完整 URL，过滤掉本地地址
-                goodsImgUrl = (!rawUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-                    && !rawUrl.Contains("192.168.", StringComparison.OrdinalIgnoreCase)
-                    && !rawUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
-                    ? rawUrl
-                    : string.Empty;
+                goodsImgUrl = normalized;
             }
             else
             {
@@ -600,7 +609,7 @@ public class LogisticsController : ControllerBase
                 try
                 {
                     var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    var path = rawUrl.StartsWith("/") ? rawUrl : $"/{rawUrl}";
+                    var path = normalized.StartsWith("/") ? normalized : $"/{normalized}";
                     goodsImgUrl = $"{baseUrl}{path}";
                 }
                 catch

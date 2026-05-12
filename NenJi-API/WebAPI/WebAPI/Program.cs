@@ -197,11 +197,8 @@ public class Program
         app.UseMiddleware<GlobalExceptionMiddleware>();
         //app.UseMiddleware<DemoCartMiddleware>();
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        app.UseSwagger();
+        app.UseSwaggerUI();
 
         if (!app.Environment.IsDevelopment())
         {
@@ -214,14 +211,14 @@ public class Program
         app.UseStaticFiles(); // 启用静态文件服务
 
         var farmImagesPath = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "farm");
-        if (Directory.Exists(farmImagesPath))
-        {
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(farmImagesPath),
-                RequestPath = "/images/farm"
-            });
-        }
+        //if (Directory.Exists(farmImagesPath))
+        //{
+        //    app.UseStaticFiles(new StaticFileOptions
+        //    {
+        //        FileProvider = new PhysicalFileProvider(farmImagesPath),
+        //        RequestPath = "/images/farm"
+        //    });
+        //}
 
         app.Run();
     }

@@ -250,7 +250,7 @@ public class ActivityController : ControllerBase
         }).ToList();
     }
 
-    private string? NormalizeMediaUrl(string? url) => MediaUrlHelper.NormalizeFull(url, Request) is { Length: > 0 } r ? r : null;
+    private static string? NormalizeMediaUrl(string? url) => MediaUrlHelper.Normalize(url) is { Length: > 0 } r ? r : null;
 
     private static ActivityDetailDto MergeDetail(ActivityDetailDto detail, ActivityDetailSummary summary)
     {
