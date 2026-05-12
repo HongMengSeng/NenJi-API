@@ -1097,55 +1097,28 @@ public class OrdersController : ControllerBase
     private async Task<OrderKey?> FindOrderAsync(string id, int userId, bool tracking, CancellationToken cancellationToken)
     {
         var raw = (id ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(raw))
+        if (string.IsNullOrWhiteSpace(raw) || !long.TryParse(raw, out var orderId) || orderId <= 0)
         {
             return null;
         }
-
-        var numeric = long.TryParse(raw, out var orderId) && orderId > 0;
 
         if (tracking)
         {
-            if (numeric)
-            {
-                var goods = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-                if (goods is not null) return OrderKey.FromCommodity(goods, goods);
-                var food = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-                if (food is not null) return OrderKey.FromDish(food, food);
-                var act = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-                if (act is not null) return OrderKey.FromActivity(act, act);
-            }
-            else
-            {
-                var goods = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-                if (goods is not null) return OrderKey.FromCommodity(goods, goods);
-                var food = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-                if (food is not null) return OrderKey.FromDish(food, food);
-                var act = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-                if (act is not null) return OrderKey.FromActivity(act, act);
-            }
-
+            var g = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (g is not null) return OrderKey.FromCommodity(g, g);
+            var f = await _dbContext.DishOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (f is not null) return OrderKey.FromDish(f, f);
+            var a = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+            if (a is not null) return OrderKey.FromActivity(a, a);
             return null;
         }
 
-        if (numeric)
-        {
-            var goods = await _dbContext.CommodityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-            if (goods is not null) return OrderKey.FromCommodity(goods);
-            var food = await _dbContext.DishOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-            if (food is not null) return OrderKey.FromDish(food);
-            var act = await _dbContext.ActivityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
-            if (act is not null) return OrderKey.FromActivity(act);
-        }
-        else
-        {
-            var goods = await _dbContext.CommodityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-            if (goods is not null) return OrderKey.FromCommodity(goods);
-            var food = await _dbContext.DishOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-            if (food is not null) return OrderKey.FromDish(food);
-            var act = await _dbContext.ActivityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderNo == raw, cancellationToken);
-            if (act is not null) return OrderKey.FromActivity(act);
-        }
+        var g2 = await _dbContext.CommodityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+        if (g2 is not null) return OrderKey.FromCommodity(g2);
+        var f2 = await _dbContext.DishOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+        if (f2 is not null) return OrderKey.FromDish(f2);
+        var a2 = await _dbContext.ActivityOrders.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId && x.OrderId == orderId, cancellationToken);
+        if (a2 is not null) return OrderKey.FromActivity(a2);
 
         return null;
     }

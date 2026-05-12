@@ -165,6 +165,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.OrderId);
             entity.Property(x => x.OrderId).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.OrderNo).IsUnique();
         });
 
         modelBuilder.Entity<CommodityOrderDetail>(entity =>
@@ -177,6 +178,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.OrderId);
             entity.Property(x => x.OrderId).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.OrderNo).IsUnique();
         });
 
         modelBuilder.Entity<DishOrderDetail>(entity =>
@@ -189,6 +191,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.OrderId);
             entity.Property(x => x.OrderId).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.OrderNo).IsUnique();
         });
 
         modelBuilder.Entity<ActivityOrderDetail>(entity =>
