@@ -504,7 +504,7 @@
 					<div class="page-fixed-panel">
 						<div class="stats-grid">
 							<div class="stat-card">
-								<div class="stat-label">券品总数</div>
+								<div class="stat-label">活动券总数</div>
 								<div class="stat-value">{{ totalCouponCount }}</div>
 							</div>
 							<div class="stat-card">
@@ -532,7 +532,7 @@
 								v-model.trim="searchKeyword"
 								class="search-input"
 								type="text"
-								placeholder="搜索券类名称"
+								placeholder="搜索活动券名称"
 								@keyup.enter="searchCoupons"
 							>
 							<button class="btn btn-default" @click="searchCoupons">搜索</button>
@@ -546,10 +546,10 @@
 								<thead>
 									<tr>
 										<th class="col-check is-center"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-										<th class="col-id">券品ID</th>
+										<th class="col-id">活动券ID</th>
 										<th class="col-image is-center">封面图</th>
-										<th class="col-name">券品名称</th>
-										<th class="col-type is-center">券品类型</th>
+										<th class="col-name">活动券名称</th>
+										<th class="col-type is-center">活动券类型</th>
 										<th class="col-price is-center">售价</th>
 										<th class="col-stock is-center">库存 / 限购</th>
 										<th class="col-validity is-center">有效期</th>
@@ -892,8 +892,8 @@
 				// 兼容旧字段结构，并为缺失值补齐默认值。
 				normalizeCoupon(coupon, index) {
 					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
-					const name = coupon.name || coupon.couponName || couponInfo.name || couponInfo.couponName || '';
-					const type = this.normalizeType(coupon.type || coupon.couponType || couponInfo.type || couponInfo.couponType, name);
+					const name = coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '';
+					const type = this.normalizeType(coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType, name);
 					const validityInfo = this.parseValidity(
 						coupon.validity ?? couponInfo.validity,
 						coupon.validityPeriod ?? couponInfo.validityPeriod,
@@ -906,7 +906,7 @@
 					return {
 						...couponInfo,
 						...coupon,
-						id: coupon.id || coupon.couponId || couponInfo.id || couponInfo.couponId || this.createCouponId(index),
+						id: this.getCouponEditId(coupon) || this.createCouponId(index),
 						name: name || `${type}${index + 1}`,
 						type,
 						price,
@@ -923,6 +923,43 @@
 						createTime: this.formatDisplayTime(coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
 						selected: false
 					};
+				},
+
+				getCouponEditId(coupon) {
+					const couponInfo = coupon?.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
+					const id = coupon?.id ?? coupon?.activityId ?? coupon?.couponId ?? couponInfo.id ?? couponInfo.activityId ?? couponInfo.couponId ?? '';
+					return String(id).trim();
+				},
+
+				cacheCouponForEdit(coupon, couponId) {
+					try {
+						const couponsData = localStorage.getItem('coupons');
+						const cachedCoupons = couponsData ? JSON.parse(couponsData) : [];
+						const coupons = Array.isArray(cachedCoupons) ? cachedCoupons : [];
+						const couponInfo = coupon?.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
+						const editCoupon = {
+							...couponInfo,
+							...coupon,
+							id: couponId,
+							name: coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '',
+							type: coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType || '',
+							image: coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || '',
+							selected: false
+						};
+						const targetIndex = coupons.findIndex(item => String(item.id) === couponId);
+						if (targetIndex === -1) {
+							coupons.unshift(editCoupon);
+						} else {
+							coupons.splice(targetIndex, 1, {
+								...coupons[targetIndex],
+								...editCoupon
+							});
+						}
+						localStorage.setItem('coupons', JSON.stringify(coupons));
+						localStorage.setItem('currentCouponEditId', couponId);
+					} catch (error) {
+						console.error('缓存当前活动券失败:', error);
+					}
 				},
 
 				// 兼容常见分页返回结构，支持 records/list/rows 或直接数组。
@@ -1094,7 +1131,14 @@
 
 				editCoupon(coupon = this.selectedCoupon) {
 					if (coupon) {
-						window.location.href = `coupon-edit.html?id=${encodeURIComponent(coupon.id)}`;
+						const couponId = this.getCouponEditId(coupon);
+						if (!couponId) {
+							alert('未获取到当前活动券ID');
+							return;
+						}
+						console.log('当前活动券ID:', couponId);
+						this.cacheCouponForEdit(coupon, couponId);
+						window.location.href = `coupon-edit.html?id=${encodeURIComponent(couponId)}`;
 						return;
 					}
 					const selectedCoupons = this.coupons.filter(item => item.selected);

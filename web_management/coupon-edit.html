@@ -703,14 +703,20 @@
 
 				// 兼容历史券数据结构，补齐类型、有效期和图片名称等字段。
 				normalizeCoupon(coupon) {
-					const type = this.normalizeType(coupon.type, coupon.name);
+					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
+					const couponId = String(coupon.id ?? coupon.activityId ?? coupon.couponId ?? couponInfo.id ?? couponInfo.activityId ?? couponInfo.couponId ?? '').trim();
+					const couponName = coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '';
+					const type = this.normalizeType(coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType, couponName);
 					const validityInfo = this.parseValidity(coupon.validity, coupon.validityPeriod, coupon.validityUnit);
 					const price = Number(coupon.price);
 					const stock = Number(coupon.stock ?? coupon.inventory);
 					const limitPerOrder = Number(coupon.limitPerOrder);
 
 					return {
+						...couponInfo,
 						...coupon,
+						id: couponId,
+						name: couponName || coupon.name,
 						type,
 						price: Number.isFinite(price) && price > 0 ? Number(price.toFixed(2)) : (type === '采摘券' ? 68 : 128),
 						stock: Number.isFinite(stock) && stock >= 0 ? Math.round(stock) : 100,
@@ -731,7 +737,7 @@
 				// 根据券品 ID 读取本地数据并回填到编辑表单。
 				loadCouponData(id) {
 					const coupons = this.getStoredCoupons().map(coupon => this.normalizeCoupon(coupon));
-					const coupon = coupons.find(item => item.id === id);
+					const coupon = coupons.find(item => String(item.id) === String(id));
 					if (!coupon) {
 						alert('未找到对应券品，请返回列表重新选择');
 						window.location.href = 'coupon.html';
@@ -791,7 +797,7 @@
 					}
 
 					const coupons = this.getStoredCoupons();
-					const targetIndex = coupons.findIndex(item => item.id === this.couponId);
+					const targetIndex = coupons.findIndex(item => String(item.id) === String(this.couponId));
 					if (targetIndex === -1) {
 						alert('券品不存在，无法保存修改');
 						window.location.href = 'coupon.html';
