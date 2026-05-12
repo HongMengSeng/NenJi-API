@@ -4,62 +4,59 @@
 		<meta charset="utf-8" />
 		<title>农场管理后台 - 餐桌管理</title>
 		<script src="js/v3.2.8/vue.global.prod.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/auth.js"></script>
+		<script src="js/auth.js"></script>
 	</head>
-	
+
 	<style>
 		*{
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
 		}
-		
+
 		body{
 			height:100vh;
 			font-family:"Microsoft YaHei";
 			background:#f5f7fa;
 		}
-		
-		/* 主页面样式 */
+
 		.main-container{
 			display: flex;
 			height: 100vh;
 		}
-		
-		/* 侧边栏样式 */
+
 		.sidebar{
 			width: 200px;
 			background: #1a202c;
 			color: white;
 			padding: 20px 0;
 		}
-		
+
 		.sidebar-header{
 			padding: 0 20px 20px;
 			border-bottom: 1px solid #2d3748;
 			font-size: 18px;
 			font-weight: bold;
 		}
-		
+
 		.sidebar-menu{
 			list-style: none;
 			margin-top: 20px;
 		}
-		
+
 		.sidebar-menu li{
 			padding: 12px 20px;
 			cursor: pointer;
 		}
-		
+
 		.sidebar-menu li:hover{
 			background: #2d3748;
 		}
-		
+
 		.sidebar-menu li.active{
 			background: #3182ce;
 		}
-		
-		/* 主内容区样式 */
+
 		.content{
 			flex: 1;
 			padding: 20px;
@@ -67,24 +64,21 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
-		
-		/* 菜品页面容器 */
+
 		.dish-page {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			min-height: 0;
 		}
-		
-		/* 内容容器 */
+
 		.content-container{
 			flex: 1;
 			overflow-y: auto;
 			min-height: 0;
 			margin-bottom: 10px;
 		}
-		
-		/* 顶部导航栏 */
+
 		.top-nav{
 			display: flex;
 			justify-content: space-between;
@@ -93,14 +87,14 @@
 			padding-bottom: 10px;
 			border-bottom: 1px solid #e2e8f0;
 		}
-		
+
 		.user-info{
 			display: flex;
 			align-items: center;
 			gap: 10px;
 			flex-shrink: 0;
 		}
-		
+
 		.user-avatar{
 			width: 40px;
 			height: 40px;
@@ -113,12 +107,11 @@
 			flex-shrink: 0;
 			font-weight: 600;
 		}
-		
-		/* 操作按钮 */
+
 		.action-buttons{
 			margin-bottom: 20px;
 		}
-		
+
 		.btn{
 			padding: 8px 16px;
 			border: none;
@@ -127,12 +120,12 @@
 			margin-right: 10px;
 			font-size: 14px;
 		}
-		
+
 		.btn-success{
 			background: #38a169;
 			color: white;
 		}
-		
+
 		.btn-primary{
 			background: #3182ce;
 			color: white;
@@ -142,12 +135,12 @@
 			background: #f3ecdf;
 			color: #8a6b2f;
 		}
-		
+
 		.btn-danger{
 			background: linear-gradient(90deg, #d8b14b 0%, #e8c96f 100%);
 			color: white;
 		}
-		
+
 		.btn-default{
 			background: #e2e8f0;
 			color: #333;
@@ -158,33 +151,32 @@
 			color: white;
 			cursor: not-allowed;
 		}
-		
-		/* 表格样式 */
+
 		.dish-table{
 			width: 100%;
 			border-collapse: collapse;
 			background: white;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		}
-		
+
 		.dish-table th,
 		.dish-table td{
 			padding: 12px;
 			text-align: left;
 			border-bottom: 1px solid #e2e8f0;
 		}
-		
+
 		.dish-table th{
 			background: #f7fafc;
 			font-weight: 600;
 		}
-		
+
 		.dish-image{
 			width: 60px;
 			height: 60px;
 			object-fit: cover;
 		}
-		
+
 		.status-tag{
 			display: inline-flex;
 			align-items: center;
@@ -195,18 +187,17 @@
 			font-size: 12px;
 			font-weight: 700;
 		}
-		
+
 		.status-tag.active{
 			background: rgba(34, 197, 94, 0.14);
 			color: #15803d;
 		}
-		
+
 		.status-tag.inactive{
 			background: #d3a239;
 			color: #fffdf8;
 		}
-		
-		/* 分页样式 */
+
 		.pagination{
 			display: flex;
 			justify-content: center;
@@ -219,12 +210,12 @@
 			bottom: 0;
 			z-index: 10;
 		}
-		
+
 		.pagination-info{
 			color: #718096;
 			font-size: 14px;
 		}
-		
+
 		.pagination-btn{
 			padding: 6px 12px;
 			border: 1px solid #e2e8f0;
@@ -235,19 +226,19 @@
 			color: #4a5568;
 			transition: all 0.3s;
 		}
-		
+
 		.pagination-btn:hover{
 			background: #3182ce;
 			color: white;
 			border-color: #3182ce;
 		}
-		
+
 		.pagination-btn:disabled{
 			background: #f7fafc;
 			color: #cbd5e0;
 			cursor: not-allowed;
 		}
-		
+
 		.pagination-btn.active{
 			background: #3182ce;
 			color: white;
@@ -569,6 +560,22 @@
 			box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.12);
 		}
 
+		.filter-select{
+			padding: 8px 12px;
+			min-width: 120px;
+			border: 1px solid #dbe2ea;
+			border-radius: 6px;
+			outline: none;
+			background: #fff;
+			font-size: 14px;
+			color: #334155;
+		}
+
+		.filter-select:focus{
+			border-color: #3182ce;
+			box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.12);
+		}
+
 		.empty-state{
 			padding: 32px 16px;
 			text-align: center;
@@ -588,25 +595,22 @@
 			}
 		}
 	</style>
-	
+
 	<body>
 		<div id="app">
 			<div class="main-container">
-				<!-- 侧边栏 -->
 				<aside class="sidebar">
 					<div class="sidebar-header">农场管理后台</div>
 					<ul class="sidebar-menu">
-									<li @click="navigateTo('product.html')">产品管理</li>
-									<li @click="navigateTo('order.html')">订单管理</li>
-									<li class="active" @click="navigateTo('dish.html')">点餐管理</li>
-									<li @click="navigateTo('coupon.html')">券类管理</li>
-									<li @click="navigateTo('user.html')">用户管理</li>
-								</ul>
+						<li @click="navigateTo('product.html')">产品管理</li>
+						<li @click="navigateTo('order.html')">订单管理</li>
+						<li class="active" @click="navigateTo('dish.html')">点餐管理</li>
+						<li @click="navigateTo('coupon.html')">券类管理</li>
+						<li @click="navigateTo('user.html')">用户管理</li>
+					</ul>
 				</aside>
-				
-				<!-- 主内容区 -->
+
 				<main class="content">
-					<!-- 顶部导航 -->
 					<header class="top-nav">
 						<div>农场管理后台-餐桌管理</div>
 						<div class="user-info">
@@ -614,8 +618,7 @@
 							<div>用户12312</div>
 						</div>
 					</header>
-					
-					<!-- 菜品管理页面 -->
+
 					<div class="dish-page">
 						<div class="content-container">
 							<section class="management-card">
@@ -634,8 +637,15 @@
 										</div>
 										<div class="search-container">
 											<input type="text" v-model.trim="tableSearchKeyword" class="search-input" placeholder="餐桌编号搜索" @keyup.enter="searchTables" />
+											<select class="filter-select" v-model="tableStatusFilter" @change="searchTables">
+												<option value="">全部状态</option>
+												<option value="空闲">空闲</option>
+												<option value="使用中">使用中</option>
+												<option value="停用">停用</option>
+											</select>
 											<button class="btn btn-primary" @click="searchTables">搜索</button>
 										</div>
+										<div v-if="tableListError" style="margin-top: 10px; color: #dc2626; font-size: 14px;">{{ tableListError }}</div>
 									</div>
 									<table class="manage-table" v-if="tables.length > 0">
 										<thead>
@@ -728,7 +738,6 @@
 									链接：
 									<a :href="tableQrPayload" target="_blank" rel="noopener noreferrer" class="qr-link">{{ tableQrPayload }}</a>
 								</div>
-								<div class="qr-tip qr-warning" v-if="tableQrPayload.startsWith('file:')">当前是本地文件预览地址，实际微信扫码请部署到 `http/https` 站点后使用。</div>
 							</div>
 						</div>
 					</div>
@@ -758,406 +767,322 @@
 			</div>
 
 		</div>
-		
+
 		<script>
-			const { createApp } = Vue
+			const { createApp } = Vue;
+			const TABLE_API_BASE = 'http://192.168.101.11:7240/api/table';
+			const STATUS_MAP = { '空闲': 1, '停用': 2, '使用中': 3 };
+			const STATUS_REVERSE = { 1: '空闲', 2: '停用', 3: '使用中' };
 
 			createApp({
 				data() {
 					return {
-						allDishes: [],
-						dishes: [],
 						allTables: [],
 						tables: [],
-						currentPage: 1,
-						pageSize: 15,
-						totalPages: 1,
-						totalDishes: 0,
 						tableCurrentPage: 1,
 						tablePageSize: 15,
 						tablePageSizeOptions: [5, 10, 15],
 						tableTotalPages: 1,
 						tableTotalTables: 0,
-						dishSelectAll: false,
-						selectedTable: null,
 						tableSelectAll: false,
+						selectedTable: null,
+						tableSearchKeyword: '',
+						tableJumpPage: 1,
+						tableStatusFilter: '',
+						tableListError: '',
 						showTableInfoModal: false,
 						tableInfoItem: null,
 						tableQrPayload: '',
 						tableQrCodeUrl: '',
 						showDeleteModal: false,
-						deleteTargetType: '',
-						deleteTargetIds: [],
-						deleteTargetLabel: '',
-						searchKeyword: '',
-						tableSearchKeyword: '',
-						jumpPage: 1,
-						tableJumpPage: 1,
-						dishSectionOpen: true,
-						tableSectionOpen: false
-					}
+						deleteTargetIds: []
+					};
 				},
+
 				mounted() {
-					this.loadDishesFromLocalStorage();
-					this.loadTablesFromLocalStorage();
+					this.loadTablesFromAPI(1);
 				},
+
 				computed: {
-					selectedDishes() {
-						return this.dishes.filter(dish => dish.selected);
-					},
 					selectedTables() {
 						return this.tables.filter(table => table.selected);
-					},
-					activeDishCount() {
-						return this.allDishes.filter(dish => dish.status === '已上架').length;
 					},
 					freeTableCount() {
 						return this.allTables.filter(table => table.status === '空闲').length;
 					}
 				},
+
 				methods: {
-					formatDisplayTime(value) {
-						if (!value) return '';
-						const text = String(value).trim().replace(/\s*日\//g, ' ');
-						const match = text.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})(?:日)?\s+(\d{1,2})[:：](\d{1,2})/);
-						if (!match) return text;
-						const pad = item => String(item).padStart(2, '0');
-						return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
-					},
-					getCurrentTime() {
-						const now = new Date();
-						const pad = item => String(item).padStart(2, '0');
-						return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-					},
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					navigateToAdd() {
-						window.location.href = 'dish-add.html';
-					},
-					toggleSection(section) {
-						if (section === 'dish') {
-							const shouldOpen = !this.dishSectionOpen;
-							this.dishSectionOpen = shouldOpen;
-							if (shouldOpen) {
-								this.tableSectionOpen = false;
+
+					async loadTablesFromAPI(pageNum) {
+						this.tableListError = '';
+						const params = new URLSearchParams();
+						params.set('pageNum', String(pageNum || 1));
+						params.set('pageSize', String(this.tablePageSize));
+						if (this.tableSearchKeyword.trim()) {
+							params.set('keyword', this.tableSearchKeyword.trim());
+						}
+						if (this.tableStatusFilter) {
+							params.set('status', this.tableStatusFilter);
+						}
+						try {
+							const res = await fetch(TABLE_API_BASE + '/list?' + params.toString(), {
+								headers: window.Auth.getAuthHeaders()
+							});
+							const data = await res.json();
+							if (data.code !== 200) {
+								this.tableListError = data.message || '获取餐桌列表失败';
+								this.clearTableData();
+								return;
 							}
-							return;
-						}
-						if (section === 'table') {
-							const shouldOpen = !this.tableSectionOpen;
-							this.tableSectionOpen = shouldOpen;
-							if (shouldOpen) {
-								this.dishSectionOpen = false;
-							}
-						}
-					},
-					saveDishesToLocalStorage() {
-						try {
-							localStorage.setItem('dishes', JSON.stringify(this.allDishes));
+							const records = (data.data && data.data.records || []).map(function(item) {
+								return {
+									id: item.tableno || item.id,
+									capacity: Number(item.capacity || 0),
+									status: item.status || '空闲',
+									createTime: item.createTime || '',
+									selected: false
+								};
+							});
+							this.allTables = records;
+							this.tableTotalTables = Number(data.data && data.data.total) || records.length;
+							this.tableTotalPages = Math.max(Number(data.data && data.data.pages) || Math.ceil(this.tableTotalTables / this.tablePageSize), 1);
+							this.tableCurrentPage = Number(data.data && data.data.pageNum) || pageNum || 1;
+							this.tableJumpPage = this.tableCurrentPage;
+							this.tableSelectAll = false;
+							this.selectedTable = null;
+							this.applyTablePagination();
 						} catch (error) {
-							console.error('菜品数据保存失败:', error);
+							console.error('获取餐桌列表失败:', error);
+							this.tableListError = '网络错误，请重试';
+							this.clearTableData();
 						}
 					},
-					saveTablesToLocalStorage() {
-						try {
-							localStorage.setItem('diningTables', JSON.stringify(this.allTables));
-						} catch (error) {
-							console.error('餐桌数据保存失败:', error);
+
+					clearTableData() {
+						this.allTables = [];
+						this.tables = [];
+						this.tableTotalTables = 0;
+						this.tableTotalPages = 1;
+						this.tableCurrentPage = 1;
+						this.tableJumpPage = 1;
+						this.tableSelectAll = false;
+						this.selectedTable = null;
+					},
+
+					applyTablePagination() {
+						this.tableTotalPages = Math.max(Math.ceil(this.tableTotalTables / this.tablePageSize), 1);
+						if (this.tableCurrentPage > this.tableTotalPages) {
+							this.tableCurrentPage = this.tableTotalPages;
 						}
-					},
-					getDefaultTables() {
-						return [
-							{ id: 'A01', capacity: 4, status: '空闲', createTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', capacity: 4, status: '使用中', createTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', capacity: 6, status: '空闲', createTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', capacity: 2, status: '停用', createTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', capacity: 4, status: '空闲', createTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', capacity: 8, status: '使用中', createTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', capacity: 2, status: '空闲', createTime: '2026-03-31 09:35', selected: false }
-						];
-					},
-					normalizeTableRecord(table) {
-						return {
-							id: table.id,
-							capacity: Number(table.capacity || 0) || 4,
-							status: table.status || '空闲',
-							createTime: this.formatDisplayTime(table.createTime || table.createdAt || table.createDate) || this.getCurrentTime(),
-							selected: Boolean(table.selected)
-						};
-					},
-					loadDishesFromLocalStorage() {
-						try {
-							const cached = JSON.parse(localStorage.getItem('dishes') || 'null');
-							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultDishes();
-							this.allDishes = source.map(dish => ({ ...dish, selected: Boolean(dish.selected), uploadTime: this.formatDisplayTime(dish.uploadTime) }));
-							if (!cached || !cached.length) this.saveDishesToLocalStorage();
-							this.applyDishFilter();
-						} catch (error) {
-							console.error('菜品数据加载失败:', error);
-							this.allDishes = this.getDefaultDishes().map(dish => ({ ...dish, selected: false, uploadTime: this.formatDisplayTime(dish.uploadTime) }));
-							this.saveDishesToLocalStorage();
-							this.applyDishFilter();
-						}
-					},
-					loadTablesFromLocalStorage() {
-						try {
-							const cached = JSON.parse(localStorage.getItem('diningTables') || 'null');
-							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultTables();
-							this.allTables = source.map(table => this.normalizeTableRecord(table));
-							if (!cached || !cached.length) this.saveTablesToLocalStorage();
-							this.applyTableFilter();
-						} catch (error) {
-							console.error('餐桌数据加载失败:', error);
-							this.allTables = this.getDefaultTables().map(table => this.normalizeTableRecord(table));
-							this.saveTablesToLocalStorage();
-							this.applyTableFilter();
-						}
-					},
-					filterDishes() {
-						const keyword = this.searchKeyword.trim().toLowerCase();
-						if (!keyword) return this.allDishes;
-						return this.allDishes.filter(dish => String(dish.id).toLowerCase().includes(keyword) || String(dish.name).toLowerCase().includes(keyword));
-					},
-					filterTables() {
-						const keyword = this.tableSearchKeyword.trim().toLowerCase();
-						if (!keyword) return this.allTables;
-						return this.allTables.filter(table =>
-							String(table.id).toLowerCase().includes(keyword)
-						);
-					},
-					applyDishFilter() {
-						const filtered = this.filterDishes();
-						this.totalDishes = filtered.length;
-						this.totalPages = Math.max(1, Math.ceil(this.totalDishes / this.pageSize));
-						if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-						const startIndex = (this.currentPage - 1) * this.pageSize;
-						this.dishes = filtered.slice(startIndex, startIndex + this.pageSize);
-						this.jumpPage = this.currentPage;
-						this.syncDishSelectionState();
-					},
-					applyTableFilter() {
-						const filtered = this.filterTables();
-						this.tableTotalTables = filtered.length;
-						this.tableTotalPages = Math.max(1, Math.ceil(this.tableTotalTables / this.tablePageSize));
-						if (this.tableCurrentPage > this.tableTotalPages) this.tableCurrentPage = this.tableTotalPages;
-						const startIndex = (this.tableCurrentPage - 1) * this.tablePageSize;
-						this.tables = filtered.slice(startIndex, startIndex + this.tablePageSize);
+						var startIndex = (this.tableCurrentPage - 1) * this.tablePageSize;
+						this.tables = this.allTables.slice(startIndex, startIndex + this.tablePageSize).map(function(t) {
+							return Object.assign({}, t, { selected: false });
+						});
 						this.tableJumpPage = this.tableCurrentPage;
-						this.syncTableSelectionState();
+						this.tableSelectAll = false;
+						this.selectedTable = null;
 					},
-					syncDishSelectionState() {
-						const selected = this.dishes.filter(dish => dish.selected);
-						this.dishSelectAll = this.dishes.length > 0 && selected.length === this.dishes.length;
-					},
-					syncTableSelectionState() {
-						const selected = this.tables.filter(table => table.selected);
-						this.selectedTable = selected.length === 1 ? selected[0] : null;
-						this.tableSelectAll = this.tables.length > 0 && selected.length === this.tables.length;
-					},
-					searchDishes() {
-						this.currentPage = 1;
-						this.applyDishFilter();
-					},
+
 					searchTables() {
 						this.tableCurrentPage = 1;
-						this.applyTableFilter();
+						this.loadTablesFromAPI(1);
 					},
-					toggleSelectAllDishes() {
-						this.dishes.forEach(dish => {
-							dish.selected = this.dishSelectAll;
-						});
-						this.syncDishSelectionState();
-						this.saveDishesToLocalStorage();
-					},
-					updateSelectedDish() {
-						this.syncDishSelectionState();
-						this.saveDishesToLocalStorage();
-					},
-					toggleSelectAllTables() {
-						this.tables.forEach(table => {
-							table.selected = this.tableSelectAll;
-						});
-						this.syncTableSelectionState();
-						this.saveTablesToLocalStorage();
-					},
-					updateSelectedTable() {
-						this.syncTableSelectionState();
-						this.saveTablesToLocalStorage();
-					},
-					editDish(dish) {
-						window.location.href = 'dish-edit.html?id=' + dish.id;
-					},
-					openDishDeleteModal(dish = null) {
-						const targets = dish ? [dish] : this.selectedDishes.slice();
-						if (!targets.length) return;
-						this.deleteTargetType = 'dish';
-						this.deleteTargetIds = targets.map(item => item.id);
-						this.deleteTargetLabel = targets.length === 1 ? targets[0].name : `${targets.length} 个菜品`;
-						this.showDeleteModal = true;
-					},
-					deleteDish(dish = null) {
-						this.openDishDeleteModal(dish);
-					},
-					editTable(table) {
-						window.location.href = 'table-form.html?id=' + encodeURIComponent(table.id);
-					},
-					refreshDishData() {
-						this.searchKeyword = '';
-						this.currentPage = 1;
-						this.loadDishesFromLocalStorage();
-					},
+
 					refreshTableData() {
 						this.tableSearchKeyword = '';
+						this.tableStatusFilter = '';
 						this.tableCurrentPage = 1;
-						this.loadTablesFromLocalStorage();
+						this.loadTablesFromAPI(1);
 					},
+
 					changeTablePage(page) {
-						if (page < 1 || page > this.tableTotalPages) return;
-						this.tableCurrentPage = page;
-						this.applyTableFilter();
+						if (page >= 1 && page <= this.tableTotalPages) {
+							this.loadTablesFromAPI(page);
+						}
 					},
+
 					jumpTableToPage() {
 						if (this.tableJumpPage >= 1 && this.tableJumpPage <= this.tableTotalPages) {
-							this.tableCurrentPage = this.tableJumpPage;
-							this.applyTableFilter();
-							return;
+							this.loadTablesFromAPI(this.tableJumpPage);
+						} else {
+							alert('请输入有效页码');
 						}
-						alert('请输入有效页码');
 					},
+
 					changeTablePageSize() {
 						this.tableCurrentPage = 1;
 						this.tableJumpPage = 1;
-						this.applyTableFilter();
+						this.loadTablesFromAPI(1);
 					},
-					changePage(page) {
-						if (page < 1 || page > this.totalPages) return;
-						this.currentPage = page;
-						this.applyDishFilter();
+
+					toggleSelectAllTables() {
+						this.tables.forEach(function(table) {
+							table.selected = this.tableSelectAll;
+						}, this);
+						this.syncTableSelectionState();
 					},
-					jumpToPage() {
-						if (this.jumpPage >= 1 && this.jumpPage <= this.totalPages) {
-							this.currentPage = this.jumpPage;
-							this.applyDishFilter();
-							return;
-						}
-						alert('请输入有效页码');
+
+					updateSelectedTable() {
+						this.syncTableSelectionState();
 					},
+
+					syncTableSelectionState() {
+						var selected = this.tables.filter(function(t) { return t.selected; });
+						this.selectedTable = selected.length === 1 ? selected[0] : null;
+						this.tableSelectAll = this.tables.length > 0 && selected.length === this.tables.length;
+					},
+
 					addTable() {
 						window.location.href = 'table-form.html';
 					},
-					openTableDeleteModal(table = null) {
-						const targets = table ? [table] : this.selectedTables.slice();
-						if (!targets.length) return;
-						this.deleteTargetType = 'table';
-						this.deleteTargetIds = targets.map(item => item.id);
-						this.deleteTargetLabel = targets.length === 1 ? targets[0].id : `${targets.length} 张餐桌`;
-						this.showDeleteModal = true;
+
+					editTable(table) {
+						window.location.href = 'table-form.html?id=' + encodeURIComponent(table.id);
 					},
-					getTableStatusClass(status) {
-						if (status === '空闲') return 'free';
-						if (status === '使用中') return 'busy';
-						return 'offline';
-					},
-					buildTableScanUrl(table) {
-						const targetUrl = new URL('table-scan.html', window.location.href);
-						targetUrl.searchParams.set('tableId', table.id);
-						targetUrl.searchParams.set('capacity', table.capacity);
-						targetUrl.searchParams.set('status', table.status);
-						return targetUrl.toString();
-					},
-					buildTableQrPayload(table) {
-						return this.buildTableScanUrl(table);
-					},
-					buildTableQrCodeUrl(payload) {
-						return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(payload)}`;
-					},
-					openTableInfo(table) {
-						this.tableInfoItem = {
-							...table
-						};
-						this.tableQrPayload = this.buildTableQrPayload(this.tableInfoItem);
+
+					async openTableInfo(table) {
+						try {
+							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(table.id), {
+								headers: window.Auth.getAuthHeaders()
+							});
+							var data = await res.json();
+							if (data.code === 200 && data.data) {
+								var detail = data.data;
+								this.tableInfoItem = {
+									id: detail.tableno || detail.id,
+									capacity: Number(detail.capacity || 0),
+									status: STATUS_REVERSE[detail.status] || '空闲',
+									createTime: detail.createTime || ''
+								};
+								this.tableQrCodeUrl = detail.qrCodeUrl || this.buildTableQrCodeUrl(this.buildTableScanUrl(this.tableInfoItem));
+								this.tableQrPayload = this.buildTableScanUrl(this.tableInfoItem);
+								this.showTableInfoModal = true;
+								return;
+							}
+						} catch (e) {
+							console.warn('获取餐桌详情失败，使用列表数据:', e);
+						}
+						this.tableInfoItem = Object.assign({}, table);
+						this.tableQrPayload = this.buildTableScanUrl(table);
 						this.tableQrCodeUrl = this.buildTableQrCodeUrl(this.tableQrPayload);
 						this.showTableInfoModal = true;
 					},
+
 					closeTableInfo() {
 						this.showTableInfoModal = false;
 						this.tableInfoItem = null;
 						this.tableQrPayload = '';
 						this.tableQrCodeUrl = '';
 					},
-					getDeleteMessage() {
-						if (this.deleteTargetIds.length > 1) {
-							return this.deleteTargetType === 'table'
-								? `确定要删除已选择的 ${this.deleteTargetIds.length} 张餐桌吗？`
-								: `确定要删除已选择的 ${this.deleteTargetIds.length} 个菜品吗？`;
-						}
-						return this.deleteTargetType === 'table' ? '确定要删除该餐桌吗？' : '确定要删除该菜品吗？';
+
+					openTableDeleteModal(table) {
+						var targets = table ? [table] : this.selectedTables.slice();
+						if (!targets.length) return;
+						this.deleteTargetIds = targets.map(function(t) { return t.id; });
+						this.showDeleteModal = true;
 					},
-					getDeleteWarningText() {
-						if (!this.deleteTargetIds.length) {
-							return '';
-						}
 
-						return this.deleteTargetType === 'table'
-							? `已选择 ${this.deleteTargetIds.length} 张餐桌`
-							: `已选择 ${this.deleteTargetIds.length} 个菜品`;
-					},
-					resetDeleteState() {
-						this.showDeleteModal = false;
-						this.deleteTargetType = '';
-						this.deleteTargetIds = [];
-						this.deleteTargetLabel = '';
-					},
-					cancelDelete() {
-						this.resetDeleteState();
-					},
-					confirmDelete() {
-						if (!this.deleteTargetIds.length || !this.deleteTargetType) {
-							this.resetDeleteState();
-							return;
-						}
-
-						const removeSet = new Set(this.deleteTargetIds);
-
-						if (this.deleteTargetType === 'table') {
-							this.allTables = this.allTables.filter(item => !removeSet.has(item.id));
-							this.saveTablesToLocalStorage();
-							this.applyTableFilter();
-							this.resetDeleteState();
-							return;
-						}
-
-						this.allDishes = this.allDishes.filter(item => !removeSet.has(item.id));
-						this.saveDishesToLocalStorage();
-						this.applyDishFilter();
-						this.resetDeleteState();
-					},
-					updateTableStatus(table, nextStatus) {
-						if (!table) {
-							return;
-						}
-
-						const status = String(nextStatus || '').trim() || '空闲';
-						if (table.status === status) {
-							return;
-						}
-
-						table.status = status;
-
-						if (this.tableInfoItem && this.tableInfoItem.id === table.id) {
-							this.tableInfoItem.status = status;
-						}
-
-						this.saveTablesToLocalStorage();
-						this.applyTableFilter();
-					},
-					deleteTable(table = null) {
+					deleteTable(table) {
 						this.openTableDeleteModal(table);
+					},
+
+					getDeleteMessage() {
+						return this.deleteTargetIds.length > 1
+							? '确定要删除已选择的 ' + this.deleteTargetIds.length + ' 张餐桌吗？'
+							: '确定要删除该餐桌吗？';
+					},
+
+					getDeleteWarningText() {
+						return this.deleteTargetIds.length > 1
+							? '已选择 ' + this.deleteTargetIds.length + ' 张餐桌'
+							: (this.deleteTargetIds.length ? '此操作不可撤销，请谨慎操作' : '');
+					},
+
+					cancelDelete() {
+						this.showDeleteModal = false;
+						this.deleteTargetIds = [];
+					},
+
+					async confirmDelete() {
+						if (!this.deleteTargetIds.length) {
+							this.cancelDelete();
+							return;
+						}
+						try {
+							for (var i = 0; i < this.deleteTargetIds.length; i++) {
+								var id = this.deleteTargetIds[i];
+								var res = await fetch(TABLE_API_BASE + '/delete', {
+									method: 'POST',
+									headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
+									body: JSON.stringify({ id: id })
+								});
+								var data = await res.json();
+								if (data.code !== 200) {
+									throw new Error(data.message || '删除失败');
+								}
+							}
+							this.cancelDelete();
+							await this.loadTablesFromAPI(this.tableCurrentPage);
+						} catch (error) {
+							console.error('删除餐桌失败:', error);
+							alert(error.message || '删除餐桌失败');
+							this.cancelDelete();
+						}
+					},
+
+					async updateTableStatus(table, statusText) {
+						if (!table) return;
+						var newStatus = String(statusText || '').trim();
+						if (!newStatus || table.status === newStatus) return;
+						var statusCode = STATUS_MAP[newStatus];
+						if (!statusCode) return;
+						try {
+							var res = await fetch(TABLE_API_BASE + '/status', {
+								method: 'POST',
+								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
+								body: JSON.stringify({ tableno: table.id, status: statusCode })
+							});
+							var data = await res.json();
+							if (data.code !== 200) {
+								throw new Error(data.message || '状态更新失败');
+							}
+							table.status = newStatus;
+							if (this.tableInfoItem && this.tableInfoItem.id === table.id) {
+								this.tableInfoItem.status = newStatus;
+							}
+						} catch (error) {
+							console.error('更新餐桌状态失败:', error);
+							alert(error.message || '更新餐桌状态失败');
+						}
+					},
+
+					getTableStatusClass(status) {
+						if (status === '空闲') return 'free';
+						if (status === '使用中') return 'busy';
+						return 'offline';
+					},
+
+					buildTableScanUrl(table) {
+						var url = new URL('table-scan.html', window.location.href);
+						url.searchParams.set('tableId', table.id);
+						url.searchParams.set('capacity', String(table.capacity));
+						url.searchParams.set('status', table.status);
+						return url.toString();
+					},
+
+					buildTableQrPayload(table) {
+						return this.buildTableScanUrl(table);
+					},
+
+					buildTableQrCodeUrl(payload) {
+						return 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=' + encodeURIComponent(payload);
 					}
 				}
-			}).mount('#app')
+			}).mount('#app');
 		</script>
 	</body>
 </html>
-

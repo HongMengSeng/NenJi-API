@@ -204,6 +204,22 @@
 			color: #334155;
 		}
 
+		.btn:disabled{
+			background: #cbd5e0;
+			color: white;
+			cursor: not-allowed;
+		}
+
+		.error-msg{
+			margin-top: 16px;
+			padding: 10px;
+			border-radius: 8px;
+			background: #fef2f2;
+			color: #dc2626;
+			font-size: 14px;
+			line-height: 1.5;
+		}
+
 		@media (max-width: 900px){
 			.form-row{
 				flex-direction: column;
@@ -245,20 +261,20 @@
 							<div class="form-group">
 								<label>餐桌编号</label>
 								<div class="input-with-action">
-									<input type="text" v-model.trim="tableForm.id" placeholder="例如 A01 / VIP01" />
+									<input type="text" v-model.trim="tableForm.id" placeholder="例如 1号桌、2号桌、12号桌" :disabled="saving" />
 								</div>
-								<div class="field-tip">餐桌编号请手动填写且需唯一，编辑时如修改编号会覆盖原编号。</div>
+								<div class="field-tip">桌台编号格式为"数字+号桌"，例如 1号桌、2号桌、12号桌，编辑时如修改编号会覆盖原编号。</div>
 							</div>
 							<div class="form-group">
 								<label>容纳人数</label>
-								<input type="number" min="1" max="30" v-model.number="tableForm.capacity" placeholder="请输入容纳人数" />
+								<input type="number" min="1" max="30" v-model.number="tableForm.capacity" placeholder="请输入容纳人数" :disabled="saving" />
 							</div>
 						</div>
 
 						<div class="form-row">
 							<div class="form-group">
 								<label>餐桌状态</label>
-								<select v-model="tableForm.status">
+								<select v-model="tableForm.status" :disabled="saving">
 									<option value="空闲">空闲</option>
 									<option value="使用中">使用中</option>
 									<option value="停用">停用</option>
@@ -266,9 +282,11 @@
 							</div>
 						</div>
 
+						<div v-if="errorMessage" class="error-msg">{{ errorMessage }}</div>
+
 						<div class="form-actions">
-							<button class="btn btn-success" @click="saveTable">{{ submitText }}</button>
-							<button class="btn btn-default" @click="cancel">取消</button>
+							<button class="btn btn-success" @click="saveTable" :disabled="saving">{{ saving ? '保存中...' : submitText }}</button>
+							<button class="btn btn-default" @click="cancel" :disabled="saving">取消</button>
 						</div>
 					</div>
 				</main>
@@ -276,7 +294,9 @@
 		</div>
 
 		<script>
-			const { createApp } = Vue
+			const { createApp } = Vue;
+			const TABLE_API_BASE = 'http://192.168.101.11:7240/api/table';
+			const STATUS_MAP = { '空闲': 1, '停用': 2, '使用中': 3 };
 
 			createApp({
 				data() {
@@ -287,7 +307,9 @@
 							id: '',
 							capacity: 4,
 							status: '空闲'
-						}
+						},
+						saving: false,
+						errorMessage: ''
 					}
 				},
 				computed: {
@@ -307,7 +329,7 @@
 					if (tableId) {
 						this.isEditMode = true;
 						this.editingTableId = tableId;
-						this.loadTableData(tableId);
+						this.loadTableDataFromAPI(tableId);
 					}
 					document.title = this.formTitle;
 				},
@@ -315,152 +337,142 @@
 					navigateTo(page) {
 						window.location.href = page;
 					},
-					getCurrentTime() {
-						const now = new Date();
-						const pad = item => String(item).padStart(2, '0');
-						return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-					},
-					getDefaultTables() {
-						return [
-							{ id: 'A01', capacity: 4, status: '空闲', createTime: '2026-03-31 09:10', selected: false },
-							{ id: 'A02', capacity: 4, status: '使用中', createTime: '2026-03-31 11:25', selected: false },
-							{ id: 'A03', capacity: 6, status: '空闲', createTime: '2026-03-31 10:40', selected: false },
-							{ id: 'B01', capacity: 2, status: '停用', createTime: '2026-03-30 16:20', selected: false },
-							{ id: 'B02', capacity: 4, status: '空闲', createTime: '2026-03-31 08:50', selected: false },
-							{ id: 'VIP01', capacity: 8, status: '使用中', createTime: '2026-03-31 12:05', selected: false },
-							{ id: 'T01', capacity: 2, status: '空闲', createTime: '2026-03-31 09:35', selected: false }
-						];
-					},
-					normalizeTableRecord(table) {
-						return {
-							id: table.id,
-							capacity: Number(table.capacity || 0) || 4,
-							status: table.status || '空闲',
-							createTime: table.createTime || table.createdAt || table.createDate || this.getCurrentTime(),
-							selected: Boolean(table.selected)
-						};
-					},
-					getStoredTables() {
+
+					// ====== 加载编辑数据 ======
+
+					async loadTableDataFromAPI(tableId) {
 						try {
-							const cached = JSON.parse(localStorage.getItem('diningTables') || 'null');
-							const source = Array.isArray(cached) && cached.length ? cached : this.getDefaultTables();
-							return source.map(table => this.normalizeTableRecord(table));
-						} catch (error) {
-							console.error('读取餐桌数据失败:', error);
-							return this.getDefaultTables().map(table => this.normalizeTableRecord(table));
-						}
-					},
-					saveStoredTables(tables) {
-						localStorage.setItem('diningTables', JSON.stringify(tables));
-					},
-					loadTableData(tableId) {
-						const tables = this.getStoredTables();
-						const currentTable = tables.find(table => table.id === tableId);
-						if (!currentTable) {
-							alert('未找到要编辑的餐桌');
-							this.cancel();
-							return;
-						}
-						this.tableForm = {
-							id: currentTable.id,
-							capacity: Number(currentTable.capacity || 0) || 4,
-							status: currentTable.status || '空闲'
-						};
-					},
-					saveTable() {
-						const tableId = this.tableForm.id.trim();
-						const capacity = Number(this.tableForm.capacity);
-						if (!tableId) {
-							alert('请输入餐桌编号');
-							return;
-						}
-						if (!capacity || capacity < 1) {
-							alert('请输入有效的容纳人数');
-							return;
-						}
-
-						const tables = this.getStoredTables();
-						const duplicateExists = tables.some(table => table.id === tableId && table.id !== this.editingTableId);
-						if (duplicateExists) {
-							alert('餐桌编号已存在，请更换后再保存');
-							return;
-						}
-
-						const oldTable = this.isEditMode ? tables.find(table => table.id === this.editingTableId) : null;
-						const tableRecord = {
-							id: tableId,
-							capacity,
-							status: this.tableForm.status,
-							createTime: oldTable && oldTable.createTime ? oldTable.createTime : this.getCurrentTime(),
-							selected: false
-						};
-
-						if (this.isEditMode) {
-							const index = tables.findIndex(table => table.id === this.editingTableId);
-							if (index === -1) {
-								alert('未找到要编辑的餐桌');
-								return;
+							var res = await fetch(TABLE_API_BASE + '/detail/' + encodeURIComponent(tableId), {
+								headers: window.Auth.getAuthHeaders()
+							});
+							var data = await res.json();
+							if (data.code !== 200 || !data.data) {
+								throw new Error(data.message || '获取餐桌信息失败');
 							}
-							tableRecord.selected = Boolean(tables[index].selected);
-							tables.splice(index, 1, tableRecord);
-						} else {
-							tables.unshift(tableRecord);
+							var detail = data.data;
+							var statusText = '空闲';
+							if (detail.status === 1) statusText = '空闲';
+							else if (detail.status === 2) statusText = '停用';
+							else if (detail.status === 3) statusText = '使用中';
+							this.tableForm = {
+								id: detail.tableno || detail.id || '',
+								capacity: Number(detail.capacity || 4),
+								status: statusText
+							};
+						} catch (error) {
+							console.error('加载餐桌数据失败:', error);
+							alert(error.message || '加载餐桌数据失败');
+							this.cancel();
+						}
+					},
+
+					// ====== 新增 / 编辑提交 ======
+
+					async saveTable() {
+						this.errorMessage = '';
+						var tableId = this.tableForm.id.trim();
+						var capacity = Number(this.tableForm.capacity);
+						if (!tableId) {
+							this.errorMessage = '请输入餐桌编号';
+							return;
+						}
+						if (!/^\d+号桌$/.test(tableId)) {
+							this.errorMessage = '餐桌编号格式不正确，请按格式输入：例如 1号桌、2号桌、12号桌...';
+							return;
+						}
+						if (!capacity || capacity < 1 || capacity > 30) {
+							this.errorMessage = '请输入有效的容纳人数（1-30）';
+							return;
 						}
 
-						this.saveStoredTables(tables);
-						if (!this.isEditMode) {
-							this.printTableQrCode(tableId);
+						this.saving = true;
+						var statusCode = STATUS_MAP[this.tableForm.status] || 1;
+						try {
+							var url, body;
+							if (this.isEditMode) {
+								url = TABLE_API_BASE + '/edit';
+								body = JSON.stringify({
+									id: this.editingTableId,
+									tableno: tableId,
+									capacity: capacity,
+									status: statusCode
+								});
+							} else {
+								url = TABLE_API_BASE + '/add';
+								body = JSON.stringify({
+									tableno: tableId,
+									capacity: capacity,
+									status: statusCode
+								});
+							}
+							var res = await fetch(url, {
+								method: 'POST',
+								headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
+								body: body
+							});
+							var data = await res.json();
+							if (data.code !== 200) {
+								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
+							}
+							if (!this.isEditMode) {
+								this.printTableQrCode(tableId, capacity, data.data && data.data.qrCodeUrl);
+							}
+							window.location.href = 'table.html';
+						} catch (error) {
+							console.error('保存餐桌失败:', error);
+							this.errorMessage = error.message || '保存失败，请重试';
+						} finally {
+							this.saving = false;
 						}
-						window.location.href = 'table.html';
 					},
-					buildTableScanUrl(tableId) {
-						const targetUrl = new URL('table-scan.html', window.location.href);
-						targetUrl.searchParams.set('tableId', tableId);
-						targetUrl.searchParams.set('capacity', this.tableForm.capacity);
-						targetUrl.searchParams.set('status', this.tableForm.status);
-						return targetUrl.toString();
+
+					// ====== 二维码打印 ======
+
+					buildTableScanUrl(tableId, capacity) {
+						var url = new URL('table-scan.html', window.location.href);
+						url.searchParams.set('tableId', tableId);
+						url.searchParams.set('capacity', String(capacity));
+						return url.toString();
 					},
+
 					buildQrCodeUrl(payload) {
-						return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(payload)}`;
+						return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(payload);
 					},
-					printTableQrCode(tableId) {
-						const qrPayload = this.buildTableScanUrl(tableId);
-						const qrCodeUrl = this.buildQrCodeUrl(qrPayload);
-						
-						const printContent = `
-							<!DOCTYPE html>
-							<html>
-							<head>
-								<meta charset="utf-8">
-								<title>餐桌二维码打印 - ${tableId}</title>
-								<style>
-									body { margin: 0; padding: 40px; text-align: center; font-family: "Microsoft YaHei"; }
-									.qr-container { display: inline-block; padding: 20px; border: 1px dashed #ccc; border-radius: 10px; }
-									.qr-image { width: 180px; height: 180px; }
-									.table-info { margin-top: 15px; font-size: 18px; font-weight: bold; color: #333; }
-									.table-capacity { margin-top: 8px; font-size: 14px; color: #666; }
-									@media print { body { padding: 20px; } }
-								</style>
-							</head>
-							<body>
-								<div class="qr-container">
-									<img src="${qrCodeUrl}" alt="餐桌二维码" class="qr-image">
-									<div class="table-info">餐桌 ${tableId}</div>
-									<div class="table-capacity">可容纳 ${this.tableForm.capacity} 人</div>
-								</div>
-							</body>
-							</html>
-						`;
-						
-						const printWindow = window.open('', '_blank');
+
+					printTableQrCode(tableId, capacity, existingQrUrl) {
+						var qrPayload = this.buildTableScanUrl(tableId, capacity);
+						var qrCodeUrl = existingQrUrl || this.buildQrCodeUrl(qrPayload);
+
+						var printContent = [
+							'<!DOCTYPE html>',
+							'<html>',
+							'<head><meta charset="utf-8"><title>餐桌二维码打印 - ' + tableId + '</title>',
+							'<style>',
+							'body { margin: 0; padding: 40px; text-align: center; font-family: "Microsoft YaHei"; }',
+							'.qr-container { display: inline-block; padding: 20px; border: 1px dashed #ccc; border-radius: 10px; }',
+							'.qr-image { width: 180px; height: 180px; }',
+							'.table-info { margin-top: 15px; font-size: 18px; font-weight: bold; color: #333; }',
+							'.table-capacity { margin-top: 8px; font-size: 14px; color: #666; }',
+							'@media print { body { padding: 20px; } }',
+							'</style></head>',
+							'<body>',
+							'<div class="qr-container">',
+							'<img src="' + qrCodeUrl + '" alt="餐桌二维码" class="qr-image">',
+							'<div class="table-info">餐桌 ' + tableId + '</div>',
+							'<div class="table-capacity">可容纳 ' + capacity + ' 人</div>',
+							'</div>',
+							'</' + 'body></html>'
+						].join('');
+
+						var printWindow = window.open('', '_blank');
 						printWindow.document.write(printContent);
 						printWindow.document.close();
 						printWindow.focus();
-						
-						setTimeout(() => {
-							printWindow.print();
-						}, 500);
+						setTimeout(function() { printWindow.print(); }, 500);
 					},
+
+					// ====== 取消 ======
+
 					cancel() {
 						window.location.href = 'table.html';
 					}
