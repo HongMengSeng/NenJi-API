@@ -319,6 +319,22 @@ public class GoodsController : ControllerBase
             ? Array.Empty<string>()
             : new[] { dish.AttributeName };
 
+        // 从 carousel 表读取该菜品的轮播图
+        var dishCarouselImages = await _dbContext.Carousels
+            .AsNoTracking()
+            .Where(x => x.LinkUrl != null && x.LinkUrl.Contains($"/order-foods-detail?id={dishId}"))
+            .OrderBy(x => x.SortOrder)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToListAsync(cancellationToken);
+
+        // 主图排第一
+        if (!string.IsNullOrWhiteSpace(image) && dishCarouselImages.All(x => !x.Equals(image, StringComparison.OrdinalIgnoreCase)))
+        {
+            dishCarouselImages.Insert(0, image);
+        }
+
         return Ok(ApiResult.Success(new
         {
             id = dish.DishId.ToString(),
@@ -328,10 +344,10 @@ public class GoodsController : ControllerBase
             image,
             mainImage = image,
             main_image = image,
-            detailImage = image,
-            detail_image = image,
-            detailImages = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
-            detail_images = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
+            detailImage = dishCarouselImages.FirstOrDefault() ?? image,
+            detail_image = dishCarouselImages.FirstOrDefault() ?? image,
+            detailImages = dishCarouselImages,
+            detail_images = dishCarouselImages,
             description = dish.DishDescription ?? string.Empty,
             desc = dish.DishDescription ?? string.Empty,
             weight = string.Empty,
@@ -342,7 +358,7 @@ public class GoodsController : ControllerBase
             categoryId = dish.DishCategoryId.ToString(),
             category = dish.DishCategoryId.ToString(),
             tags,
-            swiperList = string.IsNullOrWhiteSpace(image) ? Array.Empty<object>() : [new { id = 1, image }]
+            swiperList = dishCarouselImages.Select((img, index) => new { id = index + 1, image = img }).ToList<object>()
         }));
     }
 
