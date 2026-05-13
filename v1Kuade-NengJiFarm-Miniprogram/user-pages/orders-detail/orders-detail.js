@@ -416,31 +416,6 @@ Page({
     });
   },
 
-  // ========== 模拟发货 ==========
-  mockShipping() {
-    this.setData({ showMockConfirm: true });
-  },
-
-  cancelMockShipping() {
-    this.setData({ showMockConfirm: false });
-  },
-
-  confirmMockShipping() {
-    wx.showLoading({ title: '模拟发货中...' });
-
-    api.order.updateStatus(this.data.order.id, 'shipped')
-      .then(() => {
-        wx.hideLoading();
-        this.setData({ showMockConfirm: false });
-        wx.showToast({ title: '模拟发货成功', icon: 'success' });
-        this.getOrderDetail(this.data.order.id);
-      })
-      .catch((err) => {
-        wx.hideLoading();
-        wx.showToast({ title: err.message || '模拟发货失败', icon: 'none' });
-      });
-  },
-
   goToOrders() {
     wx.navigateTo({ url: '/user-pages/orders/orders' });
   },
