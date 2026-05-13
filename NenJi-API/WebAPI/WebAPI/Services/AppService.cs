@@ -63,10 +63,10 @@ public class AppService : IAppService
             }).ToList(),
             FunctionButtons =
             [
-                new FunctionButtonDto { Id = 1, Name = "璁よ喘涓€浜╃敯", Color = "#4E8B3A", Path = "/pages/acre/acre" },
+                new FunctionButtonDto { Id = 1, Name = "认购一亩田", Color = "#4E8B3A", Path = "/pages/acre/acre" },
                 new FunctionButtonDto { Id = 2, Name = "Farm Goods", Color = "#FF8A3D", Path = "/pages/farm-goods/farm-goods" },
-                new FunctionButtonDto { Id = 3, Name = "鐑攢鑿滃搧", Color = "#2F7D8C", Path = "/pages/order/order" },
-                new FunctionButtonDto { Id = 4, Name = "娲诲姩涓績", Color = "#C66B3D", Path = "/pages/activity/activity" }
+                new FunctionButtonDto { Id = 3, Name = "热销菜品", Color = "#2F7D8C", Path = "/pages/order/order" },
+                new FunctionButtonDto { Id = 4, Name = "活动中心", Color = "#C66B3D", Path = "/pages/activity/activity" }
             ],
             FarmGoods = farmGoods,
             HotDishes = hotDishes
@@ -187,7 +187,7 @@ public class AppService : IAppService
                         GoodsId = commodityId,
                         Name = goods.ProductName,
                         Image = goods.ImageUrl ?? string.Empty,
-                        Tag = tags.GetValueOrDefault(commodityId, []).FirstOrDefault() ?? "鍖呴偖",
+                        Tag = tags.GetValueOrDefault(commodityId, []).FirstOrDefault() ?? "包邮",
                         Price = goods.UnitPrice ?? 0m,
                         Count = x.CartQuantity,
                         Checked = false
@@ -235,7 +235,7 @@ public class AppService : IAppService
 
         if (cart is null)
         {
-            throw new BusinessException("璐墿杞﹀晢鍝佷笉瀛樺湪", 1003);
+            throw new BusinessException("购物车商品不存在", 1003);
         }
 
         cart.CartQuantity = request.Count;
