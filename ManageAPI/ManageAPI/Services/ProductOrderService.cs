@@ -23,7 +23,7 @@ public class ProductOrderService : IProductOrderService
         if (pageNum < 1) pageNum = 1;
         if (pageSize < 1) pageSize = 15;
 
-        var addressSql = "SELECT address_id, user_id, contact_name, contact_phone, province, city, municipal_district, addres, is_default FROM shipping_address";
+        var addressSql = "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address";
         var addressList = await _context.Database
             .SqlQueryRaw<AddressRaw>(addressSql)
             .ToListAsync(cancellationToken);
@@ -186,7 +186,7 @@ public class ProductOrderService : IProductOrderService
 
         var addr = await _context.Database
             .SqlQueryRaw<AddressRaw>(
-                "SELECT address_id, user_id, contact_name, contact_phone, province, city, municipal_district, addres, is_default FROM shipping_address WHERE address_id = {0}",
+                "SELECT address_id AS AddressId, user_id AS UserId, contact_name AS ContactName, contact_phone AS ContactPhone, province AS Province, city AS City, municipal_district AS MunicipalDistrict, addres AS Addres, is_default AS IsDefault FROM shipping_address WHERE address_id = {0}",
                 order.o.AddressId)
             .FirstOrDefaultAsync(cancellationToken);
 

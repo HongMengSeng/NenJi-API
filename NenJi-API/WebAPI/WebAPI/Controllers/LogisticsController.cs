@@ -74,9 +74,11 @@ public class LogisticsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetDetail(string orderId, CancellationToken cancellationToken = default)
     {
-        if (!long.TryParse(orderId, out var id) || id <= 0)
+        var order = await ResolveCommodityOrderAsync(orderId, cancellationToken);
+
+        if (order is null)
         {
-            return Ok(ApiResult.Fail("订单 ID 参数错误", 400));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
 
         var userId = ResolveCurrentUserId();
@@ -85,24 +87,9 @@ public class LogisticsController : ControllerBase
             return Ok(ApiResult.Fail("Unauthorized", 401));
         }
 
-        var order = await _dbContext.CommodityOrders
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.OrderId == id, cancellationToken);
-
-        if (order is null)
-        {
-            return Ok(ApiResult.Fail("订单不存在", 404));
-        }
-
         if (order.UserId != userId)
         {
             return Ok(ApiResult.Fail("无权查询该订单", 403));
-        }
-
-        // 商品订单已发货（OrderStatusId == 3 shipping）或已完成（OrderStatusId == 4 completed）才可查物流
-        if (order.OrderStatusId != 3 && order.OrderStatusId != 4)
-        {
-            return Ok(ApiResult.Fail("订单尚未发货，无法查询物流", 409));
         }
 
         var (companyCode, companyName, companyPhone) = ResolveCompanyInfo(order.TrackingTypeId, order.TrackingNumber);
@@ -121,7 +108,7 @@ public class LogisticsController : ControllerBase
                 from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
                 join commodity in _dbContext.Commodities.AsNoTracking()
                     on detail.CommodityId equals commodity.CommodityId
-                where detail.OrderId == id
+                where detail.OrderId == order.OrderId
                 select new
                 {
                     id = detail.CommodityId,
@@ -162,9 +149,11 @@ public class LogisticsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetTrace(string orderId, CancellationToken cancellationToken = default)
     {
-        if (!long.TryParse(orderId, out var id) || id <= 0)
+        var order = await ResolveCommodityOrderAsync(orderId, cancellationToken);
+
+        if (order is null)
         {
-            return Ok(ApiResult.Fail("订单 ID 参数错误", 400));
+            return Ok(ApiResult.Fail("订单不存在", 404));
         }
 
         var userId = ResolveCurrentUserId();
@@ -173,23 +162,9 @@ public class LogisticsController : ControllerBase
             return Ok(ApiResult.Fail("Unauthorized", 401));
         }
 
-        var order = await _dbContext.CommodityOrders
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.OrderId == id, cancellationToken);
-
-        if (order is null)
-        {
-            return Ok(ApiResult.Fail("订单不存在", 404));
-        }
-
         if (order.UserId != userId)
         {
             return Ok(ApiResult.Fail("无权查询该订单", 403));
-        }
-
-        if (order.OrderStatusId != 3 && order.OrderStatusId != 4)
-        {
-            return Ok(ApiResult.Fail("订单尚未发货，无法查询物流", 409));
         }
 
         var trace = GenerateTrace(order);

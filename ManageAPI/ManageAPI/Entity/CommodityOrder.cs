@@ -40,7 +40,7 @@ public partial class CommodityOrder
     /// </summary>
     [Column("wx_pay_no")]
     [StringLength(500)]
-    public string WxPayNo { get; set; }
+    public string? WxPayNo { get; set; }
 
     /// <summary>
     /// 订单总金额
@@ -84,7 +84,7 @@ public partial class CommodityOrder
     /// </summary>
     [Column("tracking_number")]
     [StringLength(64)]
-    public string TrackingNumber { get; set; }
+    public string? TrackingNumber { get; set; }
 
     /// <summary>
     /// 物流类型ID
@@ -97,7 +97,7 @@ public partial class CommodityOrder
     /// </summary>
     [Column("receiver_phone")]
     [StringLength(20)]
-    public string ReceiverPhone { get; set; }
+    public string? ReceiverPhone { get; set; }
 
     [InverseProperty("Order")]
     public virtual ICollection<CommodityOrderDetail> CommodityOrderDetails { get; set; } = new List<CommodityOrderDetail>();

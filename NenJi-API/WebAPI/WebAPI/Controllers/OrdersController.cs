@@ -254,7 +254,36 @@ public class OrdersController : ControllerBase
             ? GenerateOrderDetailLogistics(order)
             : Array.Empty<object>();
 
+        // 活动订单加载有效期信息（基于活动设置的有效天数 Duration）
         object? validity = null;
+        if (order.Type == "activity")
+        {
+            var detail = await _dbContext.ActivityOrderDetails
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ActivityOrderId == order.OrderId, cancellationToken);
+            int? duration = null;
+            if (detail is not null)
+            {
+                var activity = await _dbContext.Activities
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.ActivityId == detail.ActivityId, cancellationToken);
+                duration = activity?.Duration;
+            }
+
+            if (duration > 0)
+            {
+                var startTime = order.CreateTime;
+                var endTime = startTime.AddDays(duration.Value);
+                var now = DateTime.Now;
+                validity = new
+                {
+                    startTime = startTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = endTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    isValid = now <= endTime,
+                    expired = now > endTime
+                };
+            }
+        }
 
         // 退款信息
         var refundRecord = await _dbContext.RefundRecords

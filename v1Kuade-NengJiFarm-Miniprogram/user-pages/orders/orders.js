@@ -862,7 +862,7 @@ Page({
       content: '确定要取消这个订单吗？',
       success: (res) => {
         if (res.confirm) {
-          api.order.updateStatus(id, 'cancelled')
+          api.order.updateStatus(order.orderNo, 'cancelled')
             .then(() => {
               wx.showToast({ title: '订单已取消', icon: 'success' });
               this.getOrders();
@@ -892,13 +892,15 @@ Page({
 
     // 跳转到支付页面
     wx.navigateTo({
-      url: `/user-pages/pay/pay?orderNo=${order.orderNumber || order.orderNo}&totalPrice=${order.totalPrice}&type=${order.type || 'goods'}`
+      url: `/user-pages/pay/pay?orderNo=${order.orderNo}&totalPrice=${order.totalPrice}&type=${order.type || 'goods'}`
     });
   },
 
   viewOrderDetail(e) {
     const id = e.currentTarget.dataset.orderId || e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${id}` });
+    const order = this.data.orders.find(o => o.id === id || o.orderNumber === id || o.orderNo === id);
+    const navId = (order && order.orderNo) || id;
+    wx.navigateTo({ url: `/user-pages/orders-detail/orders-detail?id=${navId}` });
   },
 
   applyRefund(e) {

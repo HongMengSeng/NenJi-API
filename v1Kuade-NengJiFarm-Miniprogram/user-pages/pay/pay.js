@@ -2,10 +2,8 @@ const { api, request } = require('../../utils/api');
 
 Page({
   data: {
-    // 订单号 (orderNo)
+    // 订单ID
     orderNo: '',
-    // 订单ID (兼容旧版)
-    orderId: '',
     // 订单类型 (goods/food/activity)
     orderType: '',
     // 支付金额
@@ -27,7 +25,6 @@ Page({
     this.initPageState();
 
     const orderNo = options.orderNo || '';
-    const orderId = options.orderId || '';  // 兼容旧版传参
     const totalPrice = Number(options.totalPrice || 0);
     const activityId = options.activityId || '';
     // 订单类型：从参数获取，默认自动识别
@@ -35,7 +32,7 @@ Page({
     const clearCartList = options.clearCartList === '1';
     const from = options.from || '';
 
-    if (!orderNo && !orderId) {
+    if (!orderNo) {
       wx.showToast({
         title: '缺少订单号',
         icon: 'none'
@@ -46,7 +43,6 @@ Page({
 
     this.setData({
       orderNo,
-      orderId,
       totalPrice,
       activityId,
       orderType,
@@ -70,8 +66,7 @@ Page({
   ensurePayAmountAndStart: function () {
     wx.showLoading({ title: '加载订单中...' });
 
-    const detailId = this.data.orderNo || this.data.orderId;
-    api.order.getDetail(detailId)
+    api.order.getDetail(this.data.orderNo)
       .then((orderData) => {
         console.log('[支付页] 订单详情:', orderData);
 
@@ -112,11 +107,8 @@ Page({
           this.setData({ orderType: order.type });
         }
 
-        // 获取订单号用于支付
-        const orderNo = order.orderNumber || order.orderNo;
-
         this.setData(
-          { totalPrice: Number(amount.toFixed(2)), orderNo },
+          { totalPrice: Number(amount.toFixed(2)) },
           () => this.startPayment()
         );
       })

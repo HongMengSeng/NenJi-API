@@ -49,7 +49,7 @@ public partial class CommodityOrderDetail
     /// </summary>
     [Column("image_url")]
     [StringLength(255)]
-    public string ImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
 
     /// <summary>
     /// 商品单价
