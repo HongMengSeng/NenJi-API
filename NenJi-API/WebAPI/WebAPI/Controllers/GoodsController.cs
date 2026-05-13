@@ -319,6 +319,21 @@ public class GoodsController : ControllerBase
             ? Array.Empty<string>()
             : new[] { dish.AttributeName };
 
+        // 从 dish_image 表读取多图
+        var dishImages = await _dbContext.DishImages
+            .AsNoTracking()
+            .Where(x => x.DishId == dishId)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => NormalizeMediaUrl(x.ImageUrl))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToListAsync(cancellationToken);
+        // 主图排第一
+        if (!string.IsNullOrWhiteSpace(image) && dishImages.All(x => !x.Equals(image, StringComparison.OrdinalIgnoreCase)))
+        {
+            dishImages.Insert(0, image);
+        }
+
         return Ok(ApiResult.Success(new
         {
             id = dish.DishId.ToString(),
@@ -328,10 +343,10 @@ public class GoodsController : ControllerBase
             image,
             mainImage = image,
             main_image = image,
-            detailImage = image,
-            detail_image = image,
-            detailImages = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
-            detail_images = string.IsNullOrWhiteSpace(image) ? Array.Empty<string>() : new[] { image },
+            detailImage = dishImages.FirstOrDefault() ?? image,
+            detail_image = dishImages.FirstOrDefault() ?? image,
+            detailImages = dishImages,
+            detail_images = dishImages,
             description = dish.DishDescription ?? string.Empty,
             desc = dish.DishDescription ?? string.Empty,
             weight = string.Empty,
@@ -342,7 +357,7 @@ public class GoodsController : ControllerBase
             categoryId = dish.DishCategoryId.ToString(),
             category = dish.DishCategoryId.ToString(),
             tags,
-            swiperList = string.IsNullOrWhiteSpace(image) ? Array.Empty<object>() : [new { id = 1, image }]
+            swiperList = dishImages.Select((img, index) => new { id = index + 1, image = img }).ToList<object>()
         }));
     }
 

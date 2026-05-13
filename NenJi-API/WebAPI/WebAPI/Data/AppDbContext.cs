@@ -58,6 +58,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Video> Videos => Set<Video>();
 
+    public DbSet<DishImage> DishImages => Set<DishImage>();
+
     public DbSet<ActivityVerificationRecord> ActivityVerificationRecords => Set<ActivityVerificationRecord>();
 
     public DbSet<ActivityTypeEntity> ActivityTypes => Set<ActivityTypeEntity>();
