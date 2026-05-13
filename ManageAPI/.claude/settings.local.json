@@ -19,7 +19,12 @@
       "Bash(taskkill //f //im ManageAPI.exe)",
       "Bash(taskkill //f //pid 36600)",
       "Bash(curl -s \"http://127.0.0.1:7240/api/table/list?pageNum=1&pageSize=15\")",
-      "Bash(curl -s \"http://127.0.0.1:7240/api/table/list?pageNum=1&pageSize=5\")"
+      "Bash(curl -s \"http://127.0.0.1:7240/api/table/list?pageNum=1&pageSize=5\")",
+      "Bash(Get-ChildItem -Path \"E:\\\\Kuade-NengJiFarm\\\\ManageAPI\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Remove-Item *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(Select-String \"错误|Warning\\\\\\(s\\\\\\)|Error\\\\\\(s\\\\\\)|成功\")"
     ]
   }
 }

@@ -4,6 +4,6 @@ namespace ManageAPI.Dtos
     {/// <summary>
      /// 菜品訂單明細 ID
      /// </summary>
-        public int DishOrderDetailsId { get; set; }
+        public long DishOrderDetailsId { get; set; }
     }
 }

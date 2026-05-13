@@ -138,7 +138,7 @@ public class ProductService : IProductService
 
         var materialsToAdd = new List<CommodityMaterial>();
 
-        if (dto.CarouselMedia.Count > 0)
+        if (dto.CarouselMedia?.Count > 0)
         {
             var carouselMaterials = dto.CarouselMedia
                 .Select((m, index) => new CommodityMaterial
@@ -154,7 +154,7 @@ public class ProductService : IProductService
             materialsToAdd.AddRange(carouselMaterials);
         }
 
-        if (dto.SpecImages.Count > 0)
+        if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
                 .Select((url, index) => new CommodityMaterial
@@ -202,11 +202,12 @@ public class ProductService : IProductService
             .Where(m => m.CommodityId == dto.Id)
             .ToListAsync(cancellationToken);
 
-        _dbContext.CommodityMaterials.RemoveRange(oldMaterials);
+        if (oldMaterials.Count > 0)
+            _dbContext.CommodityMaterials.RemoveRange(oldMaterials);
 
         var materialsToAdd = new List<CommodityMaterial>();
 
-        if (dto.CarouselMedia.Count > 0)
+        if (dto.CarouselMedia?.Count > 0)
         {
             var carouselMaterials = dto.CarouselMedia
                 .Select((m, index) => new CommodityMaterial
@@ -222,7 +223,7 @@ public class ProductService : IProductService
             materialsToAdd.AddRange(carouselMaterials);
         }
 
-        if (dto.SpecImages.Count > 0)
+        if (dto.SpecImages?.Count > 0)
         {
             var specMaterials = dto.SpecImages
                 .Select((url, index) => new CommodityMaterial
@@ -238,12 +239,8 @@ public class ProductService : IProductService
             materialsToAdd.AddRange(specMaterials);
         }
 
-        _dbContext.Commodities.Update(commodity);
-
         if (materialsToAdd.Count > 0)
-        {
             _dbContext.CommodityMaterials.AddRange(materialsToAdd);
-        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

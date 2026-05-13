@@ -119,6 +119,7 @@ public class Program
         builder.Services.AddScoped<IDishOrderService, DishOrderService>();
         builder.Services.AddScoped<IProductOrderService, ProductOrderService>();
         builder.Services.AddScoped<IActivityOrderService, ActivityOrderService>();
+        builder.Services.AddScoped<ICommonService, CommonService>();
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -184,6 +185,8 @@ public class Program
                 RequestPath = ""
             });
         }
+
+        app.UseStaticFiles();
 
         app.UseStaticFiles();
         app.UseMiddleware<TokenMiddleware>();

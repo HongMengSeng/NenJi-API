@@ -9,12 +9,10 @@ namespace ManageAPI.Services;
 public class DishService : IDishService
 {
     private readonly AppDbContext _context;
-    private readonly string _iconsDir;
 
     public DishService(AppDbContext context)
     {
         _context = context;
-        _iconsDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Kude-NenJi-Api", "DemoAPI", "WebAPI", "WebAPI", "wwwroot", "icons"));
     }
 
     public async Task<(List<DishListItemDto> Records, int Total)> GetDishListAsync(
@@ -127,7 +125,7 @@ public class DishService : IDishService
             DishPrice = dto.Price,
             DishRemainingQuantity = dto.Stock,
             Status = statusId,
-            ImageUrl = SaveImageFromBase64(dto.Image) ?? string.Empty,
+            ImageUrl = dto.Image ?? string.Empty,
             DishDescription = dto.Description ?? string.Empty,
             DishCategoryId = 1,
             AttributeName = string.Empty,
@@ -147,7 +145,7 @@ public class DishService : IDishService
                 _context.Add(new DishImage
                 {
                     DishId = dish.DishId,
-                    ImageUrl = SaveImageFromBase64(dto.SpecImages[i]) ?? dto.SpecImages[i],
+                    ImageUrl = dto.SpecImages[i],
                     SortOrder = i
                 });
             }
@@ -181,7 +179,7 @@ public class DishService : IDishService
         }
 
         if (dto.Image != null)
-            dish.ImageUrl = SaveImageFromBase64(dto.Image) ?? string.Empty;
+            dish.ImageUrl = dto.Image ?? string.Empty;
 
         if (dto.Description != null)
             dish.DishDescription = dto.Description;
@@ -201,7 +199,7 @@ public class DishService : IDishService
                 _context.Add(new DishImage
                 {
                     DishId = dishId,
-                    ImageUrl = SaveImageFromBase64(dto.SpecImages[i]) ?? dto.SpecImages[i],
+                    ImageUrl = dto.SpecImages[i],
                     SortOrder = i
                 });
             }
@@ -242,40 +240,6 @@ public class DishService : IDishService
         _context.Dishes.RemoveRange(dishes);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
-    }
-
-    private string? SaveImageFromBase64(string? image)
-    {
-        if (string.IsNullOrEmpty(image))
-            return image;
-
-        // If it's a /icons/ URL, strip the prefix to get just the filename
-        if (image.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
-            return image["/icons/".Length..];
-
-        // If it's not base64, return as-is (it's already a filename)
-        if (!image.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-            return image;
-
-        try
-        {
-            if (!Directory.Exists(_iconsDir))
-                Directory.CreateDirectory(_iconsDir);
-
-            var base64Data = image.Substring(image.IndexOf(",") + 1);
-            var bytes = Convert.FromBase64String(base64Data);
-
-            var ext = image.Contains("png") ? ".png" : image.Contains("gif") ? ".gif" : ".jpg";
-            var fileName = Guid.NewGuid().ToString("N") + ext;
-            var filePath = Path.Combine(_iconsDir, fileName);
-
-            File.WriteAllBytes(filePath, bytes);
-            return fileName;
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
     }
 
     private async Task<int> ResolveStatusIdAsync(string statusName, CancellationToken cancellationToken)
