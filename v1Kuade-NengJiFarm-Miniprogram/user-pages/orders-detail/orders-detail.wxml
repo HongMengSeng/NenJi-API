@@ -89,7 +89,7 @@
       </view>
       <view class="refund-row">
         <text class="refund-label">当前状态</text>
-        <text class="refund-value refund-status {{order.refundInfo.status}}">
+        <text class="refund-value refund-status {{order.refundInfo.statusClass || order.refundInfo.status}}">
           {{order.refundInfo.statusText}}
         </text>
       </view>

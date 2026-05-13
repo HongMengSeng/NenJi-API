@@ -348,11 +348,11 @@ const api = {
       const payload = typeof extra === 'string'
         ? { status, reason: extra }
         : { status, ...extra };
-      return put(`/api/orders/${id}/status`, payload);
+      return post(`/api/orders/${id}/status`, payload);
     },
 
     // 取消订单
-    cancel: (id, reason) => put(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
+    cancel: (id, reason) => post(`/api/orders/${id}/status`, { status: 'cancelled', reason }),
 
     // 删除订单
     delete: (id) => del(`/api/orders/${id}`),
@@ -419,16 +419,20 @@ const api = {
     getList: () => get('/api/order/tables')
   },
 
-  // 退款相关
+  // 退款相关（对应后端 /api/refund/* 接口）
   refund: {
-    // 申请退款
-    apply: (orderId, data) => post(`/api/orders/${orderId}/refund`, data),
-    // 查询退款详情
-    getDetail: (orderId) => get(`/api/orders/${orderId}/refund`),
-    // 用户退款记录列表
-    getList: (params = {}) => get('/api/orders/refunds', params),
-    // 取消退款申请
-    cancel: (orderId) => put(`/api/orders/${orderId}/refund/cancel`)
+    // 申请退款 POST /api/refund/apply
+    apply: (data) => post('/api/refund/apply', data),
+    // 取消退款申请 PUT /api/refund/cancel
+    cancel: (data) => post('/api/refund/cancel', data),
+    // 用户退款列表 GET /api/refund/list?page=1&pageSize=10&status=
+    getList: (params = {}) => get('/api/refund/list', params),
+    // 退款详情 GET /api/refund/detail?refundId=
+    getDetail: (params = {}) => get('/api/refund/detail', params),
+    // 管理员退款列表 GET /api/refund/admin/list
+    getAdminList: (params = {}) => get('/api/refund/admin/list', params),
+    // 管理员处理退款 POST /api/refund/admin/process
+    process: (data) => post('/api/refund/admin/process', data),
   },
 
   // 支付相关 - 新版 API

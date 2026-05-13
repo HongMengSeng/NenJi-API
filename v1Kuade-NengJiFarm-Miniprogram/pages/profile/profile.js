@@ -190,7 +190,6 @@ Page({
   },
 
 
-
   navigateToFarmIntro() {
     wx.navigateTo({
       url: '/user-pages/farm-intro/farm-intro'

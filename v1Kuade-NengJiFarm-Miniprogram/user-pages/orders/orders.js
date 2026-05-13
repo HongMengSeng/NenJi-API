@@ -257,6 +257,16 @@ Page({
 
         self.initOrderCountdowns(orders);
 
+        // 检查本地存储中的退款记录，覆写已退款订单的状态
+        orders.forEach(order => {
+          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+            order.hasRefund = true;
+            order.status = 'refunding';
+            order.statusText = '退款中';
+          }
+        });
+
         self.setData({
           allOrders: [],
           orders,
@@ -534,10 +544,19 @@ Page({
 
         self.initOrderCountdowns(allOrders);
 
-        // 判断是否有更多数据：
-        // 1. 如果后端返回了 total，使用 total 判断
-        // 2. 否则，如果返回的订单数等于 PAGE_SIZE，假设可能还有更多数据
-        // 3. 如果返回的订单数小于 PAGE_SIZE，肯定没有更多数据了
+        // 检查本地存储中的退款记录，覆写已退款订单的状态（订单在数据库仍是原状态但已提交退款）
+        allOrders.forEach(order => {
+          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+            order.hasRefund = true;
+            order.status = 'refunding';
+            order.statusText = '退款中';
+          }
+        });
+
+        console.log('订单列表数据 - 各订单状态:', allOrders.map(o => ({ id: o.id, status: o.status, hasRefund: o.hasRefund, type: o.type })));
+
+        // 判断是否有更多数据
         let hasMore = false;
         if (total > 0) {
           hasMore = allOrders.length < total;
@@ -559,6 +578,11 @@ Page({
         });
 
         console.log('getOrders - 完成，订单数:', allOrders.length, 'hasMore:', hasMore);
+
+        // 退款tab：额外查询退款列表，补全点餐等主查询未返回的退款订单
+        if (status.includes('refunding') || status.includes('refunded')) {
+          return self._supplementRefundOrders();
+        }
       })
       .catch((err) => {
         console.error('获取订单列表失败:', err);
@@ -641,6 +665,16 @@ Page({
         }
 
         const mappedOrders = rawOrders.map(order => self._mapOrder(order));
+
+        // 检查本地存储中的退款记录，覆写已退款订单的状态
+        mappedOrders.forEach(order => {
+          const refundKey = 'refundNo_' + (order.orderNumber || order.orderNo || order.id);
+          if (wx.getStorageSync(refundKey) && !['refund', 'refunding', 'refunded'].includes(order.status)) {
+            order.hasRefund = true;
+            order.status = 'refunding';
+            order.statusText = '退款中';
+          }
+        });
 
         const existingIds = new Set(self.data.allOrders.map(o => o.id));
         const newOrders = mappedOrders.filter(o => !existingIds.has(o.id));
@@ -927,13 +961,26 @@ Page({
             if (!modalRes.confirm) return;
             const description = (modalRes.content || '').trim().substring(0, 200);
             wx.showLoading({ title: '提交中...' });
-            api.refund.apply(id, {
+            api.refund.apply({
+              orderNo: id,
+              orderType: order.type,
               reason: selectedReason.value,
+              reasonText: selectedReason.label,
               description
             })
-              .then(() => {
+              .then((refundData) => {
                 wx.hideLoading();
                 wx.showToast({ title: '退款申请已提交', icon: 'success' });
+                // 保存 refundId 到本地存储（同时用数字ID和订单号，确保详情页能查到）
+                if (refundData && refundData.refundId) {
+                  wx.setStorageSync('refundNo_' + id, refundData.refundId);
+                  if (order.orderNumber) {
+                    wx.setStorageSync('refundNo_' + order.orderNumber, refundData.refundId);
+                  }
+                  if (order.orderNo && order.orderNo !== order.orderNumber) {
+                    wx.setStorageSync('refundNo_' + order.orderNo, refundData.refundId);
+                  }
+                }
                 this.getOrders();
               })
               .catch((err) => {
@@ -948,6 +995,88 @@ Page({
   },
 
   goToShop() { wx.reLaunch({ url: '/pages/index/index' }); },
+
+  // 退款tab：补充查询退款列表，补全点餐等主API未返回的退款订单
+  _supplementRefundOrders() {
+    const self = this;
+    return api.refund.getList({ page: 1, pageSize: 999 })
+      .then((data) => {
+        const refundItems = data && data.items ? data.items : (Array.isArray(data) ? data : []);
+        if (refundItems.length === 0) return;
+
+        // 获取当前类型过滤条件
+        const activeTypeTab = self.data.activeTypeTab;
+
+        // 收集已有订单的 orderNo/orderNumber/orderNo/id
+        const existingOrderNos = new Set();
+        self.data.orders.forEach(o => {
+          if (o.orderNumber) existingOrderNos.add(String(o.orderNumber));
+          if (o.orderNo) existingOrderNos.add(String(o.orderNo));
+          if (o.id) existingOrderNos.add(String(o.id));
+        });
+
+        // 找出退款列表中尚未加载到订单列表中的（并按类型过滤）
+        const missingRefunds = refundItems.filter(r => {
+          const refNo = r.orderNo || r.orderId || '';
+          if (!refNo || existingOrderNos.has(String(refNo))) return false;
+          // 如果选了特定类型标签，按类型过滤
+          if (activeTypeTab !== 'all') {
+            const itemType = (r.orderType || '').toLowerCase();
+            if (itemType !== activeTypeTab) return false;
+          }
+          return true;
+        });
+
+        if (missingRefunds.length === 0) return;
+
+        // 逐个加载缺失的订单详情
+        const fetchPromises = missingRefunds.map(r => {
+          const orderNo = r.orderNo || r.orderId;
+          if (!orderNo) return Promise.resolve(null);
+          return api.order.getDetail(orderNo)
+            .then(orderData => {
+              if (!orderData) return null;
+              return {
+                ...orderData,
+                id: orderData.id || orderNo,
+                orderNumber: orderData.orderNumber || orderNo,
+                orderNo: orderData.orderNo || orderNo,
+                hasRefund: true,
+                status: 'refunding',
+                statusText: '退款中',
+                type: orderData.type || r.orderType || '',
+                typeText: orderData.typeText || (orderData.type === 'food' ? '点餐订单' : orderData.type === 'activity' ? '活动订单' : '商品订单'),
+                items: (orderData.items || []).map(item => ({
+                  ...item,
+                  image: self.processImageUrl(item.image),
+                  price: (item.price || '').toString().replace(/[¥￥]/g, '')
+                })),
+                totalPrice: (orderData.totalPrice || 0).toString().replace(/[¥￥]/g, ''),
+                createTime: orderData.createTime || r.createTime || ''
+              };
+            })
+            .catch(() => null);
+        });
+
+        return Promise.all(fetchPromises).then((extraOrders) => {
+          let validOrders = extraOrders.filter(Boolean);
+          // 二次确认类型过滤（从后端拿到的 orderData.type 更准确）
+          if (activeTypeTab !== 'all') {
+            validOrders = validOrders.filter(o => (o.type || '').toLowerCase() === activeTypeTab);
+          }
+          if (validOrders.length === 0) return;
+          const merged = [...self.data.orders, ...validOrders];
+          merged.sort((a, b) => new Date(b.createTime || 0) - new Date(a.createTime || 0));
+          self.setData({
+            orders: merged,
+            allOrders: merged,
+            noSearchResult: false,
+            totalOrders: self.data.totalOrders + validOrders.length
+          });
+        });
+      })
+      .catch(err => console.warn('补充加载退款订单失败:', err));
+  },
 
   // 下拉刷新（模仿活动页）
   onPullDownRefresh() {

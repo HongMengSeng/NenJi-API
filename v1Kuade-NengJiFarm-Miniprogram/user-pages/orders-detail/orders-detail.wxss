@@ -1131,6 +1131,10 @@
   color: #999;
 }
 
+.refund-status.refunded {
+  color: #4caf50;
+}
+
 .refund-admin-reply {
   flex-direction: column;
   align-items: flex-start;

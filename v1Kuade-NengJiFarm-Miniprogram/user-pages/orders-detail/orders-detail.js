@@ -239,6 +239,7 @@ Page({
         }
 
         // 先设置基本数据（包含物流信息）
+        console.log('订单详情数据 - status:', orderData.status, 'hasRefund:', orderData.hasRefund, 'isActivityOrder:', orderData.isActivityOrder);
         this.setData({ order: orderData, loading: false });
 
         if (orderData.status === 'pending') {
@@ -256,9 +257,11 @@ Page({
           this.getActivityOrderQrcode(orderId, orderData);
         }
 
-        // 加载退款信息：可申请退款状态 + 退款中/已退款状态
-        const refundableStatuses = ['paid', 'shipping', 'ordered', 'verify_pending', 'refund', 'refunding', 'refunded'];
-        if (refundableStatuses.includes(orderData.status) || orderData.hasRefund) {
+        // 加载退款信息：只在真正处于退款流程时查询退款进度
+        // 但即使状态不是退款相关，也检查本地存储（防止刚退款后被后端数据覆盖）
+        const refundStatuses = ['refund', 'refunding', 'refunded'];
+        const hasLocalRefund = wx.getStorageSync('refundNo_' + (orderData.orderNumber || orderData.orderNo || orderId));
+        if (refundStatuses.includes(orderData.status) || orderData.hasRefund || hasLocalRefund) {
           this._loadRefundInfo(orderId);
         }
 
@@ -596,32 +599,87 @@ Page({
       cancelled: '已取消'
     };
 
-    api.refund.getDetail(orderId)
+    // 先从本地存储尝试获取 refundId（先用 orderId 本身试，再试 order.orderNumber）
+    let refundId = wx.getStorageSync('refundNo_' + orderId);
+    if (!refundId && this.data.order && this.data.order.orderNumber && this.data.order.orderNumber != orderId) {
+      refundId = wx.getStorageSync('refundNo_' + this.data.order.orderNumber);
+    }
+    if (!refundId && this.data.order && this.data.order.orderNo && this.data.order.orderNo != orderId) {
+      refundId = wx.getStorageSync('refundNo_' + this.data.order.orderNo);
+    }
+    if (refundId) {
+      this._fetchRefundDetail(refundId);
+      return;
+    }
+    // 如果本地无记录，从用户退款列表查询匹配本订单的记录
+    api.refund.getList({ page: 1, pageSize: 50 })
+      .then((data) => {
+        const items = data && data.items ? data.items : (Array.isArray(data) ? data : []);
+        // 同时匹配 orderNo 和 orderId 字段
+        const match = items.find(r => r.orderNo == orderId || r.orderId == orderId);
+        if (match) {
+          wx.setStorageSync('refundNo_' + orderId, match.refundId);
+          this._fetchRefundDetail(match.refundId);
+        }
+      })
+      .catch((err) => {
+        console.warn('加载退款信息失败:', err);
+      });
+  },
+
+  // 退款原因code → 中文映射
+  _getRefundReasonText(reasonCode) {
+    const reasonMap = {
+      wrong_item: '收到的商品与描述不符',
+      damaged: '商品损坏/腐烂',
+      not_as_expected: '不想要了',
+      delayed_delivery: '长时间未发货',
+      wrong_dish: '菜品与点单不符',
+      poor_quality: '菜品质量不佳',
+      delayed_service: '出餐速度慢',
+      activity_changed: '活动内容变更',
+      schedule_conflict: '时间安排冲突',
+      duplicate_order: '重复下单',
+      other: '其他原因'
+    };
+    return reasonMap[reasonCode] || reasonCode || '';
+  },
+
+  // 根据 refundId 获取退款详情
+  _fetchRefundDetail(refundId) {
+    const statusMap = {
+      pending: '等待商家处理',
+      cancelled: '已取消',
+      '已退款': '退款已完成'
+    };
+    api.refund.getDetail({ refundId })
       .then((refundData) => {
         if (refundData) {
+          // 根据退款状态覆写订单状态，使界面展示退款中/已退款
+          const isRefundCompleted = refundData.status === 'completed' || refundData.status === '已退款';
           this.setData({
             'order.hasRefund': true,
+            'order.status': isRefundCompleted ? 'refunded' : 'refunding',
+            'order.statusText': isRefundCompleted ? '已退款' : '退款中',
             'order.refundInfo': {
               refundId: refundData.refundId,
               status: refundData.status,
+              statusClass: refundData.status === '已退款' ? 'refunded' : refundData.status,
               reason: refundData.reason,
-              reasonText: reasonMap[refundData.reason] || refundData.reason,
+              reasonText: this._getRefundReasonText(refundData.reason),
               description: refundData.description,
               images: refundData.images || [],
               refundAmount: refundData.refundAmount,
               createTime: refundData.createTime,
               processTime: refundData.processTime,
               adminReply: refundData.adminReply,
-              statusText: statusMap[refundData.status] || refundData.status
+              statusText: statusMap[refundData.status] || refundData.statusText || refundData.status
             }
           });
         }
       })
       .catch((err) => {
-        console.warn('加载退款信息失败:', err);
-        // 无退款记录或加载失败，不显示提示避免干扰用户
-        // 如果需要提示，可以取消注释下面的代码
-        // wx.showToast({ title: '退款信息加载失败', icon: 'none' });
+        console.warn('获取退款详情失败:', err);
       });
   },
 
@@ -647,7 +705,7 @@ Page({
   // 申请退款
   applyRefund() {
     const { order } = this.data;
-    const orderId = order.id;
+    const orderNo = order.orderNumber || order.orderNo || order.id || '';
 
     if (order.hasRefund) return;
 
@@ -659,7 +717,7 @@ Page({
       itemList: reasons.map(r => r.label),
       success: (res) => {
         const selectedReason = reasons[res.tapIndex];
-        this._submitRefund(orderId, selectedReason.value, selectedReason.label);
+        this._submitRefund(orderNo, order.type, selectedReason.value, selectedReason.label);
       }
     });
   },
@@ -694,7 +752,7 @@ Page({
   },
 
   // 内部方法：提交退款申请
-  _submitRefund(orderId, reason, reasonLabel) {
+  _submitRefund(orderNo, orderType, reason, reasonLabel) {
     wx.showModal({
       title: `退款原因：${reasonLabel}`,
       content: '如有补充说明请在下方填写（选填）',
@@ -706,13 +764,22 @@ Page({
         const description = (res.content || '').trim().substring(0, 200);
 
         wx.showLoading({ title: '提交中...' });
-        api.refund.apply(orderId, {
+        api.refund.apply({
+          orderNo,
+          orderType,
           reason,
+          reasonText: reasonLabel,
           description
         })
           .then((refundData) => {
             wx.hideLoading();
             wx.showToast({ title: '退款申请已提交', icon: 'success' });
+
+            // 保存 refundId 到本地存储（同时用订单号和订单编号作为key，确保详情页能查到）
+            wx.setStorageSync('refundNo_' + orderNo, refundData.refundId);
+            if (this.data.order.orderNumber || this.data.order.orderNo) {
+              wx.setStorageSync('refundNo_' + (this.data.order.orderNumber || this.data.order.orderNo), refundData.refundId);
+            }
 
             // 更新订单数据中的退款信息
             this.setData({
@@ -732,7 +799,7 @@ Page({
             });
 
             // 刷新订单详情以同步后端最新状态
-            this.getOrderDetail(orderId);
+            this.getOrderDetail(orderNo);
           })
           .catch((err) => {
             wx.hideLoading();
