@@ -54,14 +54,31 @@ public class DiningTableService : IDiningTableService
     }
 
     /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
+    /// <summary>生成餐桌二维码图片，返回可公开访问的 URL</summary>
     private async Task<string> GenerateQrCodeAsync(string tableno, string baseUrl, CancellationToken ct)
     {
         var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         var qrDir = Path.Combine(wwwroot, "images", "qrcode");
         Directory.CreateDirectory(qrDir);
 
-        var contentUrl = $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={tableno}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
-        var fileName = $"table_{tableno}.png";
+        // --- 统一格式化逻辑 ---
+        // 假设你想把 "1" 变成 "a001"，把 "12" 变成 "a012"
+        string formattedNo;
+        if (int.TryParse(tableno, out int num))
+        {
+            // D3 表示至少 3 位数字，不足补 0
+            formattedNo = $"a{num:D3}";
+        }
+        else
+        {
+            // 如果传入的本身就是 "a012" 这种字符串，或者不纯是数字，就转小写保持一致
+            formattedNo = tableno.ToLower();
+        }
+
+        var contentUrl = $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={formattedNo}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
+
+        // 使用格式化后的名称作为文件名
+        var fileName = $"table_{formattedNo}.png";
         var filePath = Path.Combine(qrDir, fileName);
 
         using var generator = new QRCodeGenerator();
@@ -114,6 +131,24 @@ public class DiningTableService : IDiningTableService
 
     public async Task<string> CreateAsync(CreateDiningTableDto dto, CancellationToken ct)
     {
+        var existing = await _dbContext.DiningTables
+            .FirstOrDefaultAsync(t => t.TableNo == dto.TableNo, ct);
+
+        if (existing != null)
+        {
+            if (existing.TableStatus == 3)
+            {
+                existing.SeatCount = dto.SeatCount;
+                existing.TableStatus = dto.TableStatus;
+                existing.QrCodeImageUrl = dto.QrCodeImageUrl;
+                existing.CreatedAt = DateTime.Now;
+                await _dbContext.SaveChangesAsync(ct);
+                return existing.TableNo;
+            }
+
+            throw new InvalidOperationException($"桌号 '{dto.TableNo}' 已存在");
+        }
+
         var entity = new DiningTables
         {
             TableNo = dto.TableNo,
@@ -203,25 +238,52 @@ public class DiningTableService : IDiningTableService
     public async Task<TableMutationResponseDto> CreateTableAsync(
         CreateTableRequestDto dto, string baseUrl, CancellationToken ct)
     {
-        // 检查餐桌号是否已存在
-        var exists = await _dbContext.DiningTables.AnyAsync(t => t.TableNo == dto.Tableno, ct);
-        if (exists)
-            throw new InvalidOperationException($"餐桌号 '{dto.Tableno}' 已存在");
-
         if (dto.Capacity < 1 || dto.Capacity > 30)
             throw new ArgumentException("容纳人数必须在 1-30 之间");
 
-        // 生成二维码（存储相对路径，返回完整URL）
-        var qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+        var existing = await _dbContext.DiningTables
+            .FirstOrDefaultAsync(t => t.TableNo == dto.Tableno, ct);
 
-        var status = dto.Status ?? 1;
+        if (existing != null)
+        {
+            if (existing.TableStatus == 3)
+            {
+                var status = dto.Status ?? 1;
+                var qrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+
+                existing.SeatCount = dto.Capacity;
+                existing.TableStatus = status;
+                existing.QrCodeImageUrl = qrPath;
+                existing.CreatedAt = DateTime.Now;
+
+                await _dbContext.SaveChangesAsync(ct);
+
+                _logger.LogInformation("重新启用停用桌台: {Tableno}", dto.Tableno);
+
+                return new TableMutationResponseDto
+                {
+                    Id = dto.Tableno,
+                    Tableno = dto.Tableno,
+                    Capacity = dto.Capacity,
+                    Status = status,
+                    QrCodeUrl = BuildQrCodeFullUrl(qrPath, baseUrl),
+                };
+            }
+
+            throw new InvalidOperationException($"桌号 '{dto.Tableno}' 已存在");
+        }
+
+        // 生成二维码（存储相对路径，返回完整URL）
+        var newQrPath = await GenerateQrCodeAsync(dto.Tableno, baseUrl, ct);
+
+        var newStatus = dto.Status ?? 1;
 
         var entity = new DiningTables
         {
             TableNo = dto.Tableno,
             SeatCount = dto.Capacity,
-            TableStatus = status,
-            QrCodeImageUrl = qrPath,
+            TableStatus = newStatus,
+            QrCodeImageUrl = newQrPath,
             CreatedAt = DateTime.Now,
         };
 
@@ -235,8 +297,8 @@ public class DiningTableService : IDiningTableService
             Id = dto.Tableno,
             Tableno = dto.Tableno,
             Capacity = dto.Capacity,
-            Status = status,
-            QrCodeUrl = BuildQrCodeFullUrl(qrPath, baseUrl),
+            Status = newStatus,
+            QrCodeUrl = BuildQrCodeFullUrl(newQrPath, baseUrl),
         };
     }
 

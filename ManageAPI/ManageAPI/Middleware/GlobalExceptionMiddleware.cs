@@ -37,9 +37,18 @@ public class GlobalExceptionMiddleware
             var payload = JsonSerializer.Serialize(ApiResult.Fail(ex.Message, ex.Code));
             await context.Response.WriteAsync(payload);
         }
+        catch (OperationCanceledException)
+        {
+            if (!context.Response.HasStarted)
+            {           
+                context.Response.StatusCode = 499;
+            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception occurred while processing {Path}", context.Request.Path);
+
+           
 
             context.Response.StatusCode = StatusCodes.Status200OK;
             context.Response.ContentType = "application/json";

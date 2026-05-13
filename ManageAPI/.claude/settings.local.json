@@ -24,7 +24,8 @@
       "Bash(Select-Object Name)",
       "Bash(Remove-Item *)",
       "PowerShell(Stop-Process *)",
-      "Bash(Select-String \"错误|Warning\\\\\\(s\\\\\\)|Error\\\\\\(s\\\\\\)|成功\")"
+      "Bash(Select-String \"错误|Warning\\\\\\(s\\\\\\)|Error\\\\\\(s\\\\\\)|成功\")",
+      "PowerShell(Get-Process *)"
     ]
   }
 }
