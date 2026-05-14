@@ -27,5 +27,6 @@
   globalData: {
     userInfo: null
   }
+  
 })
 
