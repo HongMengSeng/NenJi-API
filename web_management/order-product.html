@@ -118,6 +118,11 @@
 			font-family: inherit;
 		}
 
+		.btn:disabled{
+			cursor: not-allowed;
+			opacity: 0.6;
+		}
+
 		.btn-default{
 			background: #e2e8f0;
 			color: #333;
@@ -266,7 +271,7 @@
 		}
 
 		.product-order-table{
-			min-width: 780px;
+			min-width: 900px;
 			table-layout: fixed;
 		}
 
@@ -277,7 +282,7 @@
 
 		.product-order-table th:nth-child(1),
 		.product-order-table td:nth-child(1){
-			width: 240px;
+			width: 180px;
 		}
 
 		.product-order-table th:nth-child(2),
@@ -287,12 +292,17 @@
 
 		.product-order-table th:nth-child(3),
 		.product-order-table td:nth-child(3){
-			width: 160px;
+			width: 140px;
 		}
 
 		.product-order-table th:nth-child(4),
 		.product-order-table td:nth-child(4){
-			width: 420px;
+			width: 150px;
+		}
+
+		.product-order-table th:nth-child(5),
+		.product-order-table td:nth-child(5){
+			width: 150px;
 		}
 
 		.order-table th,
@@ -470,6 +480,26 @@
 			color: #718096;
 			background: #f8fafc;
 			border-radius: 8px;
+		}
+
+		.loading-state,
+		.error-state{
+			padding: 28px 16px;
+			text-align: center;
+			font-size: 14px;
+			border-radius: 8px;
+		}
+
+		.loading-state{
+			color: #2b6cb0;
+			background: #ebf8ff;
+		}
+
+		.error-state{
+			color: #9b2c2c;
+			background: #fff5f5;
+			border: 1px solid #fed7d7;
+			white-space: pre-line;
 		}
 
 		.modal-mask{
@@ -821,13 +851,13 @@
 							<div class="management-header static-header">
 								<div>
 									<div class="management-title">产品订单</div>
-									<div class="management-meta">共 {{ productTotalOrders }} 笔产品订单，待履约 {{ pendingProductOrders }} 笔，支持搜索、分页和查看明细</div>
+									<div class="management-meta">共 {{ productTotalOrders }} 笔产品订单，待履约 {{ pendingProductOrders }} 笔</div>
 								</div>
 							</div>
 							<div class="management-body">
 								<div class="management-toolbar">
 									<div class="action-buttons">
-										<button class="btn btn-default" @click="refreshProductOrders">刷新数据</button>
+										<button class="btn btn-default" @click="refreshProductOrders" :disabled="productLoading">刷新数据</button>
 									</div>
 									<div class="search-container">
 										<input
@@ -837,17 +867,20 @@
 											placeholder="订单ID/客户微信号/收货人搜索"
 											@keyup.enter="searchProductOrders"
 										/>
-										<button class="btn btn-primary" @click="searchProductOrders">搜索</button>
+										<button class="btn btn-primary" @click="searchProductOrders" :disabled="productLoading">搜索</button>
 									</div>
 								</div>
 
-								<div class="order-table-wrapper" v-if="productOrders.length > 0">
+								<div class="loading-state" v-if="productLoading">正在加载产品订单...</div>
+								<div class="error-state" v-else-if="productListError">{{ productListError }}</div>
+								<div class="order-table-wrapper" v-else-if="productOrders.length > 0">
 									<table class="order-table product-order-table">
 										<thead>
 											<tr>
-												<th>订单ID</th>
-												<th>履约信息</th>
+												<th>订单号</th>
+												<th>收货人</th>
 												<th>订单状态</th>
+												<th>下单时间</th>
 												<th>操作</th>
 											</tr>
 										</thead>
@@ -857,101 +890,25 @@
 													<div class="cell-main">{{ order.orderId }}</div>
 												</td>
 												<td>
-													<div class="cell-main">{{ getProductLogisticsTypeDisplay(order) }}</div>
-													<span v-if="getProductLogisticsTypeNote(order)" class="cell-sub">{{ getProductLogisticsTypeNote(order) }}</span>
+													<div class="cell-main">{{ order.receiverName || order.userName || '--' }}</div>
+													<span class="cell-sub">{{ order.contactPhone || '--' }}</span>
 												</td>
 												<td>
-													<div class="status-stack">
-														<span :class="['status-tag', getProductOrderStatusClass(order.orderStatus)]">{{ getProductOrderDisplayStatus(order.orderStatus) }}</span>
-														<span class="cell-note">{{ getProductStatusNote(order) }}</span>
-													</div>
+													<span :class="['status-tag', getProductOrderStatusClass(order.orderStatus)]">{{ getProductOrderDisplayStatus(order.orderStatus) }}</span>
 												</td>
 												<td>
-													<div class="row-actions">
-														<div class="action-panel">
-															<div v-if="hasProductPrimaryActions(order)" class="row-action-buttons">
-																<button
-																	v-if="canSignSubscriptionProduct(order)"
-																	type="button"
-																	class="btn btn-primary btn-inline"
-																	@click="openSignSubscriptionProductModal(order)"
-																>
-																	确认签约
-																</button>
-																<button
-																	v-if="canCompleteSubscriptionProduct(order)"
-																	type="button"
-																	class="btn btn-warning btn-inline"
-																	@click="openCompleteSubscriptionProductModal(order)"
-																>
-																	标记完成
-																</button>
-																<button
-																	v-if="canCancelPendingPaymentOrder(order)"
-																	type="button"
-																	class="btn btn-cancel-order btn-inline"
-																	@click="openCancelProductOrderModal(order, 'pending-payment')"
-																>
-																	取消订单
-																</button>
-																<button
-																	v-if="canShipProductOrder(order)"
-																	type="button"
-																	class="btn btn-ship-order btn-inline"
-																	@click="openShipProductOrderModal(order)"
-																>
-																	发货
-																</button>
-																<button
-																	v-if="canCancelPendingShipmentOrder(order)"
-																	type="button"
-																	class="btn btn-cancel-order btn-inline"
-																	@click="openCancelProductOrderModal(order, 'pending-shipment')"
-																>
-																	取消订单
-																</button>
-																<button
-																	v-if="canProcessRefund(order)"
-																	type="button"
-																	class="btn btn-warning btn-inline"
-																	@click="openProcessRefundModal(order)"
-																>
-																	处理退款
-																</button>
-															</div>
-															<div class="row-action-links">
-																<button
-																	v-if="canViewRefundDetail(order)"
-																	type="button"
-																	class="action-link"
-																	@click="openRefundDetailModal(order)"
-																>
-																	查看退款详情
-																</button>
-																<button
-																	v-if="isSubscriptionProductOrder(order)"
-																	type="button"
-																	class="action-link"
-																	@click="openSubscriptionProductDetailModal(order)"
-																>
-																	查看详情
-																</button>
-																<a
-																	v-else
-																	:href="'order-product-detail.html?orderNo=' + order.orderId + '&phone=' + order.contactPhone"
-																	class="view-details"
-																>
-																	查看详情
-																</a>
-															</div>
-														</div>
-													</div>
+													<div class="cell-main">{{ order.orderTime || '--' }}</div>
+												</td>
+												<td>
+													<a :href="buildProductDetailHref(order)" class="view-details">
+														查看详情
+													</a>
 												</td>
 											</tr>
 										</tbody>
 									</table>
 								</div>
-								<div class="empty-state" v-else>暂无符合条件的产品订单</div>
+								<div class="empty-state" v-else>暂无产品订单数据</div>
 							</div>
 						</section>
 					</div>
@@ -1148,7 +1105,7 @@
 		createApp({
 			data() {
 				return {
-					productListApi: '/api/product/order/list',
+					productListApi: 'http://192.168.101.30:7240/api/product/order/list',
 					allDishOrders: [],
 					dishOrders: [],
 					dishSearchKeyword: '',
@@ -1166,6 +1123,8 @@
 					productTotalPages: 1,
 					productTotalOrders: 0,
 					productJumpPage: 1,
+					productLoading: false,
+					productListError: '',
 					productActionModalVisible: false,
 					productActionModalMode: '',
 					productActionModalTitle: '',
@@ -1363,6 +1322,22 @@
 					}
 
 					return this.getProductLogisticsCompanyByNo(order.logisticsNo || '');
+				},
+
+				getProductDetailLogisticsType(order) {
+					if (!order) {
+						return '';
+					}
+
+					return String(order.logisticsType || order.deliveryMethod || '').trim();
+				},
+
+				getProductDetailLogisticsNo(order) {
+					if (!order) {
+						return '';
+					}
+
+					return String(order.logisticsNo || order.trackingNo || '').trim();
 				},
 
 				getRefundProofImages(order) {
@@ -1889,6 +1864,12 @@
 					window.location.href = page;
 				},
 
+				buildProductDetailHref(order) {
+					const orderNo = encodeURIComponent(order?.orderId || '');
+					const phone = encodeURIComponent(order?.contactPhone || '');
+					return `order-product-detail.html?orderNo=${orderNo}&phone=${phone}`;
+				},
+
 				toggleSection(section) {
 					if (section === 'dish') {
 						const shouldOpen = !this.dishSectionOpen;
@@ -1911,11 +1892,7 @@
 				
 
 				loadAllOrders() {
-					this.loadDishOrders();
-					this.loadProductOrders();
-					this.saveOrdersToLocalStorage();
-					this.updateDishOrders();
-					this.updateProductOrders();
+					this.fetchProductOrders();
 				},
 
 				createDishOrderRecords(source) {
@@ -1926,35 +1903,104 @@
 				},
 
 				createProductOrderRecords(source) {
-					return (Array.isArray(source) ? source : []).map(order => {
-						const isSubscriptionOrder = this.isSubscriptionProductOrder(order);
+					return (Array.isArray(source) ? source : []).map((order, index) => {
+						const normalizedOrder = this.normalizeProductOrder(order, index);
+						const isSubscriptionOrder = this.isSubscriptionProductOrder(normalizedOrder);
 						const normalizedOrderStatus = this.getProductOrderDisplayStatus(
-							order.orderStatus || (order.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
+							normalizedOrder.orderStatus || (normalizedOrder.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
 						);
 
 						return {
-							...order,
-							orderCategory: order.orderCategory || (String(order.orderId || '').startsWith('S') ? 'subscription' : 'product'),
-							orderSource: order.orderSource || (isSubscriptionOrder ? '认购一亩田' : '商城下单'),
-							deliveryMethod: order.deliveryMethod || (isSubscriptionOrder ? '一亩田认购' : '快递配送'),
-							logisticsType: order.logisticsType || this.getProductDetailLogisticsType(order) || (isSubscriptionOrder ? order.fieldName || '' : ''),
-							receiverName: order.receiverName || order.userName || '',
-							userName: order.userName || order.receiverName || '',
-							contactPhone: order.contactPhone || order.phone || '',
-							orderTime: this.formatDisplayTime(order.orderTime),
+							...normalizedOrder,
+							orderCategory: normalizedOrder.orderCategory || (String(normalizedOrder.orderId || '').startsWith('S') ? 'subscription' : 'product'),
+							orderSource: normalizedOrder.orderSource || (isSubscriptionOrder ? '认购一亩田' : '商城下单'),
+							deliveryMethod: normalizedOrder.deliveryMethod || (isSubscriptionOrder ? '一亩田认购' : '快递配送'),
+							logisticsType: normalizedOrder.logisticsType || (isSubscriptionOrder ? normalizedOrder.fieldName || '' : ''),
+							receiverName: normalizedOrder.receiverName || normalizedOrder.userName || '',
+							userName: normalizedOrder.userName || normalizedOrder.receiverName || '',
+							contactPhone: normalizedOrder.contactPhone || normalizedOrder.phone || '',
+							orderTime: this.formatDisplayTime(normalizedOrder.orderTime),
 							orderStatus: normalizedOrderStatus === '--'
-								? (order.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
+								? (normalizedOrder.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
 								: normalizedOrderStatus,
-							refundReason: order.refundReason || '',
-							refundApplyTime: order.refundApplyTime ? this.formatDisplayTime(order.refundApplyTime) : '',
-							refundProofImages: Array.isArray(order.refundProofImages) ? order.refundProofImages.filter(Boolean) : [],
-							signTime: order.signTime ? this.formatDisplayTime(order.signTime) : '',
-							completeTime: order.completeTime ? this.formatDisplayTime(order.completeTime) : '',
-							shippedTime: order.shippedTime ? this.formatDisplayTime(order.shippedTime) : '',
-							deliveryProgressTime: order.deliveryProgressTime ? this.formatDisplayTime(order.deliveryProgressTime) : '',
-							deliveryCompleteTime: order.deliveryCompleteTime ? this.formatDisplayTime(order.deliveryCompleteTime) : ''
+							refundReason: normalizedOrder.refundReason || '',
+							refundApplyTime: normalizedOrder.refundApplyTime ? this.formatDisplayTime(normalizedOrder.refundApplyTime) : '',
+							refundProofImages: Array.isArray(normalizedOrder.refundProofImages) ? normalizedOrder.refundProofImages.filter(Boolean) : [],
+							signTime: normalizedOrder.signTime ? this.formatDisplayTime(normalizedOrder.signTime) : '',
+							completeTime: normalizedOrder.completeTime ? this.formatDisplayTime(normalizedOrder.completeTime) : '',
+							shippedTime: normalizedOrder.shippedTime ? this.formatDisplayTime(normalizedOrder.shippedTime) : '',
+							deliveryProgressTime: normalizedOrder.deliveryProgressTime ? this.formatDisplayTime(normalizedOrder.deliveryProgressTime) : '',
+							deliveryCompleteTime: normalizedOrder.deliveryCompleteTime ? this.formatDisplayTime(normalizedOrder.deliveryCompleteTime) : ''
 						};
 					});
+				},
+
+				normalizeProductOrder(order, index = 0) {
+					order = order && typeof order === 'object' ? order : {};
+					const orderInfo = order.order && typeof order.order === 'object' ? order.order : {};
+					const buyerInfo = order.buyerInfo && typeof order.buyerInfo === 'object' ? order.buyerInfo : {};
+					const fulfillmentInfo = order.fulfillmentInfo && typeof order.fulfillmentInfo === 'object' ? order.fulfillmentInfo : {};
+					const orderId = order.orderId || order.orderNo || order.id || order.productOrderId || orderInfo.orderId || orderInfo.orderNo || orderInfo.id || `PRODUCT${index + 1}`;
+					const paymentStatus = order.paymentStatus || order.payStatus || orderInfo.paymentStatus || orderInfo.payStatus || '';
+					return {
+						...orderInfo,
+						...order,
+						orderId,
+						orderSource: order.orderSource || buyerInfo.orderSource || orderInfo.orderSource || '',
+						customerWechat: order.customerWechat || order.wechat || order.nickname || buyerInfo.customerWechat || buyerInfo.wechat || buyerInfo.nickname || '',
+						contactPhone: order.contactPhone || order.phone || order.mobile || buyerInfo.phone || fulfillmentInfo.phone || orderInfo.contactPhone || orderInfo.phone || '',
+						receiverName: order.receiverName || order.userName || fulfillmentInfo.receiverName || buyerInfo.name || orderInfo.receiverName || '',
+						userName: order.userName || order.receiverName || buyerInfo.name || fulfillmentInfo.receiverName || '',
+						productSummary: order.productSummary || order.productName || order.goodsName || order.title || orderInfo.productSummary || '',
+						itemCount: Number(order.itemCount ?? order.productCount ?? order.goodsCount ?? order.quantity ?? orderInfo.itemCount ?? 0) || 0,
+						actualAmount: Number(order.actualAmount ?? order.amount ?? order.totalAmount ?? order.payAmount ?? orderInfo.actualAmount ?? 0) || 0,
+						deliveryMethod: order.deliveryMethod || orderInfo.deliveryMethod || '',
+						logisticsType: order.logisticsType || fulfillmentInfo.schedule || orderInfo.logisticsType || '',
+						logisticsNo: order.logisticsNo || order.trackingNo || fulfillmentInfo.trackingNo || orderInfo.logisticsNo || '',
+						paymentMethod: order.paymentMethod || order.payMethod || orderInfo.paymentMethod || '微信支付',
+						paymentStatus: paymentStatus || '待支付',
+						orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || (paymentStatus === '待支付' ? '待支付' : ''),
+						orderTime: order.orderTime || order.createTime || order.createdTime || order.createdAt || orderInfo.orderTime || orderInfo.createTime || ''
+					};
+				},
+
+				getProductOrderListPayload(data) {
+					const pageData = data && typeof data === 'object' && !Array.isArray(data)
+						? (data.data || data)
+						: data;
+					const records = Array.isArray(pageData?.records)
+						? pageData.records
+						: (Array.isArray(pageData?.list)
+							? pageData.list
+							: (Array.isArray(pageData?.rows)
+								? pageData.rows
+								: (Array.isArray(pageData) ? pageData : [])));
+					return {
+						records,
+						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
+						pages: Number(pageData?.pages ?? pageData?.totalPages) || 0,
+						pageNum: Number(pageData?.pageNum ?? pageData?.currentPage) || 0
+					};
+				},
+
+				isProductOrderSuccessResponse(data) {
+					const codeText = String(data?.code ?? '').toLowerCase();
+					const message = String(data?.message || data?.msg || '').trim().toLowerCase();
+					return data?.code == null
+						|| Number(data.code) === 200
+						|| Number(data.code) === 0
+						|| codeText === 'success'
+						|| data?.success === true
+						|| message === 'success'
+						|| message.includes('成功');
+				},
+
+				getProductOrderErrorMessage(data, fallback) {
+					const message = String(data?.message || data?.msg || '').trim();
+					if (!message || /^success$/i.test(message) || message.includes('成功')) {
+						return fallback;
+					}
+					return message;
 				},
 
 				getStoredOrderList(storageKey) {
@@ -1977,6 +2023,8 @@
 				},
 
 				async fetchProductOrders() {
+					this.productLoading = true;
+					this.productListError = '';
 					try {
 						const params = new URLSearchParams({
 							pageNum: this.productCurrentPage,
@@ -1986,28 +2034,73 @@
 							params.set('keyword', this.productSearchKeyword.trim());
 						}
 
-						const response = await fetch(`${this.productListApi}?${params.toString()}`, {
-							method: 'GET',
-							headers: window.Auth.getAuthHeaders()
-						});
+						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						const requestUrl = `${this.productListApi}?${params.toString()}`;
+						let response;
+						try {
+							response = await fetch(requestUrl, {
+								method: 'GET',
+								headers
+							});
+						} catch (requestError) {
+							if (Object.keys(headers).length === 0) {
+								throw requestError;
+							}
+							response = await fetch(requestUrl, { method: 'GET' });
+						}
 
-						const data = await response.json();
-
-						if (response.status === 401 || response.status === 403 || data.code === 401 || data.code === 403) {
-							window.Auth.clearAuth();
-							window.Auth.redirectToLogin();
+						const responseText = await response.text();
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (parseError) {
+							this.productListError = '产品订单接口返回格式不是 JSON';
+							console.error('产品订单 JSON 解析失败:', parseError, responseText);
 							return;
 						}
 
-						if (data.code === 200 && data.data && Array.isArray(data.data.records)) {
-							this.allProductOrders = this.createProductOrderRecords(data.data.records);
-							this.productTotalOrders = data.data.total || 0;
-							this.productTotalPages = data.data.pages || 1;
-							this.productOrders = this.allProductOrders;
-							this.productJumpPage = this.productCurrentPage;
+						const pageData = this.getProductOrderListPayload(data);
+						const success = this.isProductOrderSuccessResponse(data);
+
+						if (response.status === 401 || response.status === 403 || data.code === 401 || data.code === 403) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							}
+							if (window.Auth && typeof window.Auth.redirectToLogin === 'function') {
+								window.Auth.redirectToLogin();
+							}
+							return;
 						}
+
+						if (!response.ok || (!success && pageData.records.length === 0)) {
+							this.allProductOrders = [];
+							this.productOrders = [];
+							this.productTotalOrders = 0;
+							this.productTotalPages = 1;
+							this.productJumpPage = 1;
+							this.productListError = this.getProductOrderErrorMessage(data, `获取产品订单失败，HTTP 状态码：${response.status}`);
+							console.error('获取产品订单列表失败:', data);
+							return;
+						}
+
+						const orders = this.createProductOrderRecords(pageData.records);
+						this.allProductOrders = orders;
+						this.productOrders = orders;
+						this.productTotalOrders = Number(pageData.total) || orders.length;
+						this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
+						this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
+						this.productJumpPage = this.productCurrentPage;
+						this.saveOrdersToLocalStorage();
 					} catch (error) {
+						const message = String(error?.message || error || '').trim();
+						this.productListError = message.includes('Failed to fetch') || message.includes('NetworkError')
+							? '产品订单请求失败：浏览器无法访问接口。Postman 能连上时，请检查后端是否允许当前页面跨域访问。'
+							: `产品订单请求失败：${message || '网络错误'}`;
 						console.error('获取产品订单列表失败:', error);
+					} finally {
+						this.productLoading = false;
 					}
 				},
 

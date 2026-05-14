@@ -518,36 +518,36 @@
 			data() {
 				return {
 					orderInfo: {
-						orderNo: 'P202604010001',
-						orderType: '农产品购买',
-						createTime: '2026/04/01 09:20:00',
-						orderStatus: '待发货',
-						paymentStatus: '已支付',
-						deliveryMethod: '快递配送',
-						logisticsType: '冷链配送',
-						deliveryStatus: '待发货',
-						deliveryNote: '顺丰冷链配送',
-						totalAmount: 158.00,
-						paymentMethod: '微信支付'
+						orderNo: '',
+						orderType: '',
+						createTime: '',
+						orderStatus: '',
+						paymentStatus: '',
+						deliveryMethod: '',
+						logisticsType: '',
+						deliveryStatus: '',
+						deliveryNote: '',
+						totalAmount: 0,
+						paymentMethod: ''
 					},
 					orderItems: [],
 					logisticsRecords: [],
 					buyerInfo: {
-						nickname: '果园慢生活',
-						name: '李四',
-						customerWechat: 'wx_orchard_229',
-						phone: '13723533044',
-						memberLevel: '普通会员',
-						orderSource: '微信商城下单',
-						remark: '希望优先发货，保鲜包装完整。'
+						nickname: '',
+						name: '',
+						customerWechat: '',
+						phone: '',
+						memberLevel: '',
+						orderSource: '',
+						remark: ''
 					},
 					fulfillmentInfo: {
-						receiverName: '李四',
-						phone: '13723533044',
-						address: '浙江省杭州市西湖区文三路 88 号',
-						schedule: '顺丰冷链',
-						trackingNo: 'SF202604010188',
-						remark: '工作日白天可收货'
+						receiverName: '',
+						phone: '',
+						address: '',
+						schedule: '',
+						trackingNo: '',
+						remark: ''
 					}
 				};
 			},
@@ -1061,61 +1061,96 @@
 					}
 				},
 
-				loadOrderDetail(orderNo, phone) {
-					const detailMap = this.getDefaultProductDetailMap();
-					const fallbackDetail = detailMap['P202604010001'];
-					const subscriptionFallback = detailMap['P202604010008'];
-					const summary = this.getStoredProductSummary(orderNo, phone);
-					
-					let detail = detailMap[orderNo];
-					if (!detail) {
-						if (summary && summary.orderType === '认购一亩田') {
-							detail = subscriptionFallback;
-						} else {
-							detail = fallbackDetail;
-						}
+				async loadOrderDetail(orderNo, phone) {
+					if (!orderNo) {
+						console.warn('缺少订单号参数');
+						return;
 					}
 
-					this.orderInfo = {
-						...detail.orderInfo,
-						orderNo: (summary && summary.orderId) || orderNo || detail.orderInfo.orderNo,
-						orderType: (summary && summary.orderType) || detail.orderInfo.orderType,
-						createTime: (summary && summary.orderTime) || detail.orderInfo.createTime,
-						orderStatus: (summary && summary.orderStatus) || detail.orderInfo.orderStatus,
-						paymentStatus: (summary && summary.paymentStatus) || detail.orderInfo.paymentStatus,
-						deliveryMethod: (summary && summary.deliveryMethod) || detail.orderInfo.deliveryMethod,
-						logisticsType: (summary && summary.logisticsType) || detail.orderInfo.logisticsType || detail.orderInfo.deliveryMethod,
-						deliveryStatus: (summary && summary.orderStatus) || detail.orderInfo.deliveryStatus,
-						deliveryNote: (summary && summary.deliveryNote) || detail.orderInfo.deliveryNote,
-						totalAmount: (summary && summary.actualAmount != null) ? summary.actualAmount : detail.orderInfo.totalAmount,
-						paymentMethod: (summary && summary.paymentMethod) || detail.orderInfo.paymentMethod || '微信支付'
-					};
+					const apiUrl = `http://192.168.101.30:7240/api/product/order/detail?orderNo=${encodeURIComponent(orderNo)}`;
+					
+					try {
+						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
+						const response = await fetch(apiUrl, {
+							method: 'GET',
+							headers: {
+								'Content-Type': 'application/json',
+								...authHeaders
+							}
+						});
 
-					this.orderItems = this.buildOrderItems(detail.itemConfigs || [], this.orderInfo.orderType);
+						const result = await response.json();
+						console.log('API 返回数据:', result);
+						
+						if (result.data && (result.code === 200 || result.message === '获取成功')) {
+							const data = result.data;
+							
+							this.orderInfo = {
+								orderNo: data.orderInfo.orderNo || '',
+								orderType: data.orderInfo.orderType || '',
+								createTime: data.orderInfo.createTime || '',
+								orderStatus: data.orderInfo.orderStatus || '',
+								paymentStatus: data.orderInfo.paymentStatus || '',
+								deliveryMethod: data.orderInfo.deliveryMethod || '',
+								logisticsType: data.orderInfo.logisticsType || '',
+								deliveryStatus: data.orderInfo.orderStatus || '',
+								deliveryNote: data.orderInfo.deliveryNote || '',
+								totalAmount: Number(data.orderInfo.totalAmount || 0),
+								paymentMethod: data.orderInfo.paymentMethod || '微信支付'
+							};
 
-					this.buyerInfo = {
-						...detail.buyerInfo,
-						customerWechat: (summary && summary.customerWechat) || detail.buyerInfo.customerWechat,
-						phone: phone || (summary && summary.contactPhone) || detail.buyerInfo.phone
-					};
+							this.orderItems = Array.isArray(data.orderItems) ? data.orderItems.map(item => ({
+								productId: item.productId || '',
+								image: item.image || '',
+								name: item.name || '',
+								description: item.description || '',
+								spec: item.spec || '',
+								netWeight: item.netWeight || '',
+								quantity: Number(item.quantity || 1),
+								price: Number(item.price || 0),
+								subtotal: Number(item.subtotal || 0)
+							})) : [];
 
-					this.fulfillmentInfo = {
-						...detail.fulfillmentInfo,
-						receiverName: (summary && summary.receiverName) || detail.fulfillmentInfo.receiverName,
-						phone: phone || (summary && summary.contactPhone) || detail.fulfillmentInfo.phone,
-						schedule: (summary && summary.logisticsType) || detail.fulfillmentInfo.schedule,
-						trackingNo: (summary && summary.logisticsNo) || detail.fulfillmentInfo.trackingNo
-					};
+							this.buyerInfo = {
+								nickname: data.buyerInfo.nickname || '',
+								name: data.buyerInfo.name || '',
+								customerWechat: data.buyerInfo.customerWechat || '',
+								phone: data.buyerInfo.phone || phone || '',
+								memberLevel: data.buyerInfo.memberLevel || '',
+								orderSource: data.buyerInfo.orderSource || '',
+								remark: data.buyerInfo.remark || ''
+							};
 
-					this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
-					const sourceLogisticsRecords = Array.isArray(detail.logisticsRecords) && detail.logisticsRecords.length
-						? detail.logisticsRecords
-						: this.buildFallbackLogisticsRecords(this.orderInfo, this.fulfillmentInfo);
-					this.logisticsRecords = sourceLogisticsRecords.map(record => ({
-						...record,
-						logisticsType: (summary && summary.logisticsType) || record.logisticsType || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod,
-						updateTime: this.formatDisplayTime(record.updateTime || this.orderInfo.createTime)
-					}));
+							this.fulfillmentInfo = {
+								receiverName: data.fulfillmentInfo.receiverName || '',
+								phone: data.fulfillmentInfo.phone || phone || '',
+								address: data.fulfillmentInfo.address || '',
+								schedule: data.fulfillmentInfo.schedule || '',
+								trackingNo: data.fulfillmentInfo.trackingNo || '',
+								remark: data.fulfillmentInfo.remark || ''
+							};
+
+							this.logisticsRecords = Array.isArray(data.logisticsRecords) 
+								? data.logisticsRecords.map(record => ({
+									logisticsType: record.logisticsType || '',
+									nodeName: record.nodeName || '',
+									handler: record.handler || '',
+									status: record.status || '',
+									updateTime: record.updateTime || '',
+									remark: record.remark || ''
+								}))
+								: this.buildFallbackLogisticsRecords(this.orderInfo, this.fulfillmentInfo);
+
+							this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
+							this.logisticsRecords.forEach(record => {
+								record.updateTime = this.formatDisplayTime(record.updateTime);
+							});
+						} else {
+							console.warn('API 返回数据异常:', result.message);
+						}
+					} catch (error) {
+						console.error('获取订单明细失败:', error);
+					}
 				}
 			}
 		}).mount('#app');
