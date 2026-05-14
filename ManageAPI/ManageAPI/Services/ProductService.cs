@@ -24,7 +24,8 @@ public class ProductService : IProductService
         string? keyword,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Commodities.AsNoTracking();
+        var query = _dbContext.Commodities.AsNoTracking()
+            .Where(c => c.IsdeleteId == 0);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -64,7 +65,7 @@ public class ProductService : IProductService
     {
         var commodity = await _dbContext.Commodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.CommodityId == id, cancellationToken);
+            .FirstOrDefaultAsync(c => c.CommodityId == id && c.IsdeleteId == 0, cancellationToken);
 
         if (commodity is null)
         {
@@ -266,18 +267,12 @@ public class ProductService : IProductService
     public async Task<bool> DeleteProductAsync(int id, CancellationToken cancellationToken = default)
     {
         var commodity = await _dbContext.Commodities
-            .FirstOrDefaultAsync(c => c.CommodityId == id, cancellationToken);
+            .FirstOrDefaultAsync(c => c.CommodityId == id && c.IsdeleteId == 0, cancellationToken);
 
         if (commodity is null)
             return false;
 
-        var materials = await _dbContext.CommodityMaterials
-            .Where(m => m.CommodityId == id)
-            .ToListAsync(cancellationToken);
-        if (materials.Count > 0)
-            _dbContext.CommodityMaterials.RemoveRange(materials);
-
-        _dbContext.Commodities.Remove(commodity);
+        commodity.IsdeleteId = 1;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
@@ -286,19 +281,15 @@ public class ProductService : IProductService
     public async Task<bool> DeleteProductBatchAsync(int[] ids, CancellationToken cancellationToken = default)
     {
         var commodities = await _dbContext.Commodities
-            .Where(c => ids.Contains(c.CommodityId))
+            .Where(c => ids.Contains(c.CommodityId) && c.IsdeleteId == 0)
             .ToListAsync(cancellationToken);
 
         if (commodities.Count == 0)
             return false;
 
-        var materials = await _dbContext.CommodityMaterials
-            .Where(m => ids.Contains(m.CommodityId))
-            .ToListAsync(cancellationToken);
-        if (materials.Count > 0)
-            _dbContext.CommodityMaterials.RemoveRange(materials);
+        foreach (var c in commodities)
+            c.IsdeleteId = 1;
 
-        _dbContext.Commodities.RemoveRange(commodities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

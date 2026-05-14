@@ -21,7 +21,8 @@ public class DishService : IDishService
     public async Task<(List<DishListItemDto> Records, int Total)> GetDishListAsync(
         int pageNum, int pageSize, string? keyword, string? status = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.Dishes.AsNoTracking();
+        var query = _context.Dishes.AsNoTracking()
+            .Where(x => x.IsdeleteId == 0);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -88,7 +89,7 @@ public class DishService : IDishService
     {
         var dish = await _context.Dishes
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.DishId == id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.DishId == id && x.IsdeleteId == 0, cancellationToken);
 
         if (dish is null) return null;
 
@@ -214,14 +215,11 @@ public class DishService : IDishService
 
     public async Task<bool> DeleteDishAsync(int id, CancellationToken cancellationToken = default)
     {
-        var dish = await _context.Dishes.FirstOrDefaultAsync(x => x.DishId == id, cancellationToken);
+        var dish = await _context.Dishes
+            .FirstOrDefaultAsync(x => x.DishId == id && x.IsdeleteId == 0, cancellationToken);
         if (dish is null) return false;
 
-        var images = await _context.Set<DishImage>()
-            .Where(x => x.DishId == id)
-            .ToListAsync(cancellationToken);
-        _context.RemoveRange(images);
-        _context.Dishes.Remove(dish);
+        dish.IsdeleteId = 1;
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -229,18 +227,14 @@ public class DishService : IDishService
     public async Task<bool> DeleteDishBatchAsync(int[] ids, CancellationToken cancellationToken = default)
     {
         var dishes = await _context.Dishes
-            .Where(x => ids.Contains(x.DishId))
+            .Where(x => ids.Contains(x.DishId) && x.IsdeleteId == 0)
             .ToListAsync(cancellationToken);
 
         if (dishes.Count == 0) return false;
 
-        var dishIds = dishes.Select(x => x.DishId).ToList();
-        var images = await _context.Set<DishImage>()
-            .Where(x => dishIds.Contains(x.DishId))
-            .ToListAsync(cancellationToken);
+        foreach (var d in dishes)
+            d.IsdeleteId = 1;
 
-        _context.RemoveRange(images);
-        _context.Dishes.RemoveRange(dishes);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }

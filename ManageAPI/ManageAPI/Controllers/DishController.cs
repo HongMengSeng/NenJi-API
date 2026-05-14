@@ -181,11 +181,6 @@ public class DishController : ControllerBase
 
             return Ok(ApiResponses<object>.Success(null, "删除成功"));
         }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogError(ex, "删除菜品失败（外键约束）");
-            return Ok(ApiResponses<object>.Error(500, "该菜品存在关联订单，无法删除"));
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除菜品失败");

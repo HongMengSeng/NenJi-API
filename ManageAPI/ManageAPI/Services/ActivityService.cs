@@ -24,7 +24,8 @@ public class ActivityService : IActivityService
         int pageNum, int pageSize, string? keyword, CancellationToken cancellationToken = default)
     {
         var baseQuery = _dbContext.Activities
-            .AsNoTracking();
+            .AsNoTracking()
+            .Where(a => a.IsdeleteId == 0);
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -52,7 +53,7 @@ public class ActivityService : IActivityService
         var activity = await _dbContext.Activities
             .AsNoTracking()
             .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.IsdeleteId == 0, cancellationToken);
 
         if (activity is null)
             return null;
@@ -164,16 +165,12 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityAsync(long id, CancellationToken cancellationToken = default)
     {
         var activity = await _dbContext.Activities
-            .Include(a => a.ActivityMaterials)
-            .FirstOrDefaultAsync(a => a.ActivityId == id, cancellationToken);
+            .FirstOrDefaultAsync(a => a.ActivityId == id && a.IsdeleteId == 0, cancellationToken);
 
         if (activity is null)
             return false;
 
-        if (activity.ActivityMaterials.Count > 0)
-            _dbContext.ActivityMaterials.RemoveRange(activity.ActivityMaterials);
-
-        _dbContext.Activities.Remove(activity);
+        activity.IsdeleteId = 1;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"活动删除成功 - ActivityId: {id}");
@@ -184,20 +181,15 @@ public class ActivityService : IActivityService
     public async Task<bool> DeleteActivityBatchAsync(long[] ids, CancellationToken cancellationToken = default)
     {
         var activities = await _dbContext.Activities
-            .Include(a => a.ActivityMaterials)
-            .Where(a => ids.Contains(a.ActivityId))
+            .Where(a => ids.Contains(a.ActivityId) && a.IsdeleteId == 0)
             .ToListAsync(cancellationToken);
 
         if (activities.Count == 0)
             return false;
 
-        foreach (var activity in activities)
-        {
-            if (activity.ActivityMaterials.Count > 0)
-                _dbContext.ActivityMaterials.RemoveRange(activity.ActivityMaterials);
-        }
+        foreach (var a in activities)
+            a.IsdeleteId = 1;
 
-        _dbContext.Activities.RemoveRange(activities);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation($"批量删除活动成功 - 数量: {activities.Count}");
