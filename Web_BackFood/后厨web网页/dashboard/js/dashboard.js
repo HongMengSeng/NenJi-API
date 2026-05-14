@@ -138,9 +138,7 @@ async function fetchStatistics() {
         if (data) {
             document.getElementById('total-revenue').textContent =
                 (data.todayTotalAmount || 0).toFixed(2);
-            // stat-total-orders 由 fetchOrders 根据实际拉取数据更新（API的 todayTotalOrder 包含后厨不可见的待付款/已取消订单）
-            document.getElementById('stat-finished-orders').textContent =
-                data.todayFinishedOrder ?? '—';
+            // stat-total-orders / stat-finished-orders 由 fetchOrders 根据实际拉取数据更新
         }
     } catch (err) {
         console.error('获取统计数据失败:', err);
@@ -242,6 +240,13 @@ async function fetchOrders() {
                 }
             }));
         }
+
+        // 计算已完成订单数（所有菜品均已处理，无待出餐）
+        const completedCount = allOrders.filter(o => {
+            const dishes = o.dishList || [];
+            return dishes.length > 0 && dishes.every(d => d.status !== DISH_STATUS.PENDING);
+        }).length;
+        document.getElementById('stat-finished-orders').textContent = completedCount;
 
         // 根据菜品实际出餐状态分类：有待出餐→待出餐Tab，全部处理完→已出餐Tab
         const filtered = allOrders.filter(o => {
