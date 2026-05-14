@@ -1,61 +1,259 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* ═══════════════════════════════════════
+   后厨出餐管理系统 - Login
+   Apple-inspired Design Language
+   ═══════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --text-tertiary: #aeaeb2;
+    --accent: #30d158;
+    --accent-hover: #24b94a;
+    --border: rgba(0, 0, 0, 0.06);
+    --border-focus: rgba(0, 0, 0, 0.15);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+    --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.08);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
     align-items: center;
-    height: 100vh;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
-.login-container {
-    background-color: white;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+/* ─── Page background ─── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #f5f5f7 0%, #eeedf0 100%);
+    z-index: -1;
+}
+
+/* ─── Login Wrapper ─── */
+.login-wrapper {
     width: 100%;
     max-width: 400px;
+    padding: 24px;
+    animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-h2 {
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Card ─── */
+.login-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 40px 32px 28px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    transition: box-shadow 0.3s ease;
+}
+
+/* ─── Brand ─── */
+.brand {
     text-align: center;
-    margin-bottom: 30px;
-    color: #333;
+    margin-bottom: 32px;
 }
-.form-group {
-    margin-bottom: 20px;
+
+.brand-icon {
+    display: inline-flex;
+    margin-bottom: 14px;
 }
-label {
-    display: block;
-    margin-bottom: 5px;
-    color: #666;
+
+.brand-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
 }
-input {
+
+.brand-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+/* ─── Input Fields ─── */
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.input-field {
+    position: relative;
+}
+
+.input-field .input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+    padding: 14px 14px;
+    background: #f5f5f7;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 15px;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s ease;
 }
-button {
+
+.input-field .input:hover {
+    background: #eeeef0;
+}
+
+.input-field .input:focus {
+    background: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.15);
+}
+
+.input-field .label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0 2px;
+}
+
+.input-field .input:focus ~ .label,
+.input-field .input:not(:placeholder-shown) ~ .label {
+    top: 0;
+    transform: translateY(-50%) scale(0.8);
+    left: 10px;
+    color: var(--accent);
+    background: #ffffff;
+    padding: 0 6px;
+}
+
+.input-field .input::placeholder {
+    color: transparent;
+}
+
+/* ─── Submit Button ─── */
+.login-btn {
+    position: relative;
     width: 100%;
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
+    padding: 14px 24px;
+    background: var(--accent);
     border: none;
-    border-radius: 4px;
-    font-size: 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
     cursor: pointer;
-    margin-top: 20px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
 }
-button:hover {
-    background-color: #45a049;
+
+.login-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
 }
-.error-message {
-    color: red;
-    text-align: center;
-    margin-top: 15px;
+
+.login-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.login-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.login-btn .btn-text {
+    transition: opacity 0.2s;
+}
+
+.login-btn .btn-loader {
     display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.login-btn.loading .btn-text { opacity: 0; }
+.login-btn.loading .btn-loader { display: block; }
+
+.spinner {
+    animation: spin 0.8s linear infinite;
+    color: white;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Error ─── */
+.error-message {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: rgba(255, 69, 58, 0.08);
+    border: 1px solid rgba(255, 69, 58, 0.15);
+    border-radius: var(--radius-sm);
+    color: #ff453a;
+    font-size: 14px;
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.error-message svg {
+    flex-shrink: 0;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+
+/* ─── Footer ─── */
+.login-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.login-footer p {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.2px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+    .login-wrapper { padding: 16px; }
+    .login-card { padding: 28px 20px 24px; border-radius: var(--radius-md); }
 }

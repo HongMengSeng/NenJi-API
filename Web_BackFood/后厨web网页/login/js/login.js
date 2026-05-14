@@ -2,8 +2,9 @@ const API_BASE = 'http://192.168.101.30:7240';
 
 function showError(msg) {
     const el = document.getElementById('error-message');
-    el.textContent = msg || '账号或密码错误';
-    el.style.display = 'block';
+    const span = el.querySelector('span');
+    if (span) span.textContent = msg || '账号或密码错误';
+    el.style.display = 'flex';
 }
 function hideError() {
     document.getElementById('error-message').style.display = 'none';
@@ -12,7 +13,7 @@ function hideError() {
 function setLoading(loading) {
     const btn = document.querySelector('#login-form button[type="submit"]');
     btn.disabled = loading;
-    btn.textContent = loading ? '登录中...' : '登录';
+    btn.classList.toggle('loading', loading);
 }
 
 window.onload = function () {
@@ -53,22 +54,16 @@ document.getElementById('login-form').addEventListener('submit', async function 
             throw new Error('账号或密码错误');
         }
 
-        // 兼容两种响应格式：
-        // 旧: { code: 0, data: { token, user_name, user_id, phone_number } }
-        // 新: { token, userId, userName, phoneNumber } (直接返回，无外层包装)
         let userData = json;
 
-        // 如果有 code 字段，走旧格式的包装解析
         if (json && typeof json === 'object' && 'code' in json) {
             if (json.code === 0 || json.code === 200) {
                 userData = json.data;
             } else {
-                // API 返回了业务错误码，一般为账号或密码错误
                 throw new Error(json.message || json.msg || '账号或密码错误');
             }
         }
 
-        // 从两种格式中提取字段
         const token = userData.token;
         const userId = userData.userId || userData.user_id;
         const userName = userData.userName || userData.user_name;

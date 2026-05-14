@@ -115,6 +115,8 @@ window.onload = function () {
 
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) avatar.textContent = userName.charAt(0).toUpperCase();
 
     document.querySelectorAll('.tab').forEach(t => {
         const tabName = t.textContent.trim() === '待出餐' ? 'pending' : 'completed';
@@ -332,39 +334,52 @@ function renderOrders() {
         const finished = items.filter(it => it.status === DISH_STATUS.FINISHED).length;
         const cancelled = items.filter(it => it.status === DISH_STATUS.CANCELLED).length;
 
-        let progressText, progressClass;
+        let progressText, progressClass, cardClass;
         if (total === 0) {
-            // 列表接口不返回菜品明细，使用简化状态
             progressText = currentTab === 'pending' ? '待出餐' : '已出餐';
-            progressClass = currentTab === 'pending' ? '' : 'completed';
+            progressClass = currentTab === 'pending' ? 'pending' : 'completed';
+            cardClass = currentTab === 'pending' ? 'card-pending' : 'card-completed';
         } else if (currentTab === 'pending') {
+            cardClass = 'card-pending';
             progressText = cancelled > 0
                 ? `${finished}/${total} 已出餐，${cancelled} 已取消`
                 : `${finished}/${total} 已出餐`;
-            progressClass = cancelled > 0 ? 'has-cancelled' : '';
+            progressClass = cancelled > 0 ? 'has-cancelled' : 'pending';
         } else {
+            cardClass = 'card-completed';
             if (cancelled > 0) {
-                progressText = `已出餐 ${finished}，取消出餐 ${cancelled}`;
+                progressText = `已出餐 ${finished}，取消 ${cancelled}`;
                 progressClass = 'has-cancelled';
             } else {
-                progressText = `全部出餐 ✓`;
+                progressText = `全部出餐`;
                 progressClass = 'completed';
             }
         }
+
+        const dotClass = progressClass === 'pending' ? 'pending' : (progressClass === 'has-cancelled' ? '' : 'completed');
         const timeStr = formatTime(order.createTime);
 
         return `
-            <div class="order-card" onclick="openOrderDetail(${order.orderId})">
-                <div class="order-header">
-                    <span class="order-id">订单 ${order.orderNo || order.orderId}</span>
+            <div class="order-card ${cardClass}" onclick="openOrderDetail(${order.orderId})">
+                <div class="order-card-top">
+                    <span class="order-no">#${order.orderNo || order.orderId}</span>
                     <span class="order-time">${timeStr}</span>
                 </div>
-                <div class="order-info">
-                    <span class="table-number">🍽 ${order.tableNumber || '—'}</span>
-                    <span class="status ${progressClass}">${progressText}</span>
+                <div class="order-card-body">
+                    <span class="order-table">
+                        <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="14" height="10" rx="1"/>
+                            <path d="M5 7h6M5 10h4"/>
+                        </svg>
+                        ${order.tableNumber || '—'}
+                    </span>
+                    <span class="order-amount">¥${Number(order.totalAmount || 0).toFixed(2)}</span>
                 </div>
-                <div class="order-info">
-                    <span style="color:#333;font-weight:bold;">¥${Number(order.totalAmount || 0).toFixed(2)}</span>
+                <div class="order-card-footer">
+                    <span class="progress-badge ${progressClass}">
+                        ${dotClass ? `<span class="progress-dot ${dotClass}"></span>` : ''}
+                        ${progressText}
+                    </span>
                 </div>
             </div>
         `;

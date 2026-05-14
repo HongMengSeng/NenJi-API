@@ -3,35 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>后厨出餐管理系统 - 订单详情</title>
+    <title>订单详情 - 后厨出餐管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/order-detail.css">
 </head>
 <body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 12L6 8l4-4"/>
+                    </svg>
+                    返回
+                </button>
+                <span class="header-title">订单详情</span>
+            </div>
+            <div class="user-badge">
+                <span class="user-avatar" id="user-avatar">K</span>
+                <span><span id="current-username"></span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
     <div class="container">
-        <button class="back-button" onclick="goBack()">返回首页</button>
-        <div class="header">
-            <div class="header-top">
-                <h1>订单详情</h1>
-                <div class="user-info">
-                    当前用户: <strong><span id="current-username"></span></strong>
-                </div>
+        <!-- Order Info -->
+        <div class="order-header-card">
+            <div class="order-header-row">
+                <span class="order-header-label">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                        <path d="M6 1v2M10 1v2M4 6h8M4 9h5M4 12h3"/>
+                    </svg>
+                    订单号
+                </span>
+                <span class="order-header-value" id="order-id">—</span>
             </div>
-            <div class="order-info">
-                <span><strong>订单号:</strong> <span id="order-id"></span></span>
-                <span><strong>下单时间:</strong> <span id="order-time"></span></span>
+            <div class="order-header-row">
+                <span class="order-header-label">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/>
+                    </svg>
+                    下单时间
+                </span>
+                <span class="order-header-value" id="order-time">—</span>
             </div>
-            <div class="order-info">
-                <span><strong>桌台号:</strong> <span id="table-number"></span></span>
+            <div class="order-header-row">
+                <span class="order-header-label">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="3" width="14" height="10" rx="1"/>
+                        <path d="M5 7h6M5 10h4"/>
+                    </svg>
+                    桌台号
+                </span>
+                <span class="order-header-value" id="table-number">—</span>
             </div>
-            <div class="order-info">
-                <span><strong>备注:</strong> <span id="order-remark"></span></span>
+            <div class="order-header-row">
+                <span class="order-header-label">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 4h14M3 4v10a1 1 0 001 1h8a1 1 0 001-1V4"/>
+                        <path d="M5 4V2a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                        <path d="M6 8h4"/>
+                    </svg>
+                    备注
+                </span>
+                <span class="order-header-value" id="order-remark">无</span>
             </div>
         </div>
+
+        <!-- Dish Items -->
         <div class="items-list" id="items-list">
-            <!-- 菜品列表将通过JavaScript动态生成 -->
+            <div class="loading-state">加载中...</div>
         </div>
-        <div class="error-message" id="error-message">操作失败，请重试</div>
+
+        <!-- Totals -->
+        <div class="totals-card">
+            <div class="total-block">
+                <span class="total-label">订单总价</span>
+                <span class="total-amount" id="total-amount">¥0.00</span>
+            </div>
+            <div class="total-divider"></div>
+            <div class="total-block">
+                <span class="total-label">已出餐金额</span>
+                <span class="total-amount green" id="completed-amount">¥0.00</span>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-message" id="error-message">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/>
+            </svg>
+            <span>操作失败，请重试</span>
+        </div>
     </div>
+
     <script src="js/order-detail.js"></script>
 </body>
 </html>

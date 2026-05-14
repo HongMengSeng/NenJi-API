@@ -129,6 +129,8 @@ window.onload = function () {
 
     const userName = localStorage.getItem('user_name') || '后厨';
     document.getElementById('current-username').textContent = userName;
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) avatar.textContent = userName.charAt(0).toUpperCase();
 
     const orderId = localStorage.getItem('currentOrderId');
     if (!orderId) {
@@ -197,65 +199,58 @@ function renderOrderDetail() {
 
     const dishList = currentOrder.dishList || [];
 
+    const totalAmount = Number(currentOrder.totalAmount || 0);
     const completedAmount = dishList
         .filter(d => d.status === DISH_STATUS.FINISHED)
         .reduce((sum, d) => sum + (Number(d.price || 0) * Number(d.quantity || 1)), 0);
 
+    document.getElementById('total-amount').textContent = `¥${totalAmount.toFixed(2)}`;
+    document.getElementById('completed-amount').textContent = `¥${completedAmount.toFixed(2)}`;
+
     const itemsList = document.getElementById('items-list');
-    itemsList.innerHTML = `
-        ${dishList.map((dish) => {
-            const status = dish.status;
-            const isFinished = status === DISH_STATUS.FINISHED;
-            const isCancelled = status === DISH_STATUS.CANCELLED;
-            const isPending = isPendingStatus(status);
-            const dishOrderDetailsId = dish.dishOrderDetailsId;
+    itemsList.innerHTML = dishList.map((dish) => {
+        const status = dish.status;
+        const isFinished = status === DISH_STATUS.FINISHED;
+        const isCancelled = status === DISH_STATUS.CANCELLED;
+        const dishOrderDetailsId = dish.dishOrderDetailsId;
 
-            let statusLabel, statusClass, buttonsHtml;
+        let statusLabel, statusClass, buttonsHtml;
 
-            if (isFinished) {
-                statusLabel = '已出餐';
-                statusClass = 'completed';
-                buttonsHtml = `<button class="complete-button" disabled>已出餐</button>`;
-            } else if (isCancelled) {
-                statusLabel = '已取消';
-                statusClass = 'cancelled';
-                buttonsHtml = `<button class="cancel-button" disabled>已取消</button>`;
-            } else {
-                statusLabel = '待出餐';
-                statusClass = 'pending';
-                buttonsHtml = `
-                    <button class="complete-button" onclick="markDishFinished(${dishOrderDetailsId}, this)">出餐</button>
-                    <button class="cancel-button" onclick="markDishCancelled(${dishOrderDetailsId}, this)">取消出餐</button>
-                `;
-            }
-
-            return `
-                <div class="item" id="dish-${dish.dishOrderDetailsId}">
-                    <div class="item-info">
-                        <span class="item-name">${dish.name || '未知菜品'}</span>
-                        <span class="item-quantity">x${dish.quantity || 1}</span>
-                        ${dish.price != null ? `<span class="item-price">¥${Number(dish.price).toFixed(2)}</span>` : ''}
-                    </div>
-                    <div class="item-status">
-                        <span class="status-text ${statusClass}" id="status-text-${dish.dishOrderDetailsId}">
-                            ${statusLabel}
-                        </span>
-                        <div class="button-group">
-                            ${buttonsHtml}
-                        </div>
-                    </div>
-                </div>
+        if (isFinished) {
+            statusLabel = '已出餐';
+            statusClass = 'completed';
+            buttonsHtml = `<button class="action-btn confirm" disabled>已出餐</button>`;
+        } else if (isCancelled) {
+            statusLabel = '已取消';
+            statusClass = 'cancelled';
+            buttonsHtml = `<button class="action-btn danger" disabled>已取消</button>`;
+        } else {
+            statusLabel = '待出餐';
+            statusClass = 'pending';
+            buttonsHtml = `
+                <button class="action-btn confirm" onclick="markDishFinished(${dishOrderDetailsId}, this)">出餐</button>
+                <button class="action-btn danger" onclick="markDishCancelled(${dishOrderDetailsId}, this)">取消</button>
             `;
-        }).join('')}
-        <div class="order-total">
-            <div class="total-label">订单总价：</div>
-            <div class="total-amount">¥${Number(currentOrder.totalAmount || 0).toFixed(2)}</div>
-        </div>
-        <div class="completed-total">
-            <div class="total-label">已出餐金额：</div>
-            <div class="total-amount" id="completed-amount">¥${completedAmount.toFixed(2)}</div>
-        </div>
-    `;
+        }
+
+        return `
+            <div class="dish-item" id="dish-${dish.dishOrderDetailsId}">
+                <div class="dish-info">
+                    <span class="dish-name">${dish.name || '未知菜品'}</span>
+                </div>
+                <div class="dish-meta">
+                    <span class="dish-qty">×${dish.quantity || 1}</span>
+                    ${dish.price != null ? `<span class="dish-price">¥${Number(dish.price).toFixed(2)}</span>` : ''}
+                </div>
+                <div class="dish-actions">
+                    <span class="status-badge ${statusClass}" id="status-text-${dish.dishOrderDetailsId}">
+                        ${statusLabel}
+                    </span>
+                    ${buttonsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
 
     // 每次渲染都把当前菜品状态写入 localStorage，确保数据同步
     saveDishStatuses(currentOrder.orderId, currentOrder.dishList);
@@ -298,29 +293,37 @@ async function markDishFinished(dishOrderDetailsId, btn) {
 
         btn.textContent = '已出餐';
         btn.disabled = true;
+        btn.className = 'action-btn confirm';
+
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
         if (statusEl) {
             statusEl.textContent = '已出餐';
-            statusEl.className = 'status-text completed';
+            statusEl.className = 'status-badge completed';
         }
 
         const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
         if (itemEl) {
-            const btnGroup = itemEl.querySelector('.button-group');
-            if (btnGroup) {
-                btnGroup.innerHTML = `<button class="complete-button" disabled>已出餐</button>`;
+            const actionsContainer = itemEl.querySelector('.dish-actions');
+            if (actionsContainer) {
+                actionsContainer.querySelectorAll('.action-btn').forEach(b => b.remove());
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'action-btn confirm';
+                doneBtn.disabled = true;
+                doneBtn.textContent = '已出餐';
+                actionsContainer.appendChild(doneBtn);
             }
         }
 
         updateCompletedAmount();
 
-        // 利用后端返回的 allFinished 判断整单是否完成
-        if (data.allFinished) {
+        // 本地判断整单是否全部完成（不依赖后端 allFinished 字段）
+        const dishList = currentOrder?.dishList || [];
+        const allDone = dishList.length > 0 && dishList.every(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED);
+        if (allDone) {
             try {
                 localStorage.setItem('order_completed_at_' + currentOrder.orderId, Date.now().toString());
             } catch (e) {}
             setTimeout(() => {
-                const dishList = currentOrder?.dishList || [];
                 const done = dishList.filter(d => d.status === DISH_STATUS.FINISHED || d.status === DISH_STATUS.CANCELLED).length;
                 alert(`订单所有菜品已全部出餐！（${done}/${dishList.length}）`);
             }, 200);
@@ -377,14 +380,19 @@ async function markDishCancelled(dishOrderDetailsId, btn) {
         const statusEl = document.getElementById(`status-text-${dishOrderDetailsId}`);
         if (statusEl) {
             statusEl.textContent = '已取消';
-            statusEl.className = 'status-text cancelled';
+            statusEl.className = 'status-badge cancelled';
         }
 
         const itemEl = document.getElementById(`dish-${dishOrderDetailsId}`);
         if (itemEl) {
-            const btnGroup = itemEl.querySelector('.button-group');
-            if (btnGroup) {
-                btnGroup.innerHTML = `<button class="cancel-button" disabled>已取消</button>`;
+            const actionsContainer = itemEl.querySelector('.dish-actions');
+            if (actionsContainer) {
+                actionsContainer.querySelectorAll('.action-btn').forEach(b => b.remove());
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'action-btn danger';
+                doneBtn.disabled = true;
+                doneBtn.textContent = '已取消';
+                actionsContainer.appendChild(doneBtn);
             }
         }
 
