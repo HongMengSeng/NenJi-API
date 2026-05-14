@@ -338,6 +338,101 @@
 			.btn-default:hover{
 				background: #cbd5e0;
 			}
+
+			.image-preview-overlay{
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0,0,0,0.8);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index: 1000;
+				cursor: zoom-out;
+			}
+
+			.image-preview-content{
+				max-width: 90%;
+				max-height: 90%;
+				object-fit: contain;
+				border-radius: 8px;
+				box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+			}
+
+			.image-preview-close{
+				position: absolute;
+				top: 20px;
+				right: 20px;
+				width: 40px;
+				height: 40px;
+				background: rgba(255,255,255,0.2);
+				border: 1px solid rgba(255,255,255,0.3);
+				border-radius: 50%;
+				color: white;
+				font-size: 24px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.image-preview-close:hover{
+				background: rgba(255,255,255,0.3);
+			}
+
+			.image-item img,
+			.media-wrapper img{
+				cursor: zoom-in;
+			}
+
+			.video-preview-overlay{
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0,0,0,0.8);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index: 1000;
+			}
+
+			.video-preview-content{
+				max-width: 90%;
+				max-height: 90%;
+				border-radius: 8px;
+				box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+			}
+
+			.video-preview-close{
+				position: absolute;
+				top: 20px;
+				right: 20px;
+				width: 40px;
+				height: 40px;
+				background: rgba(255,255,255,0.2);
+				border: 1px solid rgba(255,255,255,0.3);
+				border-radius: 50%;
+				color: white;
+				font-size: 24px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.video-preview-close:hover{
+				background: rgba(255,255,255,0.3);
+			}
+
+			.video-thumb{
+				cursor: zoom-in;
+			}
 	</style>
 	
 	<body>
@@ -397,7 +492,7 @@
 									<div class="image-upload">
 										<input type="file" ref="coverFileInput" class="file-input" accept="image/*" @change="handleCoverImageUpload" style="display: none;" />
 										<div class="image-item" v-if="productForm.coverImage || coverImagePreview">
-											<img :src="coverImagePreview || productForm.coverImage" alt="产品封面" />
+											<img :src="coverImagePreview || productForm.coverImage" alt="产品封面" @click="openImagePreview(coverImagePreview || productForm.coverImage)" />
 											<div class="remove-image-btn" @click="removeCoverImage">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectCoverImage">
@@ -412,9 +507,9 @@
 										<input type="file" ref="carouselFileInput" class="file-input" accept="image/*,video/*" @change="handleCarouselFileUpload" style="display: none;" />
 										<div class="image-item" v-for="(item, index) in productForm.carouselMedia" :key="index">
 											<div v-if="item.type === 'image'" class="media-wrapper">
-												<img :src="item.previewUrl || item.url" alt="轮播图" @error="handleMediaLoadError($event)" />
+												<img :src="item.previewUrl || item.url" alt="轮播图" @error="handleMediaLoadError($event)" @click="openImagePreview(item.previewUrl || item.url)" />
 											</div>
-											<div v-else class="video-thumb">
+											<div v-else class="video-thumb" @click="openVideoPreview(item)">
 												<div class="media-wrapper">
 													<img :src="item.previewThumb || item.thumb || item.url" alt="视频封面" @error="handleMediaLoadError($event)" />
 												</div>
@@ -471,7 +566,7 @@
 											style="display: none;"
 										/>
 										<div class="image-item" v-for="(image, index) in productForm.specImages" :key="'spec-' + index">
-											<img :src="specImagePreviews[index] || image" alt="规格图片" />
+											<img :src="specImagePreviews[index] || image" alt="规格图片" @click="openImagePreview(specImagePreviews[index] || image)" />
 											<div class="remove-image-btn" @click="removeSpecImage(index)">×</div>
 										</div>
 										<div class="add-image-btn" @click="selectSpecImage" v-if="productForm.specImages.length < 5">
@@ -491,6 +586,18 @@
 							</div>
 						</div>
 					</div>
+
+					<div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+						<span class="image-preview-close" @click.stop="closeImagePreview">×</span>
+						<img :src="previewImageUrl" class="image-preview-content" @click.stop />
+					</div>
+
+					<div v-if="previewVideoItem" class="video-preview-overlay" @click="closeVideoPreview">
+						<span class="video-preview-close" @click.stop="closeVideoPreview">×</span>
+						<video class="video-preview-content" controls @click.stop>
+							<source :src="previewVideoItem.url" :type="previewVideoItem.type === 'video/mp4' ? 'video/mp4' : 'video/webm'" />
+						</video>
+					</div>
 				</main>
 			</div>
 		</div>
@@ -506,6 +613,8 @@
 						submitMessage: '',
 						coverImagePreview: '',
 						specImagePreviews: [],
+						previewImageUrl: '',
+						previewVideoItem: null,
 						// 产品表单
 						productForm: {
 							name: '',
@@ -554,6 +663,22 @@
 
 					buildPreviewUrl(file) {
 						return URL.createObjectURL(file);
+					},
+
+					openImagePreview(url) {
+						this.previewImageUrl = url;
+					},
+
+					closeImagePreview() {
+						this.previewImageUrl = '';
+					},
+
+					openVideoPreview(videoItem) {
+						this.previewVideoItem = videoItem;
+					},
+
+					closeVideoPreview() {
+						this.previewVideoItem = null;
 					},
 					
 					// 选择封面图片

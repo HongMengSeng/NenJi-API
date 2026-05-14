@@ -733,7 +733,7 @@
 							<div class="qr-panel">
 								<span class="detail-label">餐桌二维码</span>
 								<img :src="tableQrCodeUrl" alt="餐桌二维码" class="qr-image" />
-								<div class="qr-tip">二维码内容已切换为餐桌落地页链接，微信扫一扫可直接打开。</div>
+								<div class="qr-tip">二维码内容已切换为微信小程序点餐链接，微信扫一扫可直接打开。</div>
 								<div class="qr-tip">
 									链接：
 									<a :href="tableQrPayload" target="_blank" rel="noopener noreferrer" class="qr-link">{{ tableQrPayload }}</a>
@@ -1067,11 +1067,12 @@
 					},
 
 					buildTableScanUrl(table) {
-						var url = new URL('table-scan.html', window.location.href);
-						url.searchParams.set('tableId', table.id);
-						url.searchParams.set('capacity', String(table.capacity));
-						url.searchParams.set('status', table.status);
-						return url.toString();
+						var secret = '^mFIT!xzJ@j55QN%R^4yZ0vx';
+						var appid = 'wx986e22f241e13ba2';
+						var path = 'subpkg/order/order';
+						var tableId = table && table.id ? table.id : '';
+						var query = 'tableId=' + tableId + '&secret=' + encodeURIComponent(secret);
+						return 'weixin://dl/business/?appid=' + appid + '&path=' + path + '&query=' + query;
 					},
 
 					buildTableQrPayload(table) {
@@ -1079,28 +1080,7 @@
 					},
 
 					buildTableQrCodeUrl(payload) {
-						let tableNo = 'unknown';
-						
-						if (typeof payload === 'object' && payload.tableno) {
-							tableNo = payload.tableno;
-						} else {
-							const match = String(payload || '').match(/tableNo=([^&]+)/);
-							if (match) {
-								tableNo = decodeURIComponent(match[1]);
-							}
-						}
-						
-						if (/^a\d{3}$/.test(tableNo)) {
-							return `/images/qrcode/${tableNo}.png`;
-						}
-						
-						const numMatch = tableNo.match(/(\d+)/);
-						if (numMatch) {
-							const num = parseInt(numMatch[1], 10);
-							return `/images/qrcode/a${String(num).padStart(3, '0')}.png`;
-						}
-						
-						return '/images/qrcode/a000.png';
+						return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=' + encodeURIComponent(String(payload || ''));
 					}
 				}
 			}).mount('#app');

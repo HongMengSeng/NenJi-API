@@ -2096,7 +2096,7 @@
 					} catch (error) {
 						const message = String(error?.message || error || '').trim();
 						this.productListError = message.includes('Failed to fetch') || message.includes('NetworkError')
-							? '产品订单请求失败：浏览器无法访问接口。Postman 能连上时，请检查后端是否允许当前页面跨域访问。'
+							? '产品订单请求失败：浏览器无法访问'
 							: `产品订单请求失败：${message || '网络错误'}`;
 						console.error('获取产品订单列表失败:', error);
 					} finally {

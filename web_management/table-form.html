@@ -261,9 +261,8 @@
 							<div class="form-group">
 								<label>餐桌编号</label>
 								<div class="input-with-action">
-									<input type="text" v-model.trim="tableForm.id" placeholder="例如 1号桌、2号桌、12号桌" :disabled="saving" />
+									<input type="text" v-model.trim="tableForm.id" placeholder="例如 1号桌" :disabled="saving" />
 								</div>
-								<div class="field-tip">桌台编号格式为"数字+号桌"，例如 1号桌、2号桌、12号桌，编辑时如修改编号会覆盖原编号。</div>
 							</div>
 							<div class="form-group">
 								<label>容纳人数</label>
@@ -370,16 +369,21 @@
 
 					async saveTable() {
 						this.errorMessage = '';
-						var tableId = this.tableForm.id.trim();
+						var originalTableId = this.tableForm.id.trim();
 						var capacity = Number(this.tableForm.capacity);
-						if (!tableId) {
+						if (!originalTableId) {
 							this.errorMessage = '请输入餐桌编号';
 							return;
 						}
-						if (!/^\d+号桌$/.test(tableId)) {
-							this.errorMessage = '餐桌编号格式不正确，请按格式输入：例如 1号桌、2号桌、12号桌...';
+
+						var numMatch = originalTableId.match(/(\d+)/);
+						if (!numMatch) {
+							this.errorMessage = '餐桌编号格式不正确，请按格式输入：例如 1号桌、12号桌...';
 							return;
 						}
+
+						var qrCodeId = 'a' + String(parseInt(numMatch[1], 10)).padStart(3, '0');
+
 						if (!capacity || capacity < 1 || capacity > 30) {
 							this.errorMessage = '请输入有效的容纳人数（1-30）';
 							return;
@@ -393,14 +397,14 @@
 								url = TABLE_API_BASE + '/edit';
 								body = JSON.stringify({
 									id: this.editingTableId,
-									tableno: tableId,
+									tableno: originalTableId,
 									capacity: capacity,
 									status: statusCode
 								});
 							} else {
 								url = TABLE_API_BASE + '/add';
 								body = JSON.stringify({
-									tableno: tableId,
+									tableno: originalTableId,
 									capacity: capacity,
 									status: statusCode
 								});
@@ -415,7 +419,7 @@
 								throw new Error(data.message || (this.isEditMode ? '修改失败' : '新增失败'));
 							}
 							if (!this.isEditMode) {
-								this.printTableQrCode(tableId, capacity, data.data && data.data.qrCodeUrl);
+								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
 							}
 							window.location.href = 'table.html';
 						} catch (error) {
@@ -428,38 +432,26 @@
 
 					// ====== 二维码打印 ======
 
-					buildTableScanUrl(tableId, capacity) {
-						var url = new URL('table-scan.html', window.location.href);
-						url.searchParams.set('tableId', tableId);
-						url.searchParams.set('capacity', String(capacity));
-						return url.toString();
+					buildTableScanUrl(tableId) {
+						var secret = '^mFIT!xzJ@j55QN%R^4yZ0vx';
+						var appid = 'wx986e22f241e13ba2';
+						var path = 'subpkg/order/order';
+						var query = 'tableId=' + tableId + '&secret=' + encodeURIComponent(secret);
+						return 'weixin://dl/business/?appid=' + appid + '&path=' + path + '&query=' + query;
 					},
 
 					buildQrCodeUrl(payload) {
-						const match = String(payload || '').match(/tableNo=([^&]+)/);
-						const tableNo = match ? decodeURIComponent(match[1]) : 'unknown';
-						
-						if (/^a\d{3}$/.test(tableNo)) {
-							return `/images/qrcode/${tableNo}.png`;
-						}
-						
-						const numMatch = tableNo.match(/(\d+)/);
-						if (numMatch) {
-							const num = parseInt(numMatch[1], 10);
-							return `/images/qrcode/a${String(num).padStart(3, '0')}.png`;
-						}
-						
-						return '/images/qrcode/a000.png';
+						return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=' + encodeURIComponent(String(payload || ''));
 					},
 
-					printTableQrCode(tableId, capacity, existingQrUrl) {
-						var qrPayload = this.buildTableScanUrl(tableId, capacity);
+					printTableQrCode(qrCodeId, displayName, capacity, existingQrUrl) {
+						var qrPayload = this.buildTableScanUrl(displayName || qrCodeId);
 						var qrCodeUrl = existingQrUrl || this.buildQrCodeUrl(qrPayload);
 
 						var printContent = [
 							'<!DOCTYPE html>',
 							'<html>',
-							'<head><meta charset="utf-8"><title>餐桌二维码打印 - ' + tableId + '</title>',
+							'<head><meta charset="utf-8"><title>餐桌二维码打印 - ' + displayName + '</title>',
 							'<style>',
 							'body { margin: 0; padding: 40px; text-align: center; font-family: "Microsoft YaHei"; }',
 							'.qr-container { display: inline-block; padding: 20px; border: 1px dashed #ccc; border-radius: 10px; }',
@@ -471,7 +463,7 @@
 							'<body>',
 							'<div class="qr-container">',
 							'<img src="' + qrCodeUrl + '" alt="餐桌二维码" class="qr-image">',
-							'<div class="table-info">餐桌 ' + tableId + '</div>',
+							'<div class="table-info">餐桌 ' + displayName + '</div>',
 							'<div class="table-capacity">可容纳 ' + capacity + ' 人</div>',
 							'</div>',
 							'</' + 'body></html>'
