@@ -900,9 +900,13 @@
 													<div class="cell-main">{{ order.orderTime || '--' }}</div>
 												</td>
 												<td>
-													<a :href="buildProductDetailHref(order)" class="view-details">
-														查看详情
-													</a>
+													<div class="row-action-links">
+														<a :href="buildProductDetailHref(order)" class="view-details">查看详情</a>
+														<button v-if="canShipOrder(order)" class="action-link" @click="openShipModal(order)" style="color: #3182ce;">发货</button>
+														<button v-if="canApplyRefund(order)" class="action-link" @click="openRefundRequestModal(order)" style="color: #dd6b20;">申请退款</button>
+														<button v-if="canProcessRefund(order)" class="action-link" @click="openProcessRefundModal(order)" style="color: #e53e3e;">处理退款</button>
+														<button v-if="canViewRefundStatus(order)" class="action-link" @click="openRefundDetailModal(order)" style="color: #805ad5;">查看退款详情</button>
+													</div>
 												</td>
 											</tr>
 										</tbody>
@@ -1081,12 +1085,56 @@
 						</div>
 					</div>
 
+					<div v-else-if="productActionModalMode === 'refund-detail' && selectedRefund" class="info-grid">
+						<div class="info-item">
+							<div class="info-label">退款ID</div>
+							<div class="info-value">{{ selectedRefund.refundId || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">退款编号</div>
+							<div class="info-value">{{ selectedRefund.refundNo || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">订单号</div>
+							<div class="info-value">{{ selectedRefund.orderNo || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">订单类型</div>
+							<div class="info-value">{{ selectedRefund.orderType === 'goods' ? '产品' : (selectedRefund.orderType || '--') }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">退款金额</div>
+							<div class="info-value amount-main">¥{{ formatAmount(selectedRefund.refundAmount) }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">退款状态</div>
+							<div class="info-value">{{ selectedRefund.statusText || selectedRefund.status || '--' }}</div>
+						</div>
+						<div class="info-item full">
+							<div class="info-label">退款原因</div>
+							<div class="info-value">{{ selectedRefund.reason || '--' }}</div>
+						</div>
+						<div class="info-item full">
+							<div class="info-label">退款说明</div>
+							<div class="info-value">{{ selectedRefund.description || '--' }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">申请时间</div>
+							<div class="info-value">{{ formatDisplayTime(selectedRefund.createTime) }}</div>
+						</div>
+						<div class="info-item">
+							<div class="info-label">更新时间</div>
+							<div class="info-value">{{ formatDisplayTime(selectedRefund.updateTime) || '--' }}</div>
+						</div>
+					</div>
+
 					<div v-else class="confirm-text">{{ productActionModalConfirmText }}</div>
 
 					<div v-if="productActionModalError" class="form-error">{{ productActionModalError }}</div>
 				</div>
 				<div class="modal-actions">
 					<button class="btn btn-default" @click="closeProductActionModal">{{ productActionModalIsInfoOnly ? '关闭' : '取消' }}</button>
+					<button v-if="productActionModalMode === 'refund-process'" class="btn btn-default" @click="rejectRefund">驳回退款</button>
 					<button
 						v-if="productActionModalMode !== 'refund-detail' && productActionModalMode !== 'subscription-detail'"
 						:class="['btn', productActionModalPrimaryClass]"
@@ -1141,6 +1189,7 @@
 						refundReason: '',
 						proofImages: []
 					},
+					selectedRefund: null,
 					dishSectionOpen: true,
 					productSectionOpen: false
 				};
@@ -1590,9 +1639,26 @@
 						&& order.paymentStatus !== '已退款';
 				},
 
+				canApplyRefund(order) {
+					return !this.isSubscriptionProductOrder(order)
+						&& order.paymentStatus === '已支付'
+						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待收货';
+				},
+
 				canViewRefundDetail(order) {
 					return !this.isSubscriptionProductOrder(order)
 						&& Boolean(order && (order.refundReason || this.getRefundProofImages(order).length));
+				},
+
+				canViewRefundStatus(order) {
+					const status = this.getProductOrderDisplayStatus(order.orderStatus);
+					return !this.isSubscriptionProductOrder(order) && (status === '退款中' || status === '已退款');
+				},
+
+				canShipOrder(order) {
+					return !this.isSubscriptionProductOrder(order)
+						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待发货'
+						&& order.paymentStatus === '已支付';
 				},
 
 				persistProductOrderChanges() {
@@ -1638,11 +1704,33 @@
 					this.persistProductOrderChanges();
 				},
 
-				doProcessRefund(order) {
-					order.orderStatus = '已完成';
-					order.paymentStatus = '已退款';
-					order.deliveryNote = `退款已处理完成，原因：${order.refundReason || '客户申请退款'}`;
-					this.persistProductOrderChanges();
+				async doProcessRefund(order) {
+					try {
+						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						headers['Content-Type'] = 'application/json';
+
+						const response = await fetch(`/api/refund/admin/process`, {
+							method: 'POST',
+							headers,
+							body: JSON.stringify({
+								refundId: order.refundId,
+								action: 'approve',
+								adminReply: '同意退款',
+								processNote: '已核实'
+							})
+						});
+
+						const result = await response.json();
+						if (result.code === 200 || result.code === 0) {
+							this.fetchProductOrders();
+						} else {
+							console.error('处理退款失败:', result.message);
+						}
+					} catch (error) {
+						console.error('处理退款失败:', error);
+					}
 				},
 
 				doUpdateProductDeliveryProgress(order, scene) {
@@ -1711,6 +1799,20 @@
 							? logisticsType
 							: (this.productLogisticsTypeOptions[0] || ''),
 						logisticsNo: this.getProductDetailLogisticsNo(order)
+					};
+				},
+
+				openShipModal(order) {
+					this.productActionModalVisible = true;
+					this.productActionModalMode = 'ship';
+					this.productActionModalOrder = order;
+					this.productActionModalScene = '';
+					this.productActionModalTitle = '确认发货';
+					this.productActionModalConfirmText = '';
+					this.productActionModalError = '';
+					this.productShipForm = {
+						logisticsType: '',
+						logisticsNo: ''
 					};
 				},
 
@@ -1788,6 +1890,42 @@
 					this.productActionModalTitle = '退款详情';
 					this.productActionModalConfirmText = '';
 					this.productActionModalError = '';
+				},
+
+				async rejectRefund() {
+					const order = this.productActionModalOrder;
+					if (!order) {
+						return;
+					}
+
+					try {
+						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+						headers['Content-Type'] = 'application/json';
+
+						const response = await fetch(`/api/refund/admin/process`, {
+							method: 'POST',
+							headers,
+							body: JSON.stringify({
+								refundId: order.refundId,
+								action: 'reject',
+								adminReply: '不符合退款条件',
+								processNote: '已核实'
+							})
+						});
+
+						const result = await response.json();
+						if (result.code === 200 || result.code === 0) {
+							this.closeProductActionModal();
+							this.fetchProductOrders();
+						} else {
+							this.productActionModalError = result.message || '驳回退款失败';
+						}
+					} catch (error) {
+						console.error('驳回退款失败:', error);
+						this.productActionModalError = '驳回退款失败，请重试';
+					}
 				},
 
 				submitProductActionModal() {
@@ -2222,6 +2360,41 @@
 						return;
 					}
 					alert('请输入有效的产品订单页码');
+				},
+
+				async openRefundDetailModal(order) {
+					try {
+						this.productActionModalOrder = order;
+						this.productActionModalVisible = true;
+						this.productActionModalMode = 'refund-detail';
+						this.productActionModalTitle = '退款详情';
+						this.productActionModalError = '';
+
+						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+
+						const response = await fetch(`/api/refund/list?orderNo=${order.orderId}&page=1&pageSize=10`, {
+							method: 'GET',
+							headers
+						});
+
+						const result = await response.json();
+						if (result.code === 200 || result.code === 0) {
+							const items = result.data?.items || result.data?.list || [];
+							const goodsRefund = items.find(item => item.orderType === 'goods');
+							if (goodsRefund) {
+								this.selectedRefund = goodsRefund;
+							} else {
+								this.selectedRefund = items.length > 0 ? items[0] : null;
+							}
+						} else {
+							this.productActionModalError = result.message || '获取退款详情失败';
+						}
+					} catch (error) {
+						console.error('获取退款详情失败:', error);
+						this.productActionModalError = '获取退款详情失败，请重试';
+					}
 				}
 			}
 		}).mount('#app');
