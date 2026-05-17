@@ -76,6 +76,14 @@ public class StaffController : ControllerBase
             return Ok(ApiResult.Fail("券码不能为空", 400));
         }
 
+        // 先尝试查找商品自取订单（通过核销码）
+        var commodityOrder = await TryFindCommodityPickupOrderAsync(code, cancellationToken);
+        if (commodityOrder is not null)
+        {
+            return await VerifyCommodityPickupAsync(commodityOrder, staff, cancellationToken);
+        }
+
+        // 再尝试查找活动/采摘券
         var order = await FindVoucherOrderAsync(code, cancellationToken);
         if (order is null)
         {
@@ -175,6 +183,108 @@ public class StaffController : ControllerBase
             order_id = order.OrderNo,
             verify_time = verifyTime
         }, "核销成功"));
+    }
+
+    private async Task<CommodityOrder?> TryFindCommodityPickupOrderAsync(string code, CancellationToken cancellationToken)
+    {
+        // 按 verify_code 查找
+        return await _dbContext.CommodityOrders
+            .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+    }
+
+    private async Task<IActionResult> VerifyCommodityPickupAsync(CommodityOrder order, User staff, CancellationToken cancellationToken)
+    {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+
+        // 已核销
+        if (order.OrderStatusId == 9)
+        {
+            return Ok(ApiResult.Success(new
+            {
+                verified = true,
+                alreadyVerified = true,
+                voucherType = "goods_pickup",
+                type = "goods_pickup",
+                typeName = "商品自取",
+                userName = ResolveUserName(user),
+                content = GetCommodityPickupContent(order, cancellationToken),
+                title = "商品自取",
+                orderNo = order.OrderNo,
+                order_id = order.OrderNo,
+                message = "该订单已核销",
+                participantCount = order.TotalQuantity,
+                count = order.TotalQuantity,
+                verifiedCount = order.TotalQuantity,
+                numberOfDiners = 1
+            }));
+        }
+
+        // 未支付
+        if (order.OrderStatusId == 1)
+        {
+            return Ok(ApiResult.Fail("该订单未支付，无法核销", 403));
+        }
+
+        // 已取消
+        if (order.OrderStatusId == 5)
+        {
+            return Ok(ApiResult.Fail("该订单已取消，无法核销", 403));
+        }
+
+        // 必须是待核销状态 (8)
+        if (order.OrderStatusId != 8)
+        {
+            return Ok(ApiResult.Fail("该订单状态不支持核销", 409));
+        }
+
+        // 执行核销
+        order.OrderStatusId = 9;
+        order.VerifiedTime = DateTime.Now;
+
+        _dbContext.CommodityVerifyRecords.Add(new CommodityVerifyRecord
+        {
+            OrderId = order.OrderId,
+            StaffId = staff.UserId,
+            VerifyTime = DateTime.Now
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var verifyTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        return Ok(ApiResult.Success(new
+        {
+            verified = true,
+            alreadyVerified = false,
+            voucherType = "goods_pickup",
+            type = "goods_pickup",
+            typeName = "商品自取",
+            userName = ResolveUserName(user),
+            userPhone = MaskPhone(user?.PhoneNumber),
+            content = "到店自取商品",
+            title = "商品自取",
+            orderNo = order.OrderNo,
+            order_id = order.OrderNo,
+            verifyTime,
+            verify_time = verifyTime,
+            message = "核销成功",
+            participantCount = order.TotalQuantity,
+            count = order.TotalQuantity,
+            verifiedCount = order.TotalQuantity,
+            numberOfDiners = 1
+        }, "核销成功"));
+    }
+
+    private string GetCommodityPickupContent(CommodityOrder order, CancellationToken cancellationToken)
+    {
+        var detail = _dbContext.CommodityOrderDetails
+            .AsNoTracking()
+            .FirstOrDefault(x => x.OrderId == order.OrderId);
+        if (detail is not null && !string.IsNullOrWhiteSpace(detail.GoodsName))
+            return $"到店自取 - {detail.GoodsName}";
+        return "到店自取商品";
     }
 
     [HttpGet("vouchers")]

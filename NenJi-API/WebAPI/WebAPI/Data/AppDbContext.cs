@@ -66,6 +66,14 @@ public class AppDbContext : DbContext
 
     public DbSet<SysConfig> SysConfigs => Set<SysConfig>();
 
+    public DbSet<UserPoints> UserPoints => Set<UserPoints>();
+
+    public DbSet<PointsRecord> PointsRecords => Set<PointsRecord>();
+
+    public DbSet<PointsExchange> PointsExchanges => Set<PointsExchange>();
+
+    public DbSet<CommodityVerifyRecord> CommodityVerifyRecords => Set<CommodityVerifyRecord>();
+
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 
     //public DbSet<Coupon> Coupons => Set<Coupon>();
@@ -236,6 +244,32 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.ConfigId);
             entity.Property(x => x.ConfigId).ValueGeneratedOnAdd();
             entity.HasIndex(x => x.ConfigKey).IsUnique();
+        });
+
+        modelBuilder.Entity<UserPoints>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.UserId).IsUnique();
+        });
+
+        modelBuilder.Entity<PointsRecord>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<PointsExchange>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(x => x.OrderNo).IsUnique();
+        });
+
+        modelBuilder.Entity<CommodityVerifyRecord>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
         });
 
         //modelBuilder.Entity<AdminAccount>(entity =>

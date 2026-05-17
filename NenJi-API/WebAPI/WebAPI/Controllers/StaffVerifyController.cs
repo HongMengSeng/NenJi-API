@@ -224,115 +224,25 @@ public class StaffVerifyController : ControllerBase
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 200);
 
-            // 加载活动类型字典
-            var activityTypes = await _dbContext.ActivityTypes
-                .AsNoTracking()
-                .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, cancellationToken);
-
-            // 构建基础查询：关联核销记录、订单详情、活动订单、活动
-            var query = from vr in _dbContext.ActivityVerificationRecords
-                        join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
-                        join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
-                        join a in _dbContext.Activities on detail.ActivityId equals a.ActivityId
-                        where o.OrderStatusId == 3
-                        select new { vr, detail, o, a };
-
-            // 券类型筛选
             var normalizedType = (voucherType ?? "all").Trim().ToLowerInvariant();
-            if (normalizedType == "pick")
-            {
-                query = query.Where(x => x.a.TypeId != 2);
-            }
-            else if (normalizedType == "activity")
-            {
-                query = query.Where(x => x.a.TypeId == 2);
-            }
 
-            // 活动分类筛选
-            if (!string.IsNullOrWhiteSpace(categoryName))
+            // 构建活动核销历史
+            var activityRecords = await GetActivityVerifyHistoryAsync(normalizedType, keyword, startDate, endDate, categoryName, page, pageSize, cancellationToken);
+
+            // 构建商品自取核销历史（仅当筛选条件包含 goods_pickup 或 all 时）
+            List<object> commodityRecords = [];
+            if (normalizedType is "all" or "goods_pickup")
             {
-                var matchedTypeIds = activityTypes
-                    .Where(t => t.Value == categoryName)
-                    .Select(t => t.Key)
-                    .ToList();
-                if (matchedTypeIds.Count > 0)
-                {
-                    query = query.Where(x => matchedTypeIds.Contains(x.a.TypeId));
-                }
+                commodityRecords = await GetCommodityVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
             }
 
-            // 日期范围筛选
-            if (DateTime.TryParse(startDate, out var start))
-            {
-                var startDay = start.Date;
-                query = query.Where(x => x.vr.VerificationTime >= startDay);
-            }
-            if (DateTime.TryParse(endDate, out var end))
-            {
-                var endDay = end.Date.AddDays(1);
-                query = query.Where(x => x.vr.VerificationTime < endDay);
-            }
+            // 合并 & 排序
+            var allRecords = activityRecords.Concat(commodityRecords)
+                .OrderByDescending(r => GetVerifyTime(r))
+                .ToList();
 
-            // 关键词搜索（支持核销码、用户名搜索）
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                var kw = keyword.Trim();
-                query = from q in query
-                        join u in _dbContext.Users on q.o.UserId equals u.UserId into uj
-                        from u in uj.DefaultIfEmpty()
-                        where q.o.OrderNo.Contains(kw)
-                           || q.detail.ActivityQrcode!.Contains(kw)
-                           || (u != null && u.RealName.Contains(kw))
-                           || (u != null && u.WxName.Contains(kw))
-                        select q;
-            }
-
-            // 统计总数
-            var total = await query.CountAsync(cancellationToken);
-
-            // 获取分页数据
-            var records = await query
-                .OrderByDescending(x => x.vr.VerificationTime)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
-
-            // 批量加载关联数据
-            var userIds = records.Select(x => x.o.UserId).Distinct().ToList();
-            var userMap = userIds.Count > 0
-                ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, cancellationToken)
-                : new Dictionary<int, User>();
-
-            var activityIds = records.Select(x => x.detail.ActivityId).Distinct().ToList();
-            var activityMap = activityIds.Count > 0
-                ? await _dbContext.Activities.AsNoTracking().Where(x => activityIds.Contains(x.ActivityId)).ToDictionaryAsync(x => x.ActivityId, cancellationToken)
-                : new Dictionary<long, ActivityEntity>();
-
-            var list = records.Select(r =>
-            {
-                userMap.TryGetValue(r.o.UserId, out var u);
-                activityMap.TryGetValue(r.detail.ActivityId, out var act);
-
-                var vt = act?.TypeId == 2 ? "activity" : "pick";
-                var dbTypeName = act is not null && activityTypes.TryGetValue(act.TypeId, out var resolvedTypeName) ? resolvedTypeName : null;
-                var typeName = dbTypeName ?? (vt == "activity" ? "活动券" : "采摘券");
-                var content = act?.Title ?? "活动券";
-
-                return new
-                {
-                    id = r.vr.RecordId.ToString(),
-                    voucherType = vt,
-                    typeName,
-                    categoryName = dbTypeName ?? "未分类",
-                    userName = ResolveUserName(u, null, r.o.OrderNo),
-                    userPhone = u?.PhoneNumber ?? string.Empty,
-                    content,
-                    verifyTime = r.vr.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    verified = true,
-                    orderId = r.o.OrderNo,
-                    participantCount = r.detail.Quantity
-                };
-            }).ToList();
+            var total = allRecords.Count;
+            var list = allRecords.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return Ok(ApiResult.Success(new
             {
@@ -346,6 +256,165 @@ public class StaffVerifyController : ControllerBase
         {
             return Ok(ApiResult.Fail($"服务器错误: {ex.Message}"));
         }
+    }
+
+    private async Task<List<object>> GetActivityVerifyHistoryAsync(string normalizedType, string? keyword, string? startDate, string? endDate, string? categoryName, int page, int pageSize, CancellationToken ct)
+    {
+        var activityTypes = await _dbContext.ActivityTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.ActivityTypeId, x => x.TypeName, ct);
+
+        var query = from vr in _dbContext.ActivityVerificationRecords
+                    join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
+                    join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
+                    join a in _dbContext.Activities on detail.ActivityId equals a.ActivityId
+                    where o.OrderStatusId == 3
+                    select new { vr, detail, o, a };
+
+        if (normalizedType == "pick")
+            query = query.Where(x => x.a.TypeId != 2);
+        else if (normalizedType == "activity")
+            query = query.Where(x => x.a.TypeId == 2);
+
+        if (!string.IsNullOrWhiteSpace(categoryName))
+        {
+            var matchedTypeIds = activityTypes
+                .Where(t => t.Value == categoryName)
+                .Select(t => t.Key)
+                .ToList();
+            if (matchedTypeIds.Count > 0)
+                query = query.Where(x => matchedTypeIds.Contains(x.a.TypeId));
+        }
+
+        if (DateTime.TryParse(startDate, out var start))
+        {
+            var startDay = start.Date;
+            query = query.Where(x => x.vr.VerificationTime >= startDay);
+        }
+        if (DateTime.TryParse(endDate, out var end))
+        {
+            var endDay = end.Date.AddDays(1);
+            query = query.Where(x => x.vr.VerificationTime < endDay);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim();
+            query = from q in query
+                    join u in _dbContext.Users on q.o.UserId equals u.UserId into uj
+                    from u in uj.DefaultIfEmpty()
+                    where q.o.OrderNo.Contains(kw)
+                       || q.detail.ActivityQrcode!.Contains(kw)
+                       || (u != null && u.RealName.Contains(kw))
+                       || (u != null && u.WxName.Contains(kw))
+                    select q;
+        }
+
+        var records = await query
+            .OrderByDescending(x => x.vr.VerificationTime)
+            .ToListAsync(ct);
+
+        var userIds = records.Select(x => x.o.UserId).Distinct().ToList();
+        var userMap = userIds.Count > 0
+            ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
+            : new Dictionary<int, User>();
+
+        var activityIds = records.Select(x => x.detail.ActivityId).Distinct().ToList();
+        var activityMap = activityIds.Count > 0
+            ? await _dbContext.Activities.AsNoTracking().Where(x => activityIds.Contains(x.ActivityId)).ToDictionaryAsync(x => x.ActivityId, ct)
+            : new Dictionary<long, ActivityEntity>();
+
+        return records.Select(r =>
+        {
+            userMap.TryGetValue(r.o.UserId, out var u);
+            activityMap.TryGetValue(r.detail.ActivityId, out var act);
+            var vt = act?.TypeId == 2 ? "activity" : "pick";
+            var dbTypeName = act is not null && activityTypes.TryGetValue(act.TypeId, out var resolvedTypeName) ? resolvedTypeName : null;
+            var typeName = dbTypeName ?? (vt == "activity" ? "活动券" : "采摘券");
+            var content = act?.Title ?? "活动券";
+
+            return (object)new
+            {
+                id = $"{r.vr.RecordId}",
+                voucherType = vt,
+                typeName,
+                categoryName = dbTypeName ?? "未分类",
+                userName = ResolveUserName(u, null, r.o.OrderNo),
+                userPhone = u?.PhoneNumber ?? string.Empty,
+                content,
+                verifyTime = r.vr.VerificationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                _verifySort = r.vr.VerificationTime.Ticks,
+                verified = true,
+                orderId = r.o.OrderNo,
+                participantCount = r.detail.Quantity
+            };
+        }).ToList();
+    }
+
+    private async Task<List<object>> GetCommodityVerifyHistoryAsync(string? keyword, string? startDate, string? endDate, CancellationToken ct)
+    {
+        var query = from vr in _dbContext.CommodityVerifyRecords
+                    join o in _dbContext.CommodityOrders on vr.OrderId equals o.OrderId
+                    where o.DeliveryMethod == "pickup"
+                    select new { vr, o };
+
+        if (DateTime.TryParse(startDate, out var start))
+        {
+            var startDay = start.Date;
+            query = query.Where(x => x.vr.VerifyTime >= startDay);
+        }
+        if (DateTime.TryParse(endDate, out var end))
+        {
+            var endDay = end.Date.AddDays(1);
+            query = query.Where(x => x.vr.VerifyTime < endDay);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim();
+            query = from q in query
+                    join u in _dbContext.Users on q.o.UserId equals u.UserId into uj
+                    from u in uj.DefaultIfEmpty()
+                    where q.o.OrderNo.Contains(kw)
+                       || (u != null && u.RealName.Contains(kw))
+                       || (u != null && u.WxName.Contains(kw))
+                    select q;
+        }
+
+        var records = await query
+            .OrderByDescending(x => x.vr.VerifyTime)
+            .ToListAsync(ct);
+
+        var userIds = records.Select(x => x.o.UserId).Distinct().ToList();
+        var userMap = userIds.Count > 0
+            ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
+            : new Dictionary<int, User>();
+
+        return records.Select(r =>
+        {
+            userMap.TryGetValue(r.o.UserId, out var u);
+            return (object)new
+            {
+                id = $"cvr_{r.vr.Id}",
+                voucherType = "goods_pickup",
+                typeName = "商品自取",
+                categoryName = "商品自取",
+                userName = ResolveUserName(u, null, r.o.OrderNo),
+                userPhone = u?.PhoneNumber ?? string.Empty,
+                content = "到店自取商品",
+                verifyTime = r.vr.VerifyTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                _verifySort = r.vr.VerifyTime.Ticks,
+                verified = true,
+                orderId = r.o.OrderNo,
+                participantCount = r.o.TotalQuantity
+            };
+        }).ToList();
+    }
+
+    private static long GetVerifyTime(object record)
+    {
+        var prop = record.GetType().GetProperty("_verifySort");
+        return prop?.GetValue(record) is long ticks ? ticks : 0;
     }
 
     private async Task<User?> GetCurrentStaffAsync(CancellationToken cancellationToken)

@@ -139,6 +139,7 @@ public class Program
         builder.Services.AddScoped<IInventoryStatsService, InventoryStatsService>();
         builder.Services.AddScoped<IInventoryService, InventoryService>();
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
+        builder.Services.AddScoped<IPointsService, PointsService>();
 
         builder.Services.AddSingleton<IContentService, ContentService>();
         builder.Services.AddHttpContextAccessor();
@@ -177,7 +178,7 @@ public class Program
                     "{\"address\":\"江苏省南京市溧水区能记农场\",\"phone\":\"138-1234-5678\",\"email\":\"info@nengjifarm.com\"}",
                     "农场联系方式");
                 SeedConfig(db, "commodity_order_status_names",
-                    "{\"1\":\"待付款\",\"2\":\"待发货\",\"3\":\"运输中\",\"4\":\"已完成\",\"5\":\"已取消\",\"6\":\"退款中\",\"7\":\"已退款\"}",
+                    "{\"1\":\"待付款\",\"2\":\"待发货\",\"3\":\"运输中\",\"4\":\"已完成\",\"5\":\"已取消\",\"6\":\"退款中\",\"7\":\"已退款\",\"8\":\"待核销\",\"9\":\"已核销\"}",
                     "商品订单状态名称映射");
                 SeedConfig(db, "activity_order_status_names",
                     "{\"1\":\"待付款\",\"2\":\"待核销\",\"3\":\"已核销\",\"4\":\"已取消\",\"5\":\"退款中\",\"6\":\"已退款\"}",

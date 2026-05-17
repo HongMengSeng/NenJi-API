@@ -18,11 +18,13 @@ public class PayController : ControllerBase
 {
     private readonly IWeChatPayService _weChatPayService;
     private readonly AppDbContext _dbContext;
+    private readonly IPointsService _pointsService;
 
-    public PayController(IWeChatPayService weChatPayService, AppDbContext dbContext)
+    public PayController(IWeChatPayService weChatPayService, AppDbContext dbContext, IPointsService pointsService)
     {
         _weChatPayService = weChatPayService;
         _dbContext = dbContext;
+        _pointsService = pointsService;
     }
 
     [AllowAnonymous]
@@ -579,11 +581,8 @@ public class PayController : ControllerBase
                 entity.WxPayNo = transactionId;
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
-
-            return;
         }
-
-        if (order.Type == "activity")
+        else if (order.Type == "activity")
         {
             var entity = await _dbContext.ActivityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
             if (entity is not null)
@@ -592,17 +591,20 @@ public class PayController : ControllerBase
                 entity.WxPayNo = transactionId;
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
-
-            return;
         }
-
-        var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
-        if (commodityOrder is not null)
+        else
         {
-            commodityOrder.OrderStatusId = 2;
-            commodityOrder.WxPayNo = transactionId;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var commodityOrder = await _dbContext.CommodityOrders.FirstOrDefaultAsync(x => x.OrderId == order.OrderId, cancellationToken);
+            if (commodityOrder is not null)
+            {
+                commodityOrder.OrderStatusId = commodityOrder.DeliveryMethod == "pickup" ? 8 : 2;
+                commodityOrder.WxPayNo = transactionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
         }
+
+        // 积分入账（10元=1积分）
+        await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
     }
 
     private static object BuildSplitPaymentStatusResponse(SplitPayOrder order)

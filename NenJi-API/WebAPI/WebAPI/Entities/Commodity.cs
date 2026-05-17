@@ -56,4 +56,7 @@ public class Commodity
 
     [NotMapped]
     public byte[]? ImageData { get; set; }
+
+    [Column("points_price")]
+    public int? PointsPrice { get; set; }
 }
