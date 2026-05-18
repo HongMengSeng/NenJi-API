@@ -202,11 +202,10 @@ public class Program
         app.UseSwagger();
         app.UseSwaggerUI();
 
-        // 注释：HTTPS 由 iKuai 路由器终止，后端不强制跳转
-        // if (!app.Environment.IsDevelopment())
-        // {
-        //     app.UseHttpsRedirection();
-        // }
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
         app.UseCors("AdminCors");
         app.UseAuthentication();
         app.UseAuthorization();
