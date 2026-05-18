@@ -216,7 +216,7 @@ public class DishController : ControllerBase
             Name = form["name"].FirstOrDefault() ?? string.Empty,
             Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : 0,
             Stock = int.TryParse(form["stock"].FirstOrDefault(), out var s) ? s : 0,
-            Status = form["status"].FirstOrDefault() ?? "待付款",
+            Status = form["status"].FirstOrDefault() ?? "已上架",
             Image = image,
             SpecImages = specImages,
             Description = form["description"].FirstOrDefault() ?? string.Empty,

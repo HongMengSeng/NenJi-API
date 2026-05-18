@@ -251,17 +251,27 @@ public class ActivityService : IActivityService
         return true;
     }
 
+    public static int MapStatusToId(string status)
+    {
+        var normalized = status.StartsWith("已", StringComparison.Ordinal)
+            ? status[1..]
+            : status;
+
+        return normalized switch
+        {
+            "上架" => 1,
+            "售空" => 3,
+            _ => 2
+        };
+    }
+
     private static string MapStatusToText(int statusId)
     {
         return statusId switch
         {
-            1 => "待付款",
-            2 => "待核销",
-            3 => "已核销",
-            4 => "已取消",
-            5 => "退款中",
-            6 => "已退款",
-            _ => "未知"
+            1 => "已上架",
+            3 => "已售空",
+            _ => "已下架"
         };
     }
 

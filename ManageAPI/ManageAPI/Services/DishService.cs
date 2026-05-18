@@ -225,15 +225,15 @@ public class DishService : IDishService
 
     private static int MapStatusToId(string status)
     {
-        return status switch
+        var normalized = status.StartsWith("已", StringComparison.Ordinal)
+            ? status[1..]
+            : status;
+
+        return normalized switch
         {
-            "待付款" => 1,
-            "待出餐" => 2,
-            "已完成" => 3,
-            "已取消" => 4,
-            "退款中" => 5,
-            "已退款" => 6,
-            _ => 1
+            "上架" => 1,
+            "售空" => 3,
+            _ => 2 // 已下架或其他默认为下架
         };
     }
 
@@ -241,13 +241,9 @@ public class DishService : IDishService
     {
         return status switch
         {
-            1 => "待付款",
-            2 => "待出餐",
-            3 => "已完成",
-            4 => "已取消",
-            5 => "退款中",
-            6 => "已退款",
-            _ => "未知"
+            1 => "已上架",
+            3 => "已售空",
+            _ => "已下架"
         };
     }
 }

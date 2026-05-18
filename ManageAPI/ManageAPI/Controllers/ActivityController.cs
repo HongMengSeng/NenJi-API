@@ -221,7 +221,7 @@ public class ActivityController : ControllerBase
             Name = form["name"].FirstOrDefault() ?? string.Empty,
             Type = form["type"].FirstOrDefault() ?? string.Empty,
             Price = decimal.TryParse(form["price"].FirstOrDefault(), out var p) ? p : 0,
-            StatusId = int.TryParse(form["statusId"].FirstOrDefault(), out var sid) ? sid : 1,
+            StatusId = ActivityService.MapStatusToId(form["status"].FirstOrDefault() ?? "已上架"),
             Image = image,
             VideoUrl = form["videoUrl"].FirstOrDefault() ?? string.Empty,
             Description = form["description"].FirstOrDefault(),
