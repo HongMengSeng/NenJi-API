@@ -25,7 +25,7 @@ public class CreateDishDto
     /// <summary>
     /// 上架状态
     /// </summary>
-    public string Status { get; set; } = "已上架";
+    public string Status { get; set; } = "待付款";
 
     /// <summary>
     /// 封面图URL
