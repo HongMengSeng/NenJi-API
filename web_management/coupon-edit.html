@@ -477,6 +477,7 @@
 	<script src="js/auth.js"></script>
 	<script>
 		const { createApp } = Vue;
+		const COUPON_DETAIL_API = 'http://192.168.101.30:7240/api/activity/detail';
 
 		createApp({
 			data() {
@@ -565,13 +566,29 @@
 						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('/api/common/upload', {
+						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
 						});
 
-						const result = await response.json();
+						if (!response.ok) {
+							const text = await response.text();
+							console.error('图片上传失败，HTTP状态:', response.status, '响应:', text);
+							alert('图片上传失败，服务器返回错误: ' + response.status);
+							return;
+						}
+
+						let result;
+						try {
+							result = await response.json();
+						} catch (jsonError) {
+							const text = await response.text();
+							console.error('图片上传失败，JSON解析错误:', jsonError, '响应:', text);
+							alert('图片上传失败，服务器返回格式错误');
+							return;
+						}
+
 						if (result.code === 200 && result.data) {
 							this.couponForm.image = '/images/' + result.data;
 							this.imageFileName = file.name;
@@ -627,7 +644,7 @@
 						const authHeaders = window.Auth ? window.Auth.getAuthHeaders() : {};
 						delete authHeaders['Content-Type'];
 
-						const response = await fetch('/api/common/upload', {
+						const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
 							method: 'POST',
 							headers: authHeaders,
 							body: formData
@@ -688,7 +705,7 @@
 							const formData = new FormData();
 							formData.append('file', file);
 
-							const response = await fetch('/api/common/upload', {
+							const response = await fetch('http://192.168.101.30:7240/api/common/upload', {
 								method: 'POST',
 								headers: authHeaders,
 								body: formData
@@ -864,37 +881,84 @@
 					};
 				},
 
-				// 根据券品 ID 读取本地数据并回填到编辑表单。
-				loadCouponData(id) {
+				fillCouponForm(coupon) {
+					const normalizedCoupon = this.normalizeCoupon(coupon || {});
+					this.couponForm = {
+						name: normalizedCoupon.name || '',
+						type: normalizedCoupon.type || '研学活动券',
+						price: normalizedCoupon.price || 0,
+						statusId: normalizedCoupon.statusId || 1,
+						people: normalizedCoupon.people || '',
+						content: normalizedCoupon.content || '',
+						duration: normalizedCoupon.duration || normalizedCoupon.validityPeriod || 30,
+						stock: normalizedCoupon.stock ?? 9999,
+						limitPerOrder: normalizedCoupon.limitPerOrder || 1,
+						refundRule: normalizedCoupon.refundRule || '支持未使用且未核销退款',
+						description: normalizedCoupon.description || '',
+						location: normalizedCoupon.location || '',
+						image: normalizedCoupon.image || '',
+						videoUrl: normalizedCoupon.videoUrl || '',
+						carouselMedia: Array.isArray(normalizedCoupon.carouselMedia) ? normalizedCoupon.carouselMedia : []
+					};
+					this.imageFileName = normalizedCoupon.imageName || '';
+					this.videoFileName = normalizedCoupon.videoFileName || (normalizedCoupon.videoUrl ? '已上传视频' : '');
+					this.resetImageInput();
+					this.resetVideoInput();
+				},
+
+				loadCouponDataFromCache(id) {
 					const coupons = this.getStoredCoupons().map(coupon => this.normalizeCoupon(coupon));
 					const coupon = coupons.find(item => String(item.id) === String(id));
 					if (!coupon) {
-						alert('未找到对应券品，请返回列表重新选择');
-						window.location.href = 'coupon.html';
-						return;
+						return false;
 					}
 
-					this.couponForm = {
-						name: coupon.name,
-						type: coupon.type,
-						price: coupon.price,
-						statusId: coupon.statusId || 1,
-						people: coupon.people || '',
-						content: coupon.content || '',
-						duration: coupon.duration || coupon.validityPeriod || 30,
-						stock: coupon.stock,
-						limitPerOrder: coupon.limitPerOrder,
-						refundRule: coupon.refundRule,
-						description: coupon.description || '',
-						location: coupon.location || '',
-						image: coupon.image,
-						videoUrl: coupon.videoUrl || '',
-						carouselMedia: coupon.carouselMedia || []
-					};
-					this.imageFileName = coupon.imageName || '';
-					this.videoFileName = coupon.videoFileName || (coupon.videoUrl ? '已上传视频' : '');
-					this.resetImageInput();
-					this.resetVideoInput();
+					this.fillCouponForm(coupon);
+					return true;
+				},
+
+				// 根据券品 ID 调用 API 获取详情并回填到编辑表单。
+				async loadCouponData(id) {
+					try {
+						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+							? window.Auth.getAuthHeaders()
+							: {};
+
+						const params = new URLSearchParams({ id: String(id) });
+						const response = await fetch(`${COUPON_DETAIL_API}?${params.toString()}`, {
+							method: 'GET',
+							headers
+						});
+
+						if (!response.ok) {
+							if (this.loadCouponDataFromCache(id)) {
+								console.warn('获取券品详情失败，已使用列表缓存数据，HTTP状态:', response.status);
+								return;
+							}
+							alert('获取券品详情失败，HTTP状态: ' + response.status);
+							return;
+						}
+
+						const result = await response.json();
+						if (!result.data) {
+							if (this.loadCouponDataFromCache(id)) {
+								console.warn('未获取到券品详情，已使用列表缓存数据:', result);
+								return;
+							}
+							alert('未找到对应券品，请返回列表重新选择');
+							return;
+						}
+
+						this.fillCouponForm({
+							...result.data,
+							id
+						});
+					} catch (error) {
+						console.error('获取券品详情失败:', error);
+						if (!this.loadCouponDataFromCache(id)) {
+							alert('获取券品详情失败，请返回列表重新选择');
+						}
+					}
 				},
 
 				// 保存前校验关键字段，避免把无效数据写回列表。
