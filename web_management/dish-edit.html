@@ -464,15 +464,22 @@
 						window.location.href = page;
 					},
 					
+					// 规范化状态值
+					normalizeStatus(status) {
+						const text = String(status || '').trim();
+						if (['已上架', '上架', '1', 'true', 'on'].includes(text)) return '上架';
+						if (['已下架', '下架', '0', 'false', 'off'].includes(text)) return '下架';
+						return text;
+					},
+					
 					// 加载菜品数据
 					async loadDishData(id) {
 						console.log('当前菜品ID:', id);
 						try {
-							const res = await fetch('http://192.168.101.30:7240/api/dish/detail/' + id, {
+							const res = await fetch(`http://192.168.101.30:7240/api/dish/detail?id=${id}`, {
 								method: 'GET',
 								headers: window.Auth.getAuthHeaders()
 							});
-							const data = await res.json();
 							
 							if (res.status === 401 || res.status === 403) {
 								window.Auth.clearAuth();
@@ -480,18 +487,26 @@
 								return;
 							}
 							
-							if (res.ok && data.code === 200 && data.data) {
+							const data = await res.json();
+							console.log('API返回数据:', data);
+							
+							if ((data.code === 200 || data.code === 0) && data.data) {
 								const dish = data.data;
+								console.log('菜品详情:', dish);
+								
 								this.dishForm = {
 									name: dish.name || '',
-									price: dish.price || '',
-									stock: dish.stock || '',
-									status: dish.status || '已上架',
-									image: dish.image || '',
+									price: dish.price || 0,
+									stock: dish.stock || 0,
+									status: this.normalizeStatus(dish.status) || '上架',
+									image: dish.image || dish.coverImage || '',
 									carouselMedia: dish.carouselMedia || [],
 									specImages: dish.specImages || [],
 									description: dish.description || ''
 								};
+								console.log('表单数据:', this.dishForm);
+							} else {
+								console.log('未找到菜品数据或返回失败:', data);
 							}
 						} catch (error) {
 							console.error('加载菜品数据失败:', error);
