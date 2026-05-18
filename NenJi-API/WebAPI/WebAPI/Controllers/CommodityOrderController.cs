@@ -92,7 +92,7 @@ public class CommodityOrderController : ControllerBase
             OrderStatusId = 1,
             UserId = userId,
             CreateTime = now,
-            AddressId = address?.AddressId ?? 0,
+            AddressId = address?.AddressId,
             TrackingNumber = null,
             TrackingTypeId = null,
             DeliveryMethod = deliveryMethod,

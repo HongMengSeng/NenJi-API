@@ -34,7 +34,7 @@ public class CommodityOrder
     public DateTime CreateTime { get; set; }
 
     [Column("address_id")]
-    public long AddressId { get; set; }
+    public long? AddressId { get; set; }
 
     [Column("tracking_number")]
     [MaxLength(64)]

@@ -1384,7 +1384,7 @@ public class OrdersController : ControllerBase
         public string Status { get; private set; } = string.Empty;
         public string StatusText { get; private set; } = string.Empty;
         public string? WxPayNo { get; private set; }
-        public long AddressId { get; private set; }
+        public long? AddressId { get; private set; }
         public object? TrackingEntity { get; private set; }
         public bool? IsCancelled { get; private set; }
         public long DiningTableId { get; private set; }

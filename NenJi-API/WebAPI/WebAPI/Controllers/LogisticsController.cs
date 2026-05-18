@@ -99,7 +99,7 @@ public class LogisticsController : ControllerBase
         var shipTime = ComputeShipTime(order);
         var estimatedArrival = shipTime.AddDays(2).Date.AddHours(18);
 
-        var shippingAddress = await LoadShippingAddressAsync(userId, order.AddressId, cancellationToken);
+        var shippingAddress = await LoadShippingAddressAsync(userId, order.AddressId ?? 0, cancellationToken);
         var addressText = shippingAddress is null
             ? string.Empty
             : $"{shippingAddress.Province}{shippingAddress.City}{shippingAddress.MunicipalDistrict}{shippingAddress.Addres}";

@@ -723,7 +723,7 @@ public class OrderDetailsController : ControllerBase
         public decimal TotalAmount { get; init; }
         public int TotalQuantity { get; init; }
         public int RawStatusId { get; init; }
-        public long AddressId { get; init; }
+        public long? AddressId { get; init; }
         public string? WxPayNo { get; init; }
         public string? Remark { get; init; }
 
