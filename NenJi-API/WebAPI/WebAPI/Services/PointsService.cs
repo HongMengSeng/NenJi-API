@@ -93,14 +93,7 @@ public class PointsService : IPointsService
             .OrderByDescending(x => x.Id)
             .FirstOrDefaultAsync(ct);
 
-        if (rule is null)
-        {
-            // 没有配置规则时默认 10元 = 1积分
-            var fallback = (int)(amount / 10);
-            if (fallback <= 0) return;
-            await EarnCoreAsync(userId, orderNo, fallback, ct);
-            return;
-        }
+        if (rule is null) return;
 
         var points = (int)(amount / rule.UnitAmount * rule.UnitPoints);
         if (points <= 0) return;

@@ -242,14 +242,7 @@ public class PointsController : ControllerBase
 
             if (rule is null)
             {
-                return Ok(ApiResult.Success(new
-                {
-                    ruleName = "默认规则",
-                    unitAmount = 0.01m,
-                    unitPoints = 10,
-                    unitAmountText = "0.01元",
-                    description = "每消费0.01元获得10积分"
-                }));
+                return Ok(ApiResult.Fail("暂未配置积分规则", 404));
             }
 
             return Ok(ApiResult.Success(new
