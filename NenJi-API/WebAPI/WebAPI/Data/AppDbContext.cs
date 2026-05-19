@@ -74,6 +74,14 @@ public class AppDbContext : DbContext
 
     public DbSet<PointsRule> PointsRules => Set<PointsRule>();
 
+    public DbSet<PointsCommodity> PointsCommodities => Set<PointsCommodity>();
+
+    public DbSet<PointsCommodityOrderStatus> PointsCommodityOrderStatuses => Set<PointsCommodityOrderStatus>();
+
+    public DbSet<PointsCommodityStatus> PointsCommodityStatuses => Set<PointsCommodityStatus>();
+
+    public DbSet<PointsCommodityImage> PointsCommodityImages => Set<PointsCommodityImage>();
+
     public DbSet<CommodityVerifyRecord> CommodityVerifyRecords => Set<CommodityVerifyRecord>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
@@ -266,6 +274,9 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.HasIndex(x => x.OrderNo).IsUnique();
+            entity.HasIndex(x => x.UserId).HasDatabaseName("idx_user_id");
+            entity.HasIndex(x => x.StatusId).HasDatabaseName("idx_status");
+            entity.HasIndex(x => x.CommodityId).HasDatabaseName("idx_commodity_id");
         });
 
         modelBuilder.Entity<CommodityVerifyRecord>(entity =>

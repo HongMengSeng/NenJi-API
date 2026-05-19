@@ -59,4 +59,7 @@ public class Commodity
 
     [Column("points_price")]
     public int? PointsPrice { get; set; }
+
+    [Column("isdelete_id")]
+    public int IsDelete { get; set; }
 }

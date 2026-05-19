@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -14,10 +15,12 @@ namespace WebAPI.Controllers;
 public class StaffVerifyController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IPointsService _pointsService;
 
-    public StaffVerifyController(AppDbContext dbContext)
+    public StaffVerifyController(AppDbContext dbContext, IPointsService pointsService)
     {
         _dbContext = dbContext;
+        _pointsService = pointsService;
     }
 
     /// <summary>
@@ -94,6 +97,15 @@ public class StaffVerifyController : ControllerBase
                 return Ok(ApiResult.Fail("请输入核销码", 400));
             }
 
+            // 先尝试查找商品自取订单（通过 verify_code）
+            var commodityOrder = await _dbContext.CommodityOrders
+                .FirstOrDefaultAsync(x => x.VerifyCode == code && x.DeliveryMethod == "pickup", cancellationToken);
+
+            if (commodityOrder is not null)
+            {
+                return await VerifyCommodityPickupAsync(commodityOrder, staff, cancellationToken);
+            }
+
             // 通过 activity_qrcode 查找订单详情
             var detail = await _dbContext.ActivityOrderDetails
                 .FirstOrDefaultAsync(x => x.ActivityQrcode == code, cancellationToken);
@@ -113,7 +125,7 @@ public class StaffVerifyController : ControllerBase
 
             var activity = await _dbContext.Activities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ActivityId == detail.ActivityId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
 
             // 从 activity_type 表动态获取类型名称
             var activityTypeName = activity is not null
@@ -180,6 +192,9 @@ public class StaffVerifyController : ControllerBase
             _dbContext.ActivityVerificationRecords.Add(verificationRecord);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            // 活动核销完成时发放积分
+            await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
+
             return Ok(ApiResult.Success(new
             {
                 voucherType,
@@ -191,6 +206,171 @@ public class StaffVerifyController : ControllerBase
                 verifyTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 verified = true,
                 alreadyVerified = false
+            }, "核销成功"));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"核销失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 核销商品自取订单
+    /// </summary>
+    private async Task<IActionResult> VerifyCommodityPickupAsync(CommodityOrder order, User staff, CancellationToken cancellationToken)
+    {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == order.UserId, cancellationToken);
+
+        // 已核销
+        if (order.OrderStatusId == 9)
+        {
+            return Ok(ApiResult.Success(new
+            {
+                verified = true,
+                alreadyVerified = true,
+                voucherType = "goods_pickup",
+                typeName = "商品自取",
+                userName = ResolveUserName(user, null, order.OrderNo),
+                userPhone = user?.PhoneNumber ?? string.Empty,
+                content = "到店自取商品",
+                title = "商品自取",
+                orderNo = order.OrderNo,
+                participantCount = order.TotalQuantity,
+                message = "该订单已核销"
+            }));
+        }
+
+        if (order.OrderStatusId == 1)
+        {
+            return Ok(ApiResult.Fail("该订单未支付，无法核销", 403));
+        }
+
+        if (order.OrderStatusId == 5)
+        {
+            return Ok(ApiResult.Fail("该订单已取消，无法核销", 403));
+        }
+
+        if (order.OrderStatusId != 8)
+        {
+            return Ok(ApiResult.Fail("该订单状态不支持核销", 409));
+        }
+
+        // 执行核销
+        order.OrderStatusId = 9;
+        order.VerifiedTime = DateTime.Now;
+
+        _dbContext.CommodityVerifyRecords.Add(new CommodityVerifyRecord
+        {
+            OrderId = order.OrderId,
+            StaffId = staff.UserId,
+            VerifyTime = DateTime.Now
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // 订单完成时发放积分
+        await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
+
+        var verifyTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        return Ok(ApiResult.Success(new
+        {
+            verified = true,
+            alreadyVerified = false,
+            voucherType = "goods_pickup",
+            typeName = "商品自取",
+            userName = ResolveUserName(user, null, order.OrderNo),
+            userPhone = user?.PhoneNumber ?? string.Empty,
+            content = "到店自取商品",
+            title = "商品自取",
+            orderNo = order.OrderNo,
+            verifyTime,
+            participantCount = order.TotalQuantity,
+            message = "核销成功"
+        }, "核销成功"));
+    }
+
+    /// <summary>
+    /// 核销积分兑换
+    /// </summary>
+    [HttpPost("points-exchange")]
+    public async Task<IActionResult> VerifyPointsExchange([FromBody] VerifyVoucherRequest? request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var staff = await GetCurrentStaffAsync(cancellationToken);
+            if (staff is null)
+            {
+                return Ok(ApiResult.Fail("无权限访问", 403));
+            }
+
+            var code = request?.Code?.Trim();
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Ok(ApiResult.Fail("请输入核销码", 400));
+            }
+
+            // 按 order_no 查找兑换记录（points_commodity_order 表）
+            var exchange = await _dbContext.PointsExchanges
+                .FirstOrDefaultAsync(x => x.OrderNo == code, cancellationToken);
+
+            if (exchange is null)
+            {
+                return Ok(ApiResult.Fail("未找到该兑换记录，请确认二维码是否正确", 404));
+            }
+
+            // 从 points_commodity_order_status 表获取状态名
+            var statusName = await GetPointsOrderStatusNameAsync(exchange.StatusId, cancellationToken);
+
+            if (statusName == "verified")
+            {
+                return Ok(ApiResult.Fail("该兑换已核销，不能重复核销", 409));
+            }
+
+            if (statusName == "cancelled")
+            {
+                return Ok(ApiResult.Fail("该兑换已取消，无法核销", 403));
+            }
+
+            if (statusName != "pending")
+            {
+                return Ok(ApiResult.Fail("该兑换状态异常，无法核销", 400));
+            }
+
+            // 获取商品名称（从 points_commodity 表）
+            var commodity = await _dbContext.PointsCommodities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == exchange.CommodityId && x.IsDelete == 0, cancellationToken);
+            var goodsName = commodity?.Name ?? "积分商品";
+
+            // 获取持券人信息
+            var exchangeUser = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == exchange.UserId, cancellationToken);
+
+            // 获取员工真实姓名
+            var operatorName = ResolveUserName(staff, null, string.Empty);
+
+            var now = DateTime.Now;
+
+            // 获取 verified 状态 ID
+            var verifiedStatusId = await GetVerifiedStatusIdAsync(cancellationToken);
+
+            // 执行核销
+            exchange.StatusId = verifiedStatusId;
+            exchange.VerifyTime = now;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(new
+            {
+                orderNo = exchange.OrderNo,
+                goodsName,
+                userName = ResolveUserName(exchangeUser, null, exchange.OrderNo),
+                userPhone = exchangeUser?.PhoneNumber ?? string.Empty,
+                verifyTime = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                operatorName
             }, "核销成功"));
         }
         catch (Exception ex)
@@ -226,18 +406,27 @@ public class StaffVerifyController : ControllerBase
 
             var normalizedType = (voucherType ?? "all").Trim().ToLowerInvariant();
 
-            // 构建活动核销历史
+            // 活动核销历史
             var activityRecords = await GetActivityVerifyHistoryAsync(normalizedType, keyword, startDate, endDate, categoryName, page, pageSize, cancellationToken);
 
-            // 构建商品自取核销历史（仅当筛选条件包含 goods_pickup 或 all 时）
+            // 商品自取核销历史
             List<object> commodityRecords = [];
             if (normalizedType is "all" or "goods_pickup")
             {
                 commodityRecords = await GetCommodityVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
             }
 
+            // 积分兑换核销历史
+            List<object> pointsExchangeRecords = [];
+            if (normalizedType is "all" or "points_exchange")
+            {
+                pointsExchangeRecords = await GetPointsExchangeVerifyHistoryAsync(keyword, startDate, endDate, cancellationToken);
+            }
+
             // 合并 & 排序
-            var allRecords = activityRecords.Concat(commodityRecords)
+            var allRecords = activityRecords
+                .Concat(commodityRecords)
+                .Concat(pointsExchangeRecords)
                 .OrderByDescending(r => GetVerifyTime(r))
                 .ToList();
 
@@ -258,6 +447,75 @@ public class StaffVerifyController : ControllerBase
         }
     }
 
+    private async Task<List<object>> GetPointsExchangeVerifyHistoryAsync(string? keyword, string? startDate, string? endDate, CancellationToken ct)
+    {
+        // 获取 verified 状态 ID 及对应的状态名称（从数据库动态获取）
+        var verifiedStatusId = await GetVerifiedStatusIdAsync(ct);
+        var verifiedStatusName = await GetPointsOrderStatusNameAsync(verifiedStatusId, ct);
+
+        var query = _dbContext.PointsExchanges
+            .AsNoTracking()
+            .Where(x => x.StatusId == verifiedStatusId);
+
+        if (DateTime.TryParse(startDate, out var start))
+        {
+            var startDay = start.Date;
+            query = query.Where(x => x.VerifyTime >= startDay);
+        }
+        if (DateTime.TryParse(endDate, out var end))
+        {
+            var endDay = end.Date.AddDays(1);
+            query = query.Where(x => x.VerifyTime < endDay);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim();
+            query = from q in query
+                    join u in _dbContext.Users on q.UserId equals u.UserId into uj
+                    from u in uj.DefaultIfEmpty()
+                    join c in _dbContext.PointsCommodities on q.CommodityId equals c.Id into cj
+                    from c in cj.Where(x => x.IsDelete == 0).DefaultIfEmpty()
+                    where q.OrderNo.Contains(kw)
+                       || (u != null && u.RealName.Contains(kw))
+                       || (u != null && u.WxName.Contains(kw))
+                       || (c != null && c.Name.Contains(kw))
+                    select q;
+        }
+
+        var records = await query
+            .OrderByDescending(x => x.VerifyTime)
+            .ToListAsync(ct);
+
+        var userIds = records.Select(x => x.UserId).Distinct().ToList();
+        var userMap = userIds.Count > 0
+            ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
+            : new Dictionary<int, User>();
+
+        var commodityIds = records.Select(x => x.CommodityId).Distinct().ToList();
+        var commodityMap = commodityIds.Count > 0
+            ? await _dbContext.PointsCommodities.AsNoTracking().Where(x => commodityIds.Contains(x.Id) && x.IsDelete == 0).ToDictionaryAsync(x => x.Id, ct)
+            : new Dictionary<int, PointsCommodity>();
+
+        return records.Select(r =>
+        {
+            userMap.TryGetValue(r.UserId, out var u);
+            commodityMap.TryGetValue(r.CommodityId, out var c);
+            return (object)new
+            {
+                id = $"pex_{r.Id}",
+                type = "points_exchange",
+                orderNo = r.OrderNo,
+                goodsName = c?.Name ?? "积分商品",
+                userName = ResolveUserName(u, null, r.OrderNo),
+                userPhone = u?.PhoneNumber ?? string.Empty,
+                verifyTime = r.VerifyTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty,
+                _verifySort = r.VerifyTime?.Ticks ?? 0,
+                status = PointsService.StatusToText(verifiedStatusName)
+            };
+        }).ToList();
+    }
+
     private async Task<List<object>> GetActivityVerifyHistoryAsync(string normalizedType, string? keyword, string? startDate, string? endDate, string? categoryName, int page, int pageSize, CancellationToken ct)
     {
         var activityTypes = await _dbContext.ActivityTypes
@@ -268,7 +526,7 @@ public class StaffVerifyController : ControllerBase
                     join detail in _dbContext.ActivityOrderDetails on vr.ActivityOrderDetailsId equals detail.ActivityOrderDetailsId
                     join o in _dbContext.ActivityOrders on detail.ActivityOrderId equals o.OrderId
                     join a in _dbContext.Activities on detail.ActivityId equals a.ActivityId
-                    where o.OrderStatusId == 3
+                    where a.IsDelete == 0 && o.OrderStatusId == 3
                     select new { vr, detail, o, a };
 
         if (normalizedType == "pick")
@@ -321,7 +579,7 @@ public class StaffVerifyController : ControllerBase
 
         var activityIds = records.Select(x => x.detail.ActivityId).Distinct().ToList();
         var activityMap = activityIds.Count > 0
-            ? await _dbContext.Activities.AsNoTracking().Where(x => activityIds.Contains(x.ActivityId)).ToDictionaryAsync(x => x.ActivityId, ct)
+            ? await _dbContext.Activities.AsNoTracking().Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId)).ToDictionaryAsync(x => x.ActivityId, ct)
             : new Dictionary<long, ActivityEntity>();
 
         return records.Select(r =>
@@ -415,6 +673,55 @@ public class StaffVerifyController : ControllerBase
     {
         var prop = record.GetType().GetProperty("_verifySort");
         return prop?.GetValue(record) is long ticks ? ticks : 0;
+    }
+
+    /// <summary>
+    /// 从 points_commodity_order_status 表查询 status_id 对应的状态名（数据库驱动）
+    /// </summary>
+    private async Task<string> GetPointsOrderStatusNameAsync(int statusId, CancellationToken ct = default)
+    {
+        try
+        {
+            var name = await _dbContext.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .Where(s => s.Id == statusId)
+                .Select(s => s.StatusName)
+                .FirstOrDefaultAsync(ct);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+        }
+        catch { }
+
+        // 兜底默认映射
+        return statusId switch
+        {
+            1 => "pending",
+            2 => "verified",
+            3 => "cancelled",
+            _ => "unknown"
+        };
+    }
+
+    /// <summary>
+    /// 获取 points_commodity_order_status 表中 "verified" 对应的 ID
+    /// </summary>
+    private async Task<int> GetVerifiedStatusIdAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var id = await _dbContext.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .Where(s => s.StatusName == "verified")
+                .Select(s => (int?)s.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (id.HasValue)
+                return id.Value;
+        }
+        catch { }
+
+        return 2; // 默认 verified = 2
     }
 
     private async Task<User?> GetCurrentStaffAsync(CancellationToken cancellationToken)

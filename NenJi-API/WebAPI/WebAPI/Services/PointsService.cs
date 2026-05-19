@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 using WebAPI.Common;
 using WebAPI.Data;
 using WebAPI.Entities;
@@ -9,19 +10,76 @@ public class PointsService : IPointsService
 {
     private readonly AppDbContext _db;
     private static readonly Random _random = new();
+    private static readonly Dictionary<int, string> _statusCache = new()
+    {
+        { 1, "pending" },
+        { 2, "verified" },
+        { 3, "cancelled" }
+    };
 
     public PointsService(AppDbContext db)
     {
         _db = db;
     }
 
+    /// <summary>
+    /// 从 points_commodity_order_status 表加载状态映射（DB驱动，不硬编码）
+    /// 兜底用上面缓存的默认值
+    /// </summary>
+    private async Task<Dictionary<int, string>> LoadStatusMapAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var statuses = await _db.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            if (statuses.Count > 0)
+            {
+                return statuses.ToDictionary(s => s.Id, s => s.StatusName);
+            }
+        }
+        catch
+        {
+            // 表或数据不存在，使用默认映射
+        }
+
+        return new Dictionary<int, string>(_statusCache);
+    }
+
+    /// <summary>
+    /// 从 points_commodity_status 表加载商品状态映射
+    /// </summary>
+    private async Task<HashSet<int>> LoadActiveCommodityStatusIdsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            // 取所有 status_name 为 "active" 或 "上架" 的 status_id
+            var active = await _db.PointsCommodityStatuses
+                .AsNoTracking()
+                .Where(s => s.StatusName == "active" || s.StatusName == "上架")
+                .Select(s => s.Id)
+                .ToListAsync(ct);
+
+            if (active.Count > 0)
+                return active.ToHashSet();
+        }
+        catch
+        {
+            // 表或数据不存在
+        }
+
+        // 默认 status_id = 1 视为上架
+        return [1];
+    }
+
     public async Task<PointsSummaryDto?> GetSummaryAsync(int userId, CancellationToken ct = default)
     {
-        var points = await _db.UserPoints
+        var user = await _db.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == userId, ct);
 
-        if (points is null)
+        if (user is null)
         {
             return new PointsSummaryDto
             {
@@ -38,11 +96,21 @@ public class PointsService : IPointsService
             .Where(x => x.UserId == userId && x.Type == "earn" && x.CreateTime >= todayStart)
             .SumAsync(x => x.Points, ct);
 
+        var totalEarned = await _db.PointsRecords
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.Type == "earn")
+            .SumAsync(x => (int?)x.Points, ct) ?? 0;
+
+        var totalSpent = await _db.PointsRecords
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.Type == "spend")
+            .SumAsync(x => (int?)x.Points, ct) ?? 0;
+
         return new PointsSummaryDto
         {
-            TotalPoints = points.TotalPoints,
-            EarnedPoints = points.EarnedPoints,
-            SpentPoints = points.SpentPoints,
+            TotalPoints = (int)user.Points,
+            EarnedPoints = totalEarned,
+            SpentPoints = totalSpent,
             TodayEarned = todayEarned
         };
     }
@@ -76,7 +144,6 @@ public class PointsService : IPointsService
                 Type = r.Type,
                 Desc = r.Description,
                 Points = r.Points,
-                Balance = r.Balance,
                 Time = r.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")
             }).ToList(),
             Total = total,
@@ -102,36 +169,19 @@ public class PointsService : IPointsService
 
     private async Task EarnCoreAsync(int userId, string orderNo, int points, CancellationToken ct = default)
     {
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.UserId == userId, ct);
 
-        var userPoints = await _db.UserPoints
-            .FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        if (user is null)
+            throw new BusinessException("用户不存在", 404);
 
-        if (userPoints is null)
-        {
-            userPoints = new UserPoints
-            {
-                UserId = userId,
-                TotalPoints = points,
-                EarnedPoints = points,
-                SpentPoints = 0,
-                UpdatedAt = DateTime.Now
-            };
-            _db.UserPoints.Add(userPoints);
-        }
-        else
-        {
-            userPoints.TotalPoints += points;
-            userPoints.EarnedPoints += points;
-            userPoints.UpdatedAt = DateTime.Now;
-        }
+        user.Points += points;
 
         _db.PointsRecords.Add(new PointsRecord
         {
             UserId = userId,
             Type = "earn",
             Points = points,
-            Balance = userPoints.TotalPoints,
-            Description = $"消费获得积分",
+            Description = "消费获得积分",
             OrderNo = orderNo,
             CreateTime = DateTime.Now
         });
@@ -143,75 +193,129 @@ public class PointsService : IPointsService
     {
         quantity = Math.Max(1, quantity);
 
-        var commodity = await _db.Commodities
+        // 从 points_commodity 表查积分商品（根据数据库设计，不查 commodity 表）
+        var commodity = await _db.PointsCommodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CommodityId == commodityId && (x.ProductStatus ?? 0) == 1, ct);
+            .FirstOrDefaultAsync(x => x.Id == commodityId && x.IsDelete == 0, ct);
 
         if (commodity is null)
             throw new BusinessException("商品不存在", 404);
 
-        if (commodity.PointsPrice is null or <= 0)
+        if (commodity.PointsPrice <= 0)
             throw new BusinessException("该商品不支持积分兑换", 400);
 
-        var totalPoints = commodity.PointsPrice.Value * quantity;
+        var totalPoints = commodity.PointsPrice * quantity;
 
-        var userPoints = await _db.UserPoints
-            .FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.UserId == userId, ct);
 
-        if (userPoints is null || userPoints.TotalPoints < totalPoints)
+        if (user is null)
+            throw new BusinessException("用户不存在", 404);
+
+        if (user.Points < totalPoints)
             throw new BusinessException("积分不足", 409);
 
         // 扣库存
-        var inStock = commodity.InStock ?? 0;
-        if (inStock < quantity)
+        if (commodity.Stock < quantity)
             throw new BusinessException("商品库存不足", 409);
 
-        var orderNo = $"EXC{DateTime.Now:yyyyMMddHHmmssfff}{_random.Next(100, 999)}";
+        var now = DateTime.Now;
+        var orderNo = $"EXC{now:yyyyMMddHHmmssfff}{_random.Next(100, 999)}";
+
+        // 生成二维码 (Base64 data URL) —— 不存数据库，动态生成
+        var qrcodeUrl = GenerateQrCodeBase64(orderNo);
+
+        // 默认 status_id = 1 (pending)
+        var statusId = await GetPendingStatusIdAsync(ct);
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-        // 扣积分
-        userPoints.TotalPoints -= totalPoints;
-        userPoints.SpentPoints += totalPoints;
-        userPoints.UpdatedAt = DateTime.Now;
+        // 扣积分（user 表）
+        user.Points -= totalPoints;
 
-        // 扣库存
-        commodity.InStock = inStock - quantity;
+        // 扣库存（points_commodity 表）
+        commodity.Stock -= quantity;
 
-        // 流水
+        // 积分流水
         _db.PointsRecords.Add(new PointsRecord
         {
             UserId = userId,
             Type = "spend",
             Points = totalPoints,
-            Balance = userPoints.TotalPoints,
-            Description = $"兑换{commodity.ProductName}",
+            Description = $"兑换{commodity.Name}",
             OrderNo = orderNo,
-            CreateTime = DateTime.Now
+            CreateTime = now
         });
 
-        // 兑换记录
-        _db.PointsExchanges.Add(new PointsExchange
+        // 兑换记录（points_commodity_order 表）
+        var exchange = new PointsExchange
         {
             UserId = userId,
             CommodityId = commodityId,
             Quantity = quantity,
             PointsSpent = totalPoints,
             OrderNo = orderNo,
-            Status = "completed",
-            CreateTime = DateTime.Now
-        });
+            StatusId = statusId,
+            VerifyCode = orderNo,  // 核销码 = 订单号
+            CreateTime = now
+        };
+        _db.PointsExchanges.Add(exchange);
 
         await _db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
 
+        var statusMap = await LoadStatusMapAsync(ct);
+        var statusName = statusMap.GetValueOrDefault(statusId, "pending");
+
         return new PointsExchangeResultDto
         {
-            ExchangeId = 0,
+            ExchangeId = exchange.Id,
             OrderNo = orderNo,
             PointsSpent = totalPoints,
-            PointsRemaining = userPoints.TotalPoints,
-            Status = "completed"
+            PointsRemaining = (int)user.Points,
+            QrcodeUrl = qrcodeUrl,
+            Status = StatusToText(statusName),
+            StatusText = StatusToText(statusName),
+            Name = commodity.Name,
+            Image = MediaUrlHelper.Normalize(commodity.ImageUrl),
+            Time = now.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+    }
+
+    public async Task<PointsExchangeDetailDto?> GetExchangeDetailAsync(string orderNo, int userId, CancellationToken ct = default)
+    {
+        var exchange = await _db.PointsExchanges
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderNo == orderNo && x.UserId == userId, ct);
+
+        if (exchange is null)
+            return null;
+
+        // 动态生成二维码（不存数据库）
+        var qrcodeUrl = GenerateQrCodeBase64(exchange.OrderNo);
+
+        var commodity = await _db.PointsCommodities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == exchange.CommodityId && x.IsDelete == 0, ct);
+
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, ct);
+
+        var statusMap = await LoadStatusMapAsync(ct);
+        var statusName = statusMap.GetValueOrDefault(exchange.StatusId, "pending");
+
+        return new PointsExchangeDetailDto
+        {
+            OrderNo = exchange.OrderNo,
+            Name = commodity?.Name ?? "已下架",
+            Image = MediaUrlHelper.Normalize(commodity?.ImageUrl),
+            PointsSpent = exchange.PointsSpent,
+            PointsRemaining = (int)(user?.Points ?? 0),
+            QrcodeUrl = qrcodeUrl,
+            Status = StatusToText(statusName),
+            StatusText = StatusToText(statusName),
+            Time = exchange.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            VerifyTime = exchange.VerifyTime?.ToString("yyyy-MM-dd HH:mm:ss")
         };
     }
 
@@ -232,34 +336,129 @@ public class PointsService : IPointsService
             .ToListAsync(ct);
 
         var commodityIds = records.Select(x => x.CommodityId).Distinct().ToList();
-        var commodities = await _db.Commodities.AsNoTracking()
-            .Where(x => commodityIds.Contains(x.CommodityId))
-            .Select(x => new { x.CommodityId, x.ProductName, x.ImageUrl })
+        var commodities = await _db.PointsCommodities.AsNoTracking()
+            .Where(x => commodityIds.Contains(x.Id) && x.IsDelete == 0)
+            .Select(x => new { x.Id, x.Name, x.ImageUrl })
             .ToListAsync(ct);
-        var commodityMap = commodities.ToDictionary(x => x.CommodityId);
+        var commodityMap = commodities.ToDictionary(x => x.Id);
+
+        var statusMap = await LoadStatusMapAsync(ct);
 
         return new PointsExchangeListDto
         {
             List = records.Select(r =>
             {
                 var name = commodityMap.TryGetValue(r.CommodityId, out var c)
-                    ? c.ProductName : "已下架";
+                    ? c.Name : "已下架";
                 var image = commodityMap.TryGetValue(r.CommodityId, out var ci)
                     ? (ci.ImageUrl ?? string.Empty) : string.Empty;
+                var statusName = statusMap.GetValueOrDefault(r.StatusId, "pending");
                 return new PointsExchangeItemDto
                 {
                     Id = r.Id,
                     Name = name,
-                    Image = image,
+                    Image = MediaUrlHelper.Normalize(image),
                     Points = r.PointsSpent,
                     Time = r.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    Status = r.Status == "completed" ? "已完成" : "已取消",
+                    Status = StatusToText(statusName),
                     OrderNo = r.OrderNo
                 };
             }).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
+        };
+    }
+
+    /// <summary>
+    /// 获取 points_commodity_order_status 表中 "pending" 对应的 ID
+    /// </summary>
+    public async Task<int> GetPendingStatusIdAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var pending = await _db.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .Where(s => s.StatusName == "pending")
+                .Select(s => (int?)s.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (pending.HasValue)
+                return pending.Value;
+        }
+        catch { }
+
+        return 1; // 默认 pending = 1
+    }
+
+    /// <summary>
+    /// 获取状态映射：status_id → status_name
+    /// </summary>
+    public async Task<string> GetStatusNameAsync(int statusId, CancellationToken ct = default)
+    {
+        try
+        {
+            var name = await _db.PointsCommodityOrderStatuses
+                .AsNoTracking()
+                .Where(s => s.Id == statusId)
+                .Select(s => s.StatusName)
+                .FirstOrDefaultAsync(ct);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+        }
+        catch { }
+
+        return _statusCache.GetValueOrDefault(statusId, "unknown");
+    }
+
+    /// <summary>
+    /// 获取商品名称
+    /// </summary>
+    public async Task<string> GetCommodityNameAsync(int commodityId, CancellationToken ct = default)
+    {
+        try
+        {
+            var name = await _db.PointsCommodities
+                .AsNoTracking()
+                .Where(x => x.Id == commodityId && x.IsDelete == 0)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync(ct);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+        }
+        catch { }
+
+        return "积分商品";
+    }
+
+    internal static string GenerateQrCodeBase64(string content)
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(data);
+        var bytes = qrCode.GetGraphic(20);
+        return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
+    }
+
+    internal static string StatusToText(string status)
+    {
+        return status switch
+        {
+            "pending" => "待核销",
+            "verified" or "completed" => "已核销",
+            "cancelled" => "已取消",
+            _ => status
+        };
+    }
+
+    internal static string NormalizeStatus(string status)
+    {
+        return status switch
+        {
+            "completed" => "verified",
+            _ => status
         };
     }
 }

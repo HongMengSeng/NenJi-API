@@ -38,7 +38,7 @@ public class FarmGoodsController : ControllerBase
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
@@ -69,7 +69,7 @@ public class FarmGoodsController : ControllerBase
         var categoriesById = categories.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1)
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
             .OrderByDescending(x => x.CommodityId)
             .Take(12);
         var goods = await LoadGoodsCardsAsync(query, categoriesById, cancellationToken);
@@ -114,7 +114,7 @@ public class FarmGoodsController : ControllerBase
         pageSize = Math.Max(1, pageSize);
         keyword = (keyword ?? string.Empty).Trim();
 
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
+        var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             query = query.Where(x => x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword));
@@ -149,7 +149,7 @@ public class FarmGoodsController : ControllerBase
 
         var query = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (normalizedCategory != "all" && int.TryParse(normalizedCategory, out var categoryId))
         {
@@ -189,7 +189,7 @@ public class FarmGoodsController : ControllerBase
             ? []
             : await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1 && categoryIds.Contains(x.CategoryId))
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1 && categoryIds.Contains(x.CategoryId))
                 .GroupBy(x => x.CategoryId)
                 .Select(x => new { CategoryId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);

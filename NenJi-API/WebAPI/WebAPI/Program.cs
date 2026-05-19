@@ -188,6 +188,41 @@ public class Program
             {
                 // sys_config 表初始化失败，回退到硬编码默认值
             }
+
+            try
+            {
+                // 种子 points_commodity_order_status（积分兑换订单状态）
+                if (!db.PointsCommodityOrderStatuses.Any())
+                {
+                    db.PointsCommodityOrderStatuses.AddRange(
+                        new Entities.PointsCommodityOrderStatus { Id = 1, StatusName = "pending" },
+                        new Entities.PointsCommodityOrderStatus { Id = 2, StatusName = "verified" },
+                        new Entities.PointsCommodityOrderStatus { Id = 3, StatusName = "cancelled" }
+                    );
+                    db.SaveChanges();
+                }
+            }
+            catch
+            {
+                // 初始化失败，使用默认映射
+            }
+
+            try
+            {
+                // 种子 points_commodity_status（积分商品状态）
+                if (!db.PointsCommodityStatuses.Any())
+                {
+                    db.PointsCommodityStatuses.AddRange(
+                        new Entities.PointsCommodityStatus { Id = 1, StatusName = "active" },
+                        new Entities.PointsCommodityStatus { Id = 2, StatusName = "inactive" }
+                    );
+                    db.SaveChanges();
+                }
+            }
+            catch
+            {
+                // 初始化失败，使用默认映射
+            }
         }
 
         //using (var scope = app.Services.CreateScope())

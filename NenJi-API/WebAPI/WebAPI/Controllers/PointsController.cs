@@ -41,7 +41,7 @@ public class PointsController : ControllerBase
     }
 
     /// <summary>
-    /// 可积分兑换的商品列表
+    /// 可积分兑换的商品列表（从 points_commodity 表查询）
     /// </summary>
     [HttpGet("goods")]
     public async Task<IActionResult> GetGoods(
@@ -54,13 +54,16 @@ public class PointsController : ControllerBase
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
-            var query = _dbContext.Commodities
+            // 从 points_commodity_status 表获取"上架"状态的 ID
+            var activeStatusIds = await GetActiveStatusIdsAsync(cancellationToken);
+
+            var query = _dbContext.PointsCommodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1 && x.PointsPrice != null && x.PointsPrice > 0);
+                .Where(x => x.IsDelete == 0 && x.StatusId != null && activeStatusIds.Contains(x.StatusId!.Value));
 
             var total = await query.CountAsync(cancellationToken);
             var list = await query
-                .OrderByDescending(x => x.CommodityId)
+                .OrderByDescending(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
@@ -69,13 +72,12 @@ public class PointsController : ControllerBase
             {
                 list = list.Select(x => new
                 {
-                    id = x.CommodityId.ToString(),
-                    name = x.ProductName,
+                    id = x.Id.ToString(),
+                    name = x.Name,
                     image = MediaUrlHelper.Normalize(x.ImageUrl),
                     pointsPrice = x.PointsPrice,
-                    stock = x.InStock ?? 0,
-                    description = x.SpecDescription ?? string.Empty,
-                    unit = x.UnitName ?? string.Empty
+                    stock = x.Stock,
+                    description = x.Description ?? string.Empty
                 }).ToList(),
                 total,
                 page,
@@ -96,25 +98,33 @@ public class PointsController : ControllerBase
     {
         try
         {
-            var commodity = await _dbContext.Commodities
+            var activeStatusIds = await GetActiveStatusIdsAsync(cancellationToken);
+
+            var commodity = await _dbContext.PointsCommodities
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CommodityId == id && (x.ProductStatus ?? 0) == 1 && x.PointsPrice != null && x.PointsPrice > 0, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == id && x.IsDelete == 0
+                    && x.StatusId != null && activeStatusIds.Contains(x.StatusId!.Value), cancellationToken);
 
             if (commodity is null)
                 return Ok(ApiResult.Fail("商品不存在", 404));
 
+            // 查询多图
+            var images = await _dbContext.PointsCommodityImages
+                .AsNoTracking()
+                .Where(x => x.PointsCommodityId == id)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => x.ImageUrl)
+                .ToListAsync(cancellationToken);
+
             return Ok(ApiResult.Success(new
             {
-                id = commodity.CommodityId.ToString(),
-                name = commodity.ProductName,
+                id = commodity.Id.ToString(),
+                name = commodity.Name,
                 image = MediaUrlHelper.Normalize(commodity.ImageUrl),
+                images = images.Select(MediaUrlHelper.Normalize).ToList(),
                 pointsPrice = commodity.PointsPrice,
-                stock = commodity.InStock ?? 0,
-                price = commodity.UnitPrice ?? 0m,
-                description = commodity.SpecDescription ?? string.Empty,
-                storageCondition = commodity.StorageCondition ?? string.Empty,
-                weightText = commodity.WeightText ?? string.Empty,
-                unit = commodity.UnitName ?? string.Empty
+                stock = commodity.Stock,
+                description = commodity.Description ?? string.Empty
             }));
         }
         catch (Exception ex)
@@ -141,9 +151,14 @@ public class PointsController : ControllerBase
             {
                 exchangeId = result.ExchangeId,
                 orderNo = result.OrderNo,
+                name = result.Name,
+                image = result.Image,
                 pointsSpent = result.PointsSpent,
                 pointsRemaining = result.PointsRemaining,
-                status = result.Status
+                qrcodeUrl = result.QrcodeUrl,
+                status = result.Status,
+                statusText = result.StatusText,
+                time = result.Time
             }, "兑换成功"));
         }
         catch (BusinessException ex)
@@ -153,6 +168,31 @@ public class PointsController : ControllerBase
         catch (Exception ex)
         {
             return Ok(ApiResult.Fail($"兑换失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 兑换详情（含二维码）
+    /// </summary>
+    [HttpGet("exchange-detail/{orderNo}")]
+    public async Task<IActionResult> GetExchangeDetail(string orderNo, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(orderNo))
+                return Ok(ApiResult.Fail("订单号不能为空", 400));
+
+            var userId = GetUserId();
+            var result = await _pointsService.GetExchangeDetailAsync(orderNo.Trim(), userId, cancellationToken);
+
+            if (result is null)
+                return Ok(ApiResult.Fail("兑换记录不存在", 404));
+
+            return Ok(ApiResult.Success(result));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"查询失败: {ex.Message}"));
         }
     }
 
@@ -259,6 +299,27 @@ public class PointsController : ControllerBase
         {
             return Ok(ApiResult.Fail($"获取积分规则失败: {ex.Message}"));
         }
+    }
+
+    /// <summary>
+    /// 从 points_commodity_status 表获取上架状态 ID 列表（数据库驱动）
+    /// </summary>
+    private async Task<HashSet<int>> GetActiveStatusIdsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var active = await _dbContext.PointsCommodityStatuses
+                .AsNoTracking()
+                .Where(s => s.StatusName == "active" || s.StatusName == "上架")
+                .Select(s => s.Id)
+                .ToListAsync(ct);
+
+            if (active.Count > 0)
+                return active.ToHashSet();
+        }
+        catch { }
+
+        return [1];
     }
 
     private int GetUserId()

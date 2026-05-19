@@ -108,7 +108,7 @@ public class LogisticsController : ControllerBase
                 from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
                 join commodity in _dbContext.Commodities.AsNoTracking()
                     on detail.CommodityId equals commodity.CommodityId
-                where detail.OrderId == order.OrderId
+                where commodity.IsDelete == 0 && detail.OrderId == order.OrderId
                 select new
                 {
                     id = detail.CommodityId,
@@ -552,7 +552,7 @@ public class LogisticsController : ControllerBase
             from detail in _dbContext.CommodityOrderDetails.AsNoTracking()
             join commodity in _dbContext.Commodities.AsNoTracking()
                 on detail.CommodityId equals commodity.CommodityId
-            where detail.OrderId == orderId
+            where commodity.IsDelete == 0 && detail.OrderId == orderId
             select new
             {
                 name = commodity.ProductName,

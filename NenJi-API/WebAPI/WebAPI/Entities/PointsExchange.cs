@@ -3,12 +3,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAPI.Entities;
 
-[Table("points_exchange")]
+/// <summary>
+/// 积分兑换订单（映射 points_commodity_order 表）
+/// </summary>
+[Table("points_commodity_order")]
 public class PointsExchange
 {
     [Key]
     [Column("id")]
     public long Id { get; set; }
+
+    [Column("order_no")]
+    [MaxLength(64)]
+    public string OrderNo { get; set; } = string.Empty;
 
     [Column("user_id")]
     public int UserId { get; set; }
@@ -22,13 +29,17 @@ public class PointsExchange
     [Column("points_spent")]
     public int PointsSpent { get; set; }
 
-    [Column("order_no")]
-    [MaxLength(64)]
-    public string OrderNo { get; set; } = string.Empty;
+    /// <summary>状态ID，关联 points_commodity_order_status 表</summary>
+    [Column("status_id")]
+    public int StatusId { get; set; }
 
-    [Column("status")]
-    [MaxLength(20)]
-    public string Status { get; set; } = "completed";
+    /// <summary>核销码（二维码内容即 orderNo）</summary>
+    [Column("verify_code")]
+    [MaxLength(64)]
+    public string? VerifyCode { get; set; }
+
+    [Column("verify_time")]
+    public DateTime? VerifyTime { get; set; }
 
     [Column("create_time")]
     public DateTime CreateTime { get; set; }

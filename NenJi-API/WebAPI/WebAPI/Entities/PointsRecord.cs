@@ -20,9 +20,6 @@ public class PointsRecord
     [Column("points")]
     public int Points { get; set; }
 
-    [Column("balance")]
-    public int Balance { get; set; }
-
     [Column("description")]
     [MaxLength(255)]
     public string Description { get; set; } = string.Empty;

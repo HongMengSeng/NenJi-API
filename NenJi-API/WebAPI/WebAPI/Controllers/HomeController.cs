@@ -74,7 +74,7 @@ public class HomeController : ControllerBase
 
             var farmGoodsRows = await _dbContext.Commodities
                 .AsNoTracking()
-                .Where(x => (x.ProductStatus ?? 0) == 1
+                .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1
                     && x.ProductName.Contains(keyword))
                 .OrderByDescending(x => x.ProductName.Contains(keyword))
                 .ThenByDescending(x => x.CommodityId)
@@ -92,7 +92,7 @@ public class HomeController : ControllerBase
 
             var dishRows = await _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1
+                .Where(x => x.IsDelete == 0 && x.Status == 1
                     && (x.DishName.Contains(keyword) || (x.DishDescription ?? string.Empty).Contains(keyword)))
                 .OrderByDescending(x => x.DishName.Contains(keyword))
                 .ThenByDescending(x => x.DishSold)
@@ -110,7 +110,7 @@ public class HomeController : ControllerBase
 
             var activityRows = await _dbContext.Activities
                 .AsNoTracking()
-                .Where(x => x.StatusId == 1
+                .Where(x => x.IsDelete == 0 && x.StatusId == 1
                     && (x.Title.Contains(keyword)
                         || x.Description.Contains(keyword)
                         || x.Location.Contains(keyword)
@@ -233,13 +233,13 @@ public class HomeController : ControllerBase
             var allFarmGoods = await LoadCommodityCardsAsync(
                 _dbContext.Commodities
                     .AsNoTracking()
-                    .Where(x => (x.ProductStatus ?? 0) == 1)
+                    .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1)
                     .OrderByDescending(x => x.CommodityId),
                 cancellationToken);
 
             var hotDishRows = await _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1)
+                .Where(x => x.IsDelete == 0 && x.Status == 1)
                 .OrderByDescending(x => x.DishSold)
                 .ThenByDescending(x => x.DishId)
                 .Select(x => new

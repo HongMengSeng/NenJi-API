@@ -37,7 +37,7 @@ public class GoodsController : ControllerBase
         {
             var query = _dbContext.Dishes
                 .AsNoTracking()
-                .Where(x => x.Status == 1);
+                .Where(x => x.IsDelete == 0 && x.Status == 1);
 
             if (categoryId.HasValue && categoryId > 0)
             {
@@ -78,7 +78,7 @@ public class GoodsController : ControllerBase
 
         var commoditiesQuery = _dbContext.Commodities
             .AsNoTracking()
-            .Where(x => (x.ProductStatus ?? 0) == 1);
+            .Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
 
         if (categoryId.HasValue && categoryId > 0)
         {
@@ -179,7 +179,7 @@ public class GoodsController : ControllerBase
         pageSize = Math.Max(1, pageSize);
         keyword = (keyword ?? string.Empty).Trim();
 
-        var query = _dbContext.Commodities.AsNoTracking().Where(x => (x.ProductStatus ?? 0) == 1);
+        var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             query = query.Where(x => x.ProductName.Contains(keyword) || (x.SpecDescription ?? string.Empty).Contains(keyword));
@@ -243,7 +243,7 @@ public class GoodsController : ControllerBase
 
         var commodity = await _dbContext.Commodities
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.CommodityId == goodsId && (x.ProductStatus ?? 0) == 1, cancellationToken);
         if (commodity is null)
         {
             return await BuildDishDetailResponseAsync(goodsId, cancellationToken);
@@ -307,7 +307,7 @@ public class GoodsController : ControllerBase
     {
         var dish = await _dbContext.Dishes
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.DishId == dishId && x.Status == 1, cancellationToken);
+            .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.DishId == dishId && x.Status == 1, cancellationToken);
         if (dish is null)
         {
             return Ok(ApiResult.Fail("goods not found", 404));

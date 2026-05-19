@@ -18,6 +18,7 @@ public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly IInventoryService _inventoryService;
+    private readonly IPointsService _pointsService;
     private static Dictionary<int, string>? _dishStatusCache;
     private static readonly object _dishStatusCacheLock = new();
     private static Dictionary<int, string>? _commodityStatusTextCache;
@@ -25,10 +26,11 @@ public class OrdersController : ControllerBase
     private static Dictionary<int, string>? _activityStatusTextCache;
     private static readonly object _activityStatusCacheLock = new();
 
-    public OrdersController(AppDbContext dbContext, IInventoryService inventoryService)
+    public OrdersController(AppDbContext dbContext, IInventoryService inventoryService, IPointsService pointsService)
     {
         _dbContext = dbContext;
         _inventoryService = inventoryService;
+        _pointsService = pointsService;
     }
 
     private async Task EnsureDishStatusCacheAsync()
@@ -266,7 +268,7 @@ public class OrdersController : ControllerBase
             {
                 var activity = await _dbContext.Activities
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.ActivityId == detail.ActivityId, cancellationToken);
+                    .FirstOrDefaultAsync(x => x.IsDelete == 0 && x.ActivityId == detail.ActivityId, cancellationToken);
                 duration = activity?.Duration;
             }
 
@@ -784,7 +786,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.CommodityOrderDetails
             .Where(d => _dbContext.Commodities
-                .Where(c => c.ProductName.Contains(value))
+                .Where(c => c.IsDelete == 0 && c.ProductName.Contains(value))
                 .Select(c => c.CommodityId)
                 .Contains(d.CommodityId))
             .Select(d => d.OrderId);
@@ -795,7 +797,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.DishOrderDetails
             .Where(d => _dbContext.Dishes
-                .Where(dish => dish.DishName.Contains(value))
+                .Where(dish => dish.IsDelete == 0 && dish.DishName.Contains(value))
                 .Select(dish => dish.DishId)
                 .Contains(d.DishId))
             .Select(d => d.DishOrderId);
@@ -806,7 +808,7 @@ public class OrdersController : ControllerBase
     {
         var matchedIds = _dbContext.ActivityOrderDetails
             .Where(d => _dbContext.Activities
-                .Where(a => a.Title.Contains(value))
+                .Where(a => a.IsDelete == 0 && a.Title.Contains(value))
                 .Select(a => a.ActivityId)
                 .Contains(d.ActivityId))
             .Select(d => d.ActivityOrderId);
@@ -988,7 +990,7 @@ public class OrdersController : ControllerBase
             var commodityMap = commodityIds.Count == 0
                 ? new Dictionary<int, Commodity>()
                 : await _dbContext.Commodities.AsNoTracking()
-                    .Where(x => commodityIds.Contains(x.CommodityId))
+                    .Where(x => x.IsDelete == 0 && commodityIds.Contains(x.CommodityId))
                     .ToDictionaryAsync(x => x.CommodityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.OrderId))
@@ -1023,7 +1025,7 @@ public class OrdersController : ControllerBase
             var dishMap = dishIds.Count == 0
                 ? new Dictionary<int, Dish>()
                 : await _dbContext.Dishes.AsNoTracking()
-                    .Where(x => dishIds.Contains(x.DishId))
+                    .Where(x => x.IsDelete == 0 && dishIds.Contains(x.DishId))
                     .ToDictionaryAsync(x => x.DishId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.DishOrderId))
@@ -1058,7 +1060,7 @@ public class OrdersController : ControllerBase
             var activityMap = activityIds.Count == 0
                 ? new Dictionary<long, ActivityEntity>()
                 : await _dbContext.Activities.AsNoTracking()
-                    .Where(x => activityIds.Contains(x.ActivityId))
+                    .Where(x => x.IsDelete == 0 && activityIds.Contains(x.ActivityId))
                     .ToDictionaryAsync(x => x.ActivityId, cancellationToken);
 
             foreach (var group in details.GroupBy(x => x.ActivityOrderId))
@@ -1228,6 +1230,9 @@ public class OrdersController : ControllerBase
             {
                 if (entity.OrderStatusId != 3 && entity.OrderStatusId != 2) return (false, "当前状态不可确认收货");
                 entity.OrderStatusId = 4;
+
+                // 订单完成时发放积分
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
             }
             else
             {
@@ -1262,6 +1267,9 @@ public class OrdersController : ControllerBase
             {
                 if (entity.OrderStatusId != 2) return (false, "当前状态不可完成");
                 entity.OrderStatusId = 3;
+
+                // 订单完成时发放积分
+                await _pointsService.EarnPointsAsync(order.UserId, order.OrderNo, order.TotalAmount, cancellationToken);
             }
             else
             {
@@ -1301,9 +1309,10 @@ public class OrdersController : ControllerBase
             var entity = (CommodityOrder)order.TrackingEntity!;
             if (entity.OrderStatusId == 1)
             {
-                entity.OrderStatusId = 2;
+                var paidStatusId = entity.DeliveryMethod == "pickup" ? 8 : 2;
+                entity.OrderStatusId = paidStatusId;
                 entity.WxPayNo = wxPayNo;
-                await SyncDetailStatusAsync(entity.OrderId, 2, cancellationToken);
+                await SyncDetailStatusAsync(entity.OrderId, paidStatusId, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 order.RefreshFrom(entity);
             }
@@ -1375,6 +1384,7 @@ public class OrdersController : ControllerBase
     {
         public string Type { get; init; } = string.Empty;
         public string TypeText { get; init; } = string.Empty;
+        public int UserId { get; init; }
         public long OrderId { get; init; }
         public string OrderNo { get; init; } = string.Empty;
         public DateTime CreateTime { get; init; }
@@ -1401,6 +1411,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "goods",
                 TypeText = "商品订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,
@@ -1427,6 +1438,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "food",
                 TypeText = "点餐订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,
@@ -1452,6 +1464,7 @@ public class OrdersController : ControllerBase
             {
                 Type = "activity",
                 TypeText = "活动订单",
+                UserId = order.UserId,
                 OrderId = order.OrderId,
                 OrderNo = order.OrderNo,
                 CreateTime = order.CreateTime,

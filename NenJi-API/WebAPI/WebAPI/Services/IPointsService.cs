@@ -16,6 +16,9 @@ public interface IPointsService
 
     /// <summary>获取兑换记录</summary>
     Task<PointsExchangeListDto> GetExchangeRecordsAsync(int userId, int page, int pageSize, CancellationToken ct = default);
+
+    /// <summary>查询兑换详情</summary>
+    Task<PointsExchangeDetailDto?> GetExchangeDetailAsync(string orderNo, int userId, CancellationToken ct = default);
 }
 
 public class PointsSummaryDto
@@ -40,7 +43,6 @@ public class PointsRecordItemDto
     public string Type { get; set; } = string.Empty;
     public string Desc { get; set; } = string.Empty;
     public int Points { get; set; }
-    public int Balance { get; set; }
     public string Time { get; set; } = string.Empty;
 }
 
@@ -50,7 +52,26 @@ public class PointsExchangeResultDto
     public string OrderNo { get; set; } = string.Empty;
     public int PointsSpent { get; set; }
     public int PointsRemaining { get; set; }
-    public string Status { get; set; } = "completed";
+    public string QrcodeUrl { get; set; } = string.Empty;
+    public string Status { get; set; } = "pending";
+    public string StatusText { get; set; } = "待核销";
+    public string Name { get; set; } = string.Empty;
+    public string Image { get; set; } = string.Empty;
+    public string Time { get; set; } = string.Empty;
+}
+
+public class PointsExchangeDetailDto
+{
+    public string OrderNo { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Image { get; set; } = string.Empty;
+    public int PointsSpent { get; set; }
+    public int PointsRemaining { get; set; }
+    public string QrcodeUrl { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string Time { get; set; } = string.Empty;
+    public string? VerifyTime { get; set; }
 }
 
 public class PointsExchangeListDto
