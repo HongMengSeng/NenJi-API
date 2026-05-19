@@ -251,12 +251,22 @@ Page({
 
         // 格式化数据（与 staff-verify-history 保持一致）
         const historyList = list.map(item => {
-          const isPointsExchange = item.type === 'points_exchange';
+          const isPointsExchange = item.type === 'points_exchange' || item.typeName === '积分兑换';
           const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
+          const isStudy = item.typeName === '亲子研学' || item.categoryName === '亲子研学';
+          let tagClass = 'tag-activity';
+          if (isPointsExchange) {
+            tagClass = 'tag-points';
+          } else if (isPickupHistory) {
+            tagClass = 'tag-pickup';
+          } else if (isStudy) {
+            tagClass = 'tag-study';
+          }
           return {
           id: item.id || Math.random().toString(36).substr(2, 9),
           voucherType: isPointsExchange ? 'points_exchange' : (item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity')),
           typeName: isPointsExchange ? '积分兑换' : (item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券')),
+          tagClass: tagClass,
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
           content: isPointsExchange ? (item.goodsName || '积分商品') : (item.content || item.description || '-'),

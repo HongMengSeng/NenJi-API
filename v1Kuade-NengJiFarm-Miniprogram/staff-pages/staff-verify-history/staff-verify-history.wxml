@@ -58,7 +58,7 @@
         data-item="{{item}}"
       >
         <view class="history-left">
-          <text class="history-type activity-tag">
+          <text class="history-type {{item.tagClass}}">
             {{item.typeName}}
           </text>
           <view class="history-detail">

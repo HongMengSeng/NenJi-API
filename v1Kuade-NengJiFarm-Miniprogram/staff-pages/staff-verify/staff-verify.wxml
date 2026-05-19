@@ -69,7 +69,7 @@
     <view class="history-list" wx:if="{{historyList.length > 0}}">
       <view class="history-item" wx:for="{{historyList}}" wx:key="id" bindtap="showHistoryDetail" data-item="{{item}}">
         <view class="history-left">
-          <text class="history-type activity-tag">{{item.typeName}}</text>
+          <text class="history-type {{item.tagClass}}">{{item.typeName}}</text>
           <view class="history-detail">
             <text class="history-user">{{item.userName}}</text>
             <text class="history-content">{{item.content}}</text>
