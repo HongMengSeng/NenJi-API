@@ -567,8 +567,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-default" @click="cancelDelete">取消</button>
-						<button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+						<button class="btn btn-default" @click="cancelDelete" :disabled="deleteLoading">取消</button>
+						<button class="btn btn-danger" @click="confirmDelete" :disabled="deleteLoading">{{ deleteLoading ? '删除中...' : '确认删除' }}</button>
 					</div>
 				</div>
 			</div>
@@ -579,6 +579,7 @@
 			const { createApp } = Vue
 			const DISH_IMAGE_BASE_URL = 'http://192.168.101.30:7240';
 			const DISH_LIST_API = 'http://192.168.101.30:7240/api/dish/list';
+			const DISH_DELETE_API = 'http://192.168.101.30:7240/api/dish/delete';
 
 			createApp({
 				data() {
@@ -592,6 +593,7 @@
 						totalDishes: 0,
 						dishSelectAll: false,
 						showDeleteModal: false,
+						deleteLoading: false,
 						deleteTargetType: '',
 						deleteTargetIds: [],
 						deleteTargetLabel: '',
@@ -716,6 +718,49 @@
 							return fallback;
 						}
 						return message;
+					},
+
+					async parseResponseData(response) {
+						const text = await response.text();
+						if (!text) {
+							return {};
+						}
+						try {
+							return JSON.parse(text);
+						} catch (error) {
+							return { message: text };
+						}
+					},
+
+					normalizeDeleteId(id) {
+						const text = String(id ?? '').trim();
+						if (!text) {
+							return '';
+						}
+						const numericId = Number(text);
+						return Number.isFinite(numericId) ? numericId : text;
+					},
+
+					async deleteDishById(id) {
+						const deleteId = this.normalizeDeleteId(id);
+						if (deleteId === '') {
+							throw new Error('未找到菜品ID');
+						}
+
+						const response = await fetch(`${DISH_DELETE_API}?id=${encodeURIComponent(deleteId)}`, {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify({
+								id: deleteId
+							})
+						});
+						const data = await this.parseResponseData(response);
+						if (!response.ok || !this.isSuccessResponse(data)) {
+							throw new Error(this.getErrorMessage(data, `删除菜品失败，HTTP 状态码：${response.status}`));
+						}
+						return deleteId;
 					},
 
 					getStatusQueryValue() {
@@ -854,11 +899,15 @@
 					},
 					resetDeleteState() {
 						this.showDeleteModal = false;
+						this.deleteLoading = false;
 						this.deleteTargetType = '';
 						this.deleteTargetIds = [];
 						this.deleteTargetLabel = '';
 					},
 					cancelDelete() {
+						if (this.deleteLoading) {
+							return;
+						}
 						this.resetDeleteState();
 					},
 					async confirmDelete() {
@@ -867,8 +916,25 @@
 							return;
 						}
 
-						this.resetDeleteState();
-						await this.loadDishes(this.currentPage);
+						this.deleteLoading = true;
+						this.listError = '';
+						const targetIds = [...this.deleteTargetIds];
+						try {
+							const deletedIds = [];
+							for (const id of targetIds) {
+								deletedIds.push(await this.deleteDishById(id));
+							}
+							const nextPage = this.dishes.length <= deletedIds.length && this.currentPage > 1
+								? this.currentPage - 1
+								: this.currentPage;
+							this.resetDeleteState();
+							await this.loadDishes(nextPage);
+						} catch (error) {
+							console.error('删除菜品失败:', error);
+							this.deleteLoading = false;
+							this.listError = error.message || '删除菜品失败';
+							alert(this.listError);
+						}
 					}
 				}
 			}).mount('#app')
