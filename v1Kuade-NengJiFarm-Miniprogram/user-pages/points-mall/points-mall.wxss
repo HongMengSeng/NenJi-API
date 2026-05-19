@@ -106,6 +106,16 @@
   margin-bottom: 16rpx;
 }
 
+.goods-spec-tag {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 1rpx 10rpx;
+  border-radius: 4rpx;
+  font-size: 20rpx;
+  margin-right: 6rpx;
+}
+
 .goods-bottom {
   display: flex;
   justify-content: space-between;

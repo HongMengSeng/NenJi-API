@@ -9,6 +9,7 @@ Page({
       image: '',
       images: [],
       description: '',
+      spec: '',
       stock: 0
     },
     swiperList: [],
@@ -64,6 +65,7 @@ Page({
           image: images[0] || '',
           images,
           description: data.description || '',
+          spec: data.spec || '',
           stock: data.stock || 0
         };
 

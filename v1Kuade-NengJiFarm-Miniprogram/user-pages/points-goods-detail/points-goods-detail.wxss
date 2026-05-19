@@ -87,6 +87,16 @@ page {
   margin-top: 10rpx;
 }
 
+.goods-spec {
+  display: inline-block;
+  background-color: #FFF5E6;
+  color: #D4A76A;
+  padding: 2rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
+}
+
 .user-points-row {
   font-size: 24rpx;
   color: #666;

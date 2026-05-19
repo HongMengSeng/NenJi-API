@@ -49,7 +49,8 @@
     <view wx:else class="stock-info">还剩 {{goods.stock}} 份</view>
    
     <view class="goods-description">
-      {{goods.description}}
+      <text wx:if="{{goods.spec}}" class="goods-spec">{{goods.spec}}</text>
+      <text wx:if="{{goods.description}}" class="goods-desc-text">{{goods.description}}</text>
     </view>
 
     <view class="delivery-info">

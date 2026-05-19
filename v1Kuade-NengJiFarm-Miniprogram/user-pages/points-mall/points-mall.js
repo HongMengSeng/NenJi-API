@@ -64,7 +64,8 @@ Page({
           image: this._processImage(item.image),
           points: item.pointsPrice,
           stock: item.stock,
-          desc: item.description || ''
+          desc: item.description || '',
+          spec: item.spec || ''
         }));
 
         const goodsList = append ? [...this.data.goodsList, ...newItems] : newItems;
