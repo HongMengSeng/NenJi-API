@@ -613,8 +613,10 @@ public class StaffVerifyController : ControllerBase
     {
         var query = from vr in _dbContext.CommodityVerifyRecords
                     join o in _dbContext.CommodityOrders on vr.OrderId equals o.OrderId
+                    join d in _dbContext.CommodityOrderDetails on vr.OrderId equals d.OrderId into dj
+                    from d in dj.DefaultIfEmpty()
                     where o.DeliveryMethod == "pickup"
-                    select new { vr, o };
+                    select new { vr, o, d };
 
         if (DateTime.TryParse(startDate, out var start))
         {
@@ -648,9 +650,21 @@ public class StaffVerifyController : ControllerBase
             ? await _dbContext.Users.AsNoTracking().Where(x => userIds.Contains(x.UserId)).ToDictionaryAsync(x => x.UserId, ct)
             : new Dictionary<int, User>();
 
-        return records.Select(r =>
+        // 按 order 分组取商品名称（一个订单可能有多个明细）
+        var orderGoodsNames = records
+            .GroupBy(x => x.o.OrderId)
+            .ToDictionary(g => g.Key, g =>
+            {
+                var names = g.Where(x => x.d != null && !string.IsNullOrWhiteSpace(x.d.GoodsName))
+                             .Select(x => x.d!.GoodsName).Distinct().ToList();
+                return names.Count > 0 ? string.Join("、", names) : null;
+            });
+
+        return records.GroupBy(x => x.vr.Id).Select(g =>
         {
+            var r = g.First();
             userMap.TryGetValue(r.o.UserId, out var u);
+            var goodsName = orderGoodsNames.GetValueOrDefault(r.o.OrderId);
             return (object)new
             {
                 id = $"cvr_{r.vr.Id}",
@@ -659,6 +673,7 @@ public class StaffVerifyController : ControllerBase
                 categoryName = "商品自取",
                 userName = ResolveUserName(u, null, r.o.OrderNo),
                 userPhone = u?.PhoneNumber ?? string.Empty,
+                goodsName = goodsName ?? "到店自取商品",
                 content = "到店自取商品",
                 verifyTime = r.vr.VerifyTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 _verifySort = r.vr.VerifyTime.Ticks,
