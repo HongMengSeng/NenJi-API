@@ -530,10 +530,9 @@
 									<label>净含量</label>
 									<div class="weight-input-group">
 										<input type="number" v-model="productForm.netWeight" />
-										<select v-model="productForm.weightUnit">
-											<option value="kg">kg</option>
-											<option value="g">g</option>
-											<option value="斤">斤</option>
+										<select v-model="productForm.unitId">
+											<option value="" disabled>请选择单位</option>
+											<option v-for="unit in units" :key="unit.unitId" :value="unit.unitId">{{ unit.unitName }}</option>
 										</select>
 									</div>
 								</div>
@@ -604,7 +603,8 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_IMAGE_BASE_URL = '/images/';
+			const PRODUCT_IMAGE_BASE_URL = '/images/farm';
+			const UNITS_API = 'http://192.168.101.11:7240/api/product/units';
 			
 			createApp({
 				data() {
@@ -615,6 +615,11 @@
 						specImagePreviews: [],
 						previewImageUrl: '',
 						previewVideoItem: null,
+						units: [
+							{ unitId: 1, unitName: 'kg' },
+							{ unitId: 2, unitName: 'g' },
+							{ unitId: 3, unitName: '斤' }
+						],
 						// 产品表单
 						productForm: {
 							name: '',
@@ -624,7 +629,7 @@
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
-							weightUnit: 'kg',
+							unitId: '',
 							storageCondition: '',
 							specImages: [],
 							description: ''
@@ -633,11 +638,10 @@
 				},
 				
 				mounted() {
-					// 检查是否是编辑模式
+					this.loadUnits();
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
 					if (productId) {
-						// 模拟加载产品数据
 						this.loadProductData(productId);
 					}
 				},
@@ -646,6 +650,25 @@
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
+					},
+					
+					// 加载单位列表
+					async loadUnits() {
+						try {
+							const res = await fetch(UNITS_API, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							if (!res.ok) {
+								console.warn('单位列表接口不可用，使用默认单位');
+								return;
+							}
+							const data = await res.json();
+							if ((data.code === 0 || data.code === 200) && data.data && data.data.length > 0) {
+								this.units = data.data;
+							}
+						} catch (error) {
+							console.warn('加载单位列表失败，使用默认单位:', error);
+						}
 					},
 					
 					// 加载产品数据
@@ -702,13 +725,14 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+								const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
 								});
 								const data = await res.json();
-								if (data.code === 200 && data.data) {
+								const successCode = data.code === 200 || data.code === 0;
+								if (successCode && data.data) {
 									const resultUrl = data.data.url || data.data;
 									if (resultUrl) {
 										this.productForm.coverImage = resultUrl;
@@ -765,13 +789,14 @@
 									formData.append('file', file);
 									const authHeaders = window.Auth.getAuthHeaders();
 									delete authHeaders['Content-Type'];
-									const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+									const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
 										method: 'POST',
 										headers: authHeaders,
 										body: formData
 									});
 									const data = await res.json();
-									if (data.code === 200 && data.data) {
+									const successCode = data.code === 200 || data.code === 0;
+									if (successCode && data.data) {
 										uploadUrl = data.data.url || data.data;
 										console.log('上传成功:', uploadUrl);
 									} else {
@@ -848,13 +873,14 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.30:7240/api/common/upload', {
+								const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
 								});
 								const data = await res.json();
-								if (data.code === 200 && data.data) {
+								const successCode = data.code === 200 || data.code === 0;
+								if (successCode && data.data) {
 									imageUrl = data.data.url || data.data;
 									console.log('上传成功:', imageUrl);
 								} else {
@@ -883,6 +909,7 @@
 
 					// 按后端新增产品接口要求组装 body。
 					buildProductBody() {
+						const unitIdValue = this.toNumber(this.productForm.unitId);
 						return {
 							name: String(this.productForm.name || '').trim(),
 							price: this.toNumber(this.productForm.price),
@@ -895,7 +922,7 @@
 								thumb: item.thumb || ''
 							})),
 							netWeight: this.toNumber(this.productForm.netWeight),
-							weightUnit: this.productForm.weightUnit,
+							unitId: unitIdValue > 0 ? unitIdValue : null,
 							storageCondition: String(this.productForm.storageCondition || '').trim(),
 							specImages: this.productForm.specImages,
 							description: String(this.productForm.description || '').trim()
@@ -920,7 +947,7 @@
 
 						try {
 							console.log('新增产品请求body:', bodyData);
-							const res = await fetch('http://192.168.101.30:7240/api/product/add', {
+							const res = await fetch('http://192.168.101.11:7240/api/product/add', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
