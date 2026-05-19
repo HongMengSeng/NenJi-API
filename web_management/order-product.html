@@ -257,6 +257,16 @@
 			font-family: inherit;
 		}
 
+		.status-filter-select{
+			padding: 8px 10px;
+			min-width: 140px;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+			font-size: 14px;
+			font-family: inherit;
+			background: white;
+		}
+
 		.order-table-wrapper{
 			overflow-x: auto;
 			border-radius: 8px;
@@ -794,6 +804,10 @@
 				width: 100%;
 			}
 
+			.status-filter-select{
+				width: 100%;
+			}
+
 			.info-grid{
 				grid-template-columns: 1fr;
 			}
@@ -867,6 +881,10 @@
 											placeholder="订单ID/客户微信号/收货人搜索"
 											@keyup.enter="searchProductOrders"
 										/>
+										<select class="status-filter-select" v-model="productStatusFilter" @change="searchProductOrders" :disabled="productLoading">
+											<option value="">全部状态</option>
+											<option v-for="item in productStatusFilterOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+										</select>
 										<button class="btn btn-primary" @click="searchProductOrders" :disabled="productLoading">搜索</button>
 									</div>
 								</div>
@@ -1182,6 +1200,17 @@
 					allProductOrders: [],
 					productOrders: [],
 					productSearchKeyword: '',
+					productStatusFilter: '',
+					productStatusFilterOptions: [
+						{ label: '待支付', value: '待支付' },
+						{ label: '待发货', value: '待发货' },
+						{ label: '待收货', value: '待收货' },
+						{ label: '退款中', value: '退款中' },
+						{ label: '已退款', value: '已退款' },
+						{ label: '已完成', value: '已完成' },
+						{ label: '待签约', value: '待签约' },
+						{ label: '认购中', value: '认购中' }
+					],
 					productCurrentPage: 1,
 					productPageSize: 15,
 					productPageSizeOptions: [5, 10, 15],
@@ -1725,9 +1754,7 @@
 				},
 
 				canApplyRefund(order) {
-					return !this.isSubscriptionProductOrder(order)
-						&& order.paymentStatus === '已支付'
-						&& this.getProductOrderDisplayStatus(order.orderStatus) === '待收货';
+					return false;
 				},
 
 				canViewRefundDetail(order) {
@@ -2267,16 +2294,44 @@
 					this.fetchProductOrders();
 				},
 
+				getProductStatusFilterValue() {
+					return String(this.productStatusFilter || '').trim();
+				},
+
+				matchesProductStatusFilter(order, status) {
+					if (!status) {
+						return true;
+					}
+
+					const displayStatus = this.getProductOrderDisplayStatus(order?.orderStatus);
+					if (status === '已退款') {
+						return displayStatus === '已退款' || order?.paymentStatus === '已退款';
+					}
+					if (status === '已完成') {
+						return displayStatus === '已完成' && order?.paymentStatus !== '已退款';
+					}
+					return displayStatus === status;
+				},
+
+				filterProductOrdersByStatus(orders, status = this.getProductStatusFilterValue()) {
+					return (Array.isArray(orders) ? orders : []).filter(order => this.matchesProductStatusFilter(order, status));
+				},
+
 				async fetchProductOrders() {
 					this.productLoading = true;
 					this.productListError = '';
 					try {
+						const statusFilter = this.getProductStatusFilterValue();
 						const params = new URLSearchParams({
-							pageNum: this.productCurrentPage,
-							pageSize: this.productPageSize
+							pageNum: statusFilter ? 1 : this.productCurrentPage,
+							pageSize: statusFilter ? Math.max(this.productPageSize, 1000) : this.productPageSize
 						});
 						if (this.productSearchKeyword.trim()) {
 							params.set('keyword', this.productSearchKeyword.trim());
+						}
+						if (statusFilter) {
+							params.set('orderStatus', statusFilter);
+							params.set('status', statusFilter);
 						}
 
 						const headers = window.Auth && typeof window.Auth.getAuthHeaders === 'function'
@@ -2331,11 +2386,23 @@
 						}
 
 						const orders = this.createProductOrderRecords(pageData.records);
-						this.allProductOrders = orders;
-						this.productOrders = orders;
-						this.productTotalOrders = Number(pageData.total) || orders.length;
-						this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
-						this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
+						if (statusFilter) {
+							const filteredOrders = this.filterProductOrdersByStatus(orders, statusFilter);
+							this.allProductOrders = filteredOrders;
+							this.productTotalOrders = filteredOrders.length;
+							this.productTotalPages = Math.max(Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
+							if (this.productCurrentPage > this.productTotalPages) {
+								this.productCurrentPage = this.productTotalPages;
+							}
+							const startIndex = (this.productCurrentPage - 1) * this.productPageSize;
+							this.productOrders = filteredOrders.slice(startIndex, startIndex + this.productPageSize);
+						} else {
+							this.allProductOrders = orders;
+							this.productOrders = orders;
+							this.productTotalOrders = Number(pageData.total) || orders.length;
+							this.productTotalPages = Math.max(Number(pageData.pages) || Math.ceil(this.productTotalOrders / this.productPageSize) || 1, 1);
+							this.productCurrentPage = Number(pageData.pageNum) || this.productCurrentPage;
+						}
 						this.productJumpPage = this.productCurrentPage;
 					} catch (error) {
 						const message = String(error?.message || error || '').trim();
@@ -2363,7 +2430,7 @@
 
 				filterProductOrders() {
 					const keyword = this.productSearchKeyword.trim().toLowerCase();
-					const managedOrders = this.allProductOrders.filter(order => this.isManagedProductOrder(order));
+					const managedOrders = this.filterProductOrdersByStatus(this.allProductOrders.filter(order => this.isManagedProductOrder(order)));
 					if (!keyword) {
 						return managedOrders;
 					}
@@ -2415,6 +2482,7 @@
 
 				refreshProductOrders() {
 					this.productSearchKeyword = '';
+					this.productStatusFilter = '';
 					this.productCurrentPage = 1;
 					this.fetchProductOrders();
 				},
