@@ -83,6 +83,7 @@ public class AppDbContext : DbContext
     public DbSet<PointsCommodityImage> PointsCommodityImages => Set<PointsCommodityImage>();
 
     public DbSet<CommodityVerifyRecord> CommodityVerifyRecords => Set<CommodityVerifyRecord>();
+    public DbSet<Unit> Units => Set<Unit>();
 
     //public DbSet<AdminAccount> AdminAccounts => Set<AdminAccount>();
 

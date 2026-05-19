@@ -94,9 +94,14 @@ public class GoodsController : ControllerBase
         var commodityIds = commodities.Select(x => x.CommodityId).ToList();
         var commodityStats = await _inventoryStatsService.GetCommodityStatsAsync(commodityIds, cancellationToken);
 
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
         var goodsList = commodities.Select(x =>
         {
             var stat = commodityStats.GetValueOrDefault(x.CommodityId);
+            var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+            var spec = BuildSpec(x.WeightText, unitName);
+            var description = ExtractDescription(x.SpecDescription, spec);
             return (object)new
             {
                 id = x.CommodityId.ToString(),
@@ -106,7 +111,8 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
-                description = x.SpecDescription ?? string.Empty,
+                spec,
+                description,
                 categoryId = x.CategoryId.ToString(),
                 category = x.CategoryId.ToString(),
                 tags = Array.Empty<string>()
@@ -195,9 +201,14 @@ public class GoodsController : ControllerBase
         var ids = commodities.Select(x => x.CommodityId).ToList();
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(ids, cancellationToken);
 
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
         var goodsList = commodities.Select(x =>
         {
             var stat = stats.GetValueOrDefault(x.CommodityId);
+            var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+            var spec = BuildSpec(x.WeightText, unitName);
+            var description = ExtractDescription(x.SpecDescription, spec);
             return new
             {
                 id = x.CommodityId.ToString(),
@@ -207,7 +218,8 @@ public class GoodsController : ControllerBase
                 image = NormalizeMediaUrl(x.ImageUrl),
                 stock = stat?.Stock ?? (x.InStock ?? 0),
                 sold = stat?.Sold ?? Math.Max(0, x.Quantity ?? 0),
-                description = x.SpecDescription ?? string.Empty,
+                spec,
+                description,
                 categoryId = x.CategoryId.ToString()
             };
         }).ToList();
@@ -278,6 +290,16 @@ public class GoodsController : ControllerBase
         var sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0);
         var detailImage = images.FirstOrDefault() ?? mainImage;
 
+        // 从 unit 表获取单位名称
+        var unitName = commodity.UnitId.HasValue
+            ? await _dbContext.Units.AsNoTracking()
+                .Where(u => u.UnitId == commodity.UnitId.Value && u.IsEnabled == 1)
+                .Select(u => u.UnitName)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        var spec = BuildSpec(commodity.WeightText, unitName);
+        var description = ExtractDescription(commodity.SpecDescription, spec);
+
         return Ok(ApiResult.Success(new
         {
             id = commodity.CommodityId.ToString(),
@@ -291,8 +313,9 @@ public class GoodsController : ControllerBase
             detail_image = detailImage,
             detailImages = images,
             detail_images = images,
-            description = commodity.SpecDescription ?? string.Empty,
-            desc = commodity.SpecDescription ?? string.Empty,
+            spec,
+            description,
+            desc = description,
             weight = commodity.WeightText ?? string.Empty,
             storage = commodity.StorageCondition ?? string.Empty,
             videoUrl = string.Empty,
@@ -365,4 +388,33 @@ public class GoodsController : ControllerBase
     }
 
     private static string NormalizeMediaUrl(string? raw) => MediaUrlHelper.Normalize(raw);
+
+    /// <summary>
+    /// 构建规格文本：净含量 + "/" + 单位
+    /// </summary>
+    internal static string BuildSpec(string? weightText, string? unitName)
+    {
+        if (string.IsNullOrWhiteSpace(weightText))
+            return string.Empty;
+        if (!string.IsNullOrWhiteSpace(unitName))
+            return $"{weightText}/{unitName}";
+        return weightText;
+    }
+
+    /// <summary>
+    /// 从 spec_description 中提取纯描述文本（去掉规格前缀）
+    /// </summary>
+    internal static string ExtractDescription(string? specDescription, string? spec)
+    {
+        var desc = specDescription ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(spec) && !string.IsNullOrWhiteSpace(desc))
+        {
+            var prefix = $"{spec}，";
+            if (desc.StartsWith(prefix))
+            {
+                desc = desc[prefix.Length..];
+            }
+        }
+        return desc;
+    }
 }

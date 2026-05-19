@@ -86,6 +86,8 @@ public class HomeController : ControllerBase
                     x.UnitPrice,
                     x.OriginalPrice,
                     x.SpecDescription,
+                    x.WeightText,
+                    x.UnitId,
                     x.InStock
                 })
                 .ToListAsync(cancellationToken);
@@ -129,9 +131,18 @@ public class HomeController : ControllerBase
                 })
                 .ToListAsync(cancellationToken);
 
+            // 加载 unit 表
+            var unitMap = await _dbContext.Units
+                .AsNoTracking()
+                .Where(u => u.IsEnabled == 1)
+                .ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
+
             var items = farmGoodsRows.Select(x =>
             {
                 var price = x.UnitPrice ?? 0m;
+                var unitName = x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null;
+                var spec = GoodsController.BuildSpec(x.WeightText, unitName);
+                var description = GoodsController.ExtractDescription(x.SpecDescription, spec);
                 return new HomeSearchItem
                 {
                     Id = x.CommodityId.ToString(),
@@ -141,7 +152,8 @@ public class HomeController : ControllerBase
                     Image = NormalizeMediaUrl(x.ImageUrl) ?? string.Empty,
                     Price = price,
                     OriginalPrice = x.OriginalPrice ?? price,
-                    Description = x.SpecDescription ?? string.Empty,
+                    Spec = spec,
+                    Description = description,
                     Stock = x.InStock ?? 0,
                     DetailPath = $"/user-pages/goods-detail/goods-detail?id={x.CommodityId}"
                 };
@@ -512,6 +524,7 @@ public class HomeController : ControllerBase
         public string Image { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal OriginalPrice { get; set; }
+        public string Spec { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int Stock { get; set; }
         public string Date { get; set; } = string.Empty;

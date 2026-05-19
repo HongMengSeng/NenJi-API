@@ -145,10 +145,11 @@ public class OrderController : ControllerBase
         var query = _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1);
         var commodities = await query.OrderBy(x => x.CategoryId).ThenBy(x => x.CommodityId).ToListAsync(cancellationToken);
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(commodities.Select(x => x.CommodityId), cancellationToken);
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
 
         var goods = commodities
             .Where(x => categoryMap.TryGetValue(x.CategoryId, out var key) && key == currentCategory)
-            .Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId)))
+            .Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId), x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null))
             .ToList();
         var total = goods.Count;
         var pageGoods = goods.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -173,9 +174,10 @@ public class OrderController : ControllerBase
         var categoryMap = categories.ToDictionary(x => x.CategoryId, x => x.Id);
         var commodities = await _dbContext.Commodities.AsNoTracking().Where(x => x.IsDelete == 0 && (x.ProductStatus ?? 0) == 1).ToListAsync(cancellationToken);
         var stats = await _inventoryStatsService.GetCommodityStatsAsync(commodities.Select(x => x.CommodityId), cancellationToken);
+        var unitMap = await _dbContext.Units.AsNoTracking().Where(u => u.IsEnabled == 1).ToDictionaryAsync(u => u.UnitId, u => u.UnitName, cancellationToken);
         var goodsList = commodities
             .GroupBy(x => categoryMap.TryGetValue(x.CategoryId, out var key) ? key : $"category-{x.CategoryId}")
-            .ToDictionary(g => g.Key, g => g.Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId))).ToList());
+            .ToDictionary(g => g.Key, g => g.Select(x => BuildMenuGoods(x, stats.GetValueOrDefault(x.CommodityId), x.UnitId.HasValue ? unitMap.GetValueOrDefault(x.UnitId.Value) : null)).ToList());
 
         return Ok(ApiResult.Success(new { data = new { data = new { categories, goodsList } } }));
     }
@@ -463,9 +465,11 @@ public class OrderController : ControllerBase
         };
     }
 
-    private object BuildMenuGoods(Commodity commodity, CommodityInventoryStats? stats)
+    private object BuildMenuGoods(Commodity commodity, CommodityInventoryStats? stats, string? unitName = null)
     {
         var image = NormalizeMediaUrl(commodity.ImageUrl);
+        var spec = GoodsController.BuildSpec(commodity.WeightText, unitName);
+        var description = GoodsController.ExtractDescription(commodity.SpecDescription, spec);
         return new
         {
             id = commodity.CommodityId.ToString(),
@@ -473,7 +477,8 @@ public class OrderController : ControllerBase
             price = commodity.UnitPrice ?? 0m,
             image,
             detailImage = image,
-            description = commodity.SpecDescription ?? string.Empty,
+            spec,
+            description,
             sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0),
             stock = stats?.Stock ?? (commodity.InStock ?? 0)
         };
