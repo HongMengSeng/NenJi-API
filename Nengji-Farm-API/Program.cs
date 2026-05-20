@@ -190,7 +190,6 @@ public class Program
         builder.Services.AddScoped<IInventoryService, InventoryService>();
         builder.Services.AddHttpClient<IWeChatPayService, WeChatPayService>();
         builder.Services.AddScoped<IPointsService, PointsService>();
-        builder.Services.AddScoped<IContentService, ContentService>();
         builder.Services.AddScoped<ILogisticsTrackService, LogisticsTrackService>();
         builder.Services.AddHostedService<OrderTimeoutService>();
 
