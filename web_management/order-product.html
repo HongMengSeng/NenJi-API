@@ -865,7 +865,6 @@
 							<div class="management-header static-header">
 								<div>
 									<div class="management-title">产品订单</div>
-									<div class="management-meta">共 {{ productTotalOrders }} 笔产品订单，待履约 {{ pendingProductOrders }} 笔</div>
 								</div>
 							</div>
 							<div class="management-body">
@@ -2032,7 +2031,7 @@
 							: {};
 						headers['Content-Type'] = 'application/json';
 
-						const response = await fetch(`http://192.168.101.75/api/refund/admin/process`, {
+						const response = await fetch(`http://192.168.101.75/api/activity-order/refund`, {
 							method: 'POST',
 							headers,
 							body: JSON.stringify({
