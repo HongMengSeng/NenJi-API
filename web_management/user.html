@@ -711,7 +711,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return `http://192.168.101.30:7240/api/back-user/list?${params.toString()}`;
+					return `http://192.168.101.75:7240/api/back-user/list?${params.toString()}`;
 				},
 				async fetchUsers(url) {
 					const res = await fetch(url, {
@@ -894,7 +894,7 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch('http://192.168.101.30:7240/api/back-user/delete', {
+							const res = await fetch('http://192.168.101.75:7240/api/back-user/delete', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

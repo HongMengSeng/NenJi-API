@@ -614,9 +614,9 @@
 		
 		<script>
 			const { createApp } = Vue
-			const UNITS_API = 'http://192.168.101.11:7240/api/product/units';
-			const CATEGORIES_API = 'http://192.168.101.11:7240/api/product/categories';
-			const COMMON_UPLOAD_API = 'http://192.168.101.11:7240/api/common/upload';
+			const UNITS_API = 'http://192.168.101.75:7240/api/product/units';
+			const CATEGORIES_API = 'http://192.168.101.75:7240/api/product/categories';
+			const COMMON_UPLOAD_API = 'http://192.168.101.75:7240/api/common/upload';
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
@@ -1038,7 +1038,7 @@
 
 						try {
 							console.log('新增产品请求body:', bodyData);
-							const res = await fetch('http://192.168.101.11:7240/api/product/add', {
+							const res = await fetch('http://192.168.101.75:7240/api/product/add', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

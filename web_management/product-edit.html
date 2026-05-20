@@ -623,11 +623,11 @@
 		
 		<script>
 			const { createApp } = Vue
-			const PRODUCT_DETAIL_API = 'http://192.168.101.30:7240/api/product/detail';
+			const PRODUCT_DETAIL_API = 'http://192.168.101.75:7240/api/product/detail';
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
-			const UNITS_API = 'http://192.168.101.30:7240/api/product/units';
-			const CATEGORIES_API = 'http://192.168.101.30:7240/api/product/categories';
-			const COMMON_UPLOAD_API = 'http://192.168.101.30:7240/api/common/upload';
+			const UNITS_API = 'http://192.168.101.75:7240/api/product/units';
+			const CATEGORIES_API = 'http://192.168.101.75:7240/api/product/categories';
+			const COMMON_UPLOAD_API = 'http://192.168.101.75:7240/api/common/upload';
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
 			
@@ -1245,7 +1245,7 @@
 						this.submitMessage = '';
 
 						try {
-							const res = await fetch('http://192.168.101.30:7240/api/product/edit', {
+							const res = await fetch('http://192.168.101.75:7240/api/product/edit', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
