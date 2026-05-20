@@ -598,7 +598,7 @@
 										</td>
 										<td class="col-name">
 											<div class="name-text">{{ coupon.name }}</div>
-											<div class="cell-subtext">创建于 {{ formatDisplayTime(coupon.createTime) }}</div>
+											<div class="cell-subtext">活动时间 {{ coupon.dateText || formatDisplayTime(coupon.createTime) }}</div>
 										</td>
 										<td class="col-type is-center"><span class="type-text">{{ coupon.type }}</span></td>
 										<td class="col-price is-center"><span class="price-text">{{ formatPrice(coupon.price) }}</span></td>
@@ -673,7 +673,6 @@
 		const { createApp } = Vue;
 		const ACTIVITY_API_BASE = 'http://192.168.101.75:80/api/activity';
 		const COUPON_LIST_API = `${ACTIVITY_API_BASE}/list`;
-		const COUPON_STATS_API = `${ACTIVITY_API_BASE}/stats`;
 		const COUPON_DELETE_API = `${ACTIVITY_API_BASE}/delete`;
 		const COUPON_DELETE_BATCH_API = `${ACTIVITY_API_BASE}/deleteBatch`;
 		const COUPON_API_ORIGIN = new URL(COUPON_LIST_API).origin;
@@ -695,15 +694,13 @@
 					selectedCoupon: null,
 					showDeleteModal: false,
 					selectAll: false,
-					jumpPage: 1,
-					statsData: null
+					jumpPage: 1
 				};
 			},
 
 			mounted() {
-				// 页面加载完成后同时请求券品列表和统计数据。
+				// 页面加载完成后请求活动列表接口。
 				this.loadCoupons();
-				this.loadStats();
 			},
 
 			computed: {
@@ -718,30 +715,18 @@
 				},
 
 				totalCouponCount() {
-					if (this.statsData && this.statsData.totalCoupons !== undefined) {
-						return this.statsData.totalCoupons;
-					}
 					return this.totalCoupons || this.summarySource.length;
 				},
 
 				totalStock() {
-					if (this.statsData && this.statsData.totalStock !== undefined) {
-						return this.statsData.totalStock;
-					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.stock, 0);
 				},
 
 				totalSold() {
-					if (this.statsData && this.statsData.totalSold !== undefined) {
-						return this.statsData.totalSold;
-					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.soldCount, 0);
 				},
 
 				totalVerified() {
-					if (this.statsData && this.statsData.totalVerified !== undefined) {
-						return this.statsData.totalVerified;
-					}
 					return this.summarySource.reduce((total, coupon) => total + coupon.verifiedCount, 0);
 				}
 			},
@@ -803,7 +788,7 @@
 
 				// 未上传图片时，根据券品类型生成一张默认封面图。
 				generateSceneImage(type) {
-					const config = type === '采摘券'
+					const config = String(type || '').includes('采摘')
 						? {
 							title: '采摘体验',
 							subtitle: 'PICKING VOUCHER',
@@ -916,20 +901,21 @@
 				},
 
 				getDefaultUsageRules(type) {
-					if (type === '采摘活动') {
+					if (String(type || '').includes('采摘')) {
 						return '适用于农场指定采摘园区，每张限 1 人使用，到店出示券包核销码后核销，节假日以农场开放安排为准。';
 					}
 					return '适用于农场研学活动场次，需至少提前 1 天预约，到店后出示券包核销码签到使用。';
 				},
 
 				normalizeType(type, name = '') {
-					if (type === '研学活动券' || type === '采摘券') {
-						return type;
+					const text = String(type || '').trim();
+					if (text) {
+						return text;
 					}
 					if (String(name).includes('采摘')) {
-						return '采摘券';
+						return '采摘体验';
 					}
-					return '研学活动券';
+					return '亲子研学';
 				},
 
 				normalizeRefundRule(refundRule) {
@@ -994,8 +980,9 @@
 					const couponInfo = coupon.coupon && typeof coupon.coupon === 'object' ? coupon.coupon : {};
 					const name = coupon.name || coupon.title || coupon.couponName || couponInfo.name || couponInfo.title || couponInfo.couponName || '';
 					const type = this.normalizeType(coupon.type || coupon.categoryName || coupon.couponType || couponInfo.type || couponInfo.categoryName || couponInfo.couponType, name);
+					const dateText = coupon.date || coupon.activityDate || couponInfo.date || couponInfo.activityDate || '';
 					const validityInfo = this.parseValidity(
-						coupon.validity ?? couponInfo.validity,
+						coupon.validity ?? couponInfo.validity ?? coupon.duration ?? couponInfo.duration,
 						coupon.validityPeriod ?? couponInfo.validityPeriod,
 						coupon.validityUnit ?? couponInfo.validityUnit
 					);
@@ -1010,17 +997,21 @@
 						name: name || `${type}${index + 1}`,
 						type,
 						price,
+						status: coupon.status ?? coupon.activityStatus ?? coupon.statusText ?? couponInfo.status ?? couponInfo.activityStatus ?? '上架',
 						stock: this.toPositiveInt(coupon.stock ?? couponInfo.stock ?? coupon.inventory ?? couponInfo.inventory ?? coupon.remainingStock ?? couponInfo.remainingStock, 100),
 						limitPerOrder: Math.max(1, this.toPositiveInt(coupon.limitPerOrder ?? couponInfo.limitPerOrder ?? coupon.limit ?? couponInfo.limit ?? coupon.maxPerOrder ?? couponInfo.maxPerOrder, 1)),
 						validityPeriod: validityInfo.period,
 						validityUnit: validityInfo.unit,
 						validity: `${validityInfo.period}${validityInfo.unit}`,
+						dateText,
+						startDate: coupon.startDate || couponInfo.startDate || '',
+						endDate: coupon.endDate || couponInfo.endDate || '',
 						refundRule: this.normalizeRefundRule(coupon.refundRule || couponInfo.refundRule),
 						usageRules: coupon.usageRules || couponInfo.usageRules || this.getDefaultUsageRules(type),
 						image: this.resolveImageUrl(coupon.image || couponInfo.image || coupon.coverImage || couponInfo.coverImage || ''),
 						soldCount,
 						verifiedCount,
-						createTime: this.formatDisplayTime(coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
+						createTime: this.formatDisplayTime(coupon.startDate || couponInfo.startDate || coupon.createTime || couponInfo.createTime || coupon.createdTime || couponInfo.createdTime || coupon.createAt || couponInfo.createAt || this.formatDateTime()),
 						selected: false
 					};
 				},
@@ -1067,13 +1058,37 @@
 					const pageData = data && typeof data === 'object' && !Array.isArray(data)
 						? (data.data || data)
 						: data;
-					const records = Array.isArray(pageData?.records)
+					let records = Array.isArray(pageData?.records)
 						? pageData.records
 						: (Array.isArray(pageData?.list)
 							? pageData.list
 							: (Array.isArray(pageData?.rows)
 								? pageData.rows
-								: (Array.isArray(pageData) ? pageData : [])));
+								: []));
+
+					if (!records.length && Array.isArray(pageData?.activities?.all)) {
+						records = pageData.activities.all;
+					}
+
+					if (!records.length && pageData?.activities && typeof pageData.activities === 'object') {
+						const seenIds = new Set();
+						records = Object.entries(pageData.activities)
+							.filter(([key, value]) => key !== 'all' && Array.isArray(value))
+							.flatMap(([, value]) => value)
+							.filter(item => {
+								const id = String(item?.id ?? item?.activityId ?? item?.couponId ?? JSON.stringify(item));
+								if (seenIds.has(id)) {
+									return false;
+								}
+								seenIds.add(id);
+								return true;
+							});
+					}
+
+					if (!records.length && Array.isArray(pageData)) {
+						records = pageData;
+					}
+
 					return {
 						records,
 						total: Number(pageData?.total ?? pageData?.count ?? records.length) || 0,
@@ -1101,23 +1116,6 @@
 						return fallback;
 					}
 					return message;
-				},
-
-				// 加载统计数据
-				async loadStats() {
-					try {
-						const res = await fetch(COUPON_STATS_API, {
-							headers: window.Auth.getAuthHeaders()
-						});
-						const data = await res.json();
-						if (this.isSuccessResponse(data)) {
-							this.statsData = data.data;
-						} else {
-							console.warn('获取统计数据失败:', data.message);
-						}
-					} catch (error) {
-						console.warn('获取统计数据接口异常:', error);
-					}
 				},
 
 				// 券品列表加载入口：请求后端列表接口，并把当前页数据渲染到表格。
