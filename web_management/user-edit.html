@@ -314,7 +314,7 @@
 				},
 				async loadUserData(userId) {
 					try {
-						const res = await fetch(`http://192.168.101.75:7240/api/back-user/${encodeURIComponent(userId)}`, {
+						const res = await fetch(`http://192.168.101.75:80/api/back-user/${encodeURIComponent(userId)}`, {
 							headers: window.Auth.getAuthHeaders()
 						});
 						const data = await res.json();
@@ -377,7 +377,7 @@
 							bodyData.password = this.form.password;
 						}
 
-						const res = await fetch('http://192.168.101.75:7240/api/back-user/edit', {
+						const res = await fetch('http://192.168.101.75:80/api/back-user/edit', {
 							method: 'POST',
 							headers: window.Auth.getAuthHeaders({
 								'Content-Type': 'application/json'

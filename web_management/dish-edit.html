@@ -489,7 +489,7 @@
 					async loadDishData(id) {
 						console.log('当前菜品ID:', id);
 						try {
-							const res = await fetch(`http://192.168.101.11:7240/api/dish/detail?id=${id}`, {
+							const res = await fetch(`http://192.168.101.75:80/api/dish/detail?id=${id}`, {
 								method: 'GET',
 								headers: window.Auth.getAuthHeaders()
 							});
@@ -547,7 +547,7 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
+								const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
@@ -602,7 +602,7 @@
 											formData.append('file', file);
 											const authHeaders = window.Auth.getAuthHeaders();
 											delete authHeaders['Content-Type'];
-											const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
+											const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 												method: 'POST',
 												headers: authHeaders,
 												body: formData
@@ -662,7 +662,7 @@
 										formData.append('file', file);
 										const authHeaders = window.Auth.getAuthHeaders();
 										delete authHeaders['Content-Type'];
-										const res = await fetch('http://192.168.101.11:7240/api/common/upload', {
+										const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 											method: 'POST',
 											headers: authHeaders,
 											body: formData
@@ -731,7 +731,7 @@
 						};
 						
 						try {
-							const res = await fetch('http://192.168.101.11:7240/api/dish/edit', {
+							const res = await fetch('http://192.168.101.75:80/api/dish/edit', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'

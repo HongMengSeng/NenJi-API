@@ -493,7 +493,7 @@
 								formData.append('file', file);
 								const authHeaders = window.Auth.getAuthHeaders();
 								delete authHeaders['Content-Type'];
-								const res = await fetch('http://192.168.101.75:7240/api/common/upload', {
+								const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 									method: 'POST',
 									headers: authHeaders,
 									body: formData
@@ -548,7 +548,7 @@
 											formData.append('file', file);
 											const authHeaders = window.Auth.getAuthHeaders();
 											delete authHeaders['Content-Type'];
-											const res = await fetch('http://192.168.101.75:7240/api/common/upload', {
+											const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 												method: 'POST',
 												headers: authHeaders,
 												body: formData
@@ -608,7 +608,7 @@
 										formData.append('file', file);
 										const authHeaders = window.Auth.getAuthHeaders();
 										delete authHeaders['Content-Type'];
-										const res = await fetch('http://192.168.101.75:7240/api/common/upload', {
+										const res = await fetch('http://192.168.101.75:80/api/common/upload', {
 											method: 'POST',
 											headers: authHeaders,
 											body: formData
@@ -672,7 +672,7 @@
 						};
 						
 						try {
-							const res = await fetch('http://192.168.101.75:7240/api/dish/add', {
+							const res = await fetch('http://192.168.101.75:80/api/dish/add', {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
