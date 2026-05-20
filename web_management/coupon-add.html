@@ -349,17 +349,6 @@
 							</div>
 						</div>
 
-						<div class="form-row">
-							<div class="form-group">
-								<label>开始时间</label>
-								<input v-model="couponForm.startDate" type="datetime-local">
-							</div>
-							<div class="form-group">
-								<label>结束时间</label>
-								<input v-model="couponForm.endDate" type="datetime-local">
-							</div>
-						</div>
-
 						<div class="form-group">
 							<label>活动内容</label>
 							<textarea
@@ -483,8 +472,6 @@
 						people: '',
 						content: '',
 						duration: 0,
-						startDate: '',
-						endDate: '',
 						description: '',
 						location: '',
 						image: '',
@@ -549,11 +536,6 @@
 
 				parseNonNegativeInteger(value, fallback = 0) {
 					return Math.max(0, Math.round(this.parseNumber(value, fallback)));
-				},
-
-				formatDateTimeForApi(value) {
-					const text = String(value || '').trim();
-					return text ? text.replace('T', ' ') : '';
 				},
 
 				getFileNameFromUrl(value) {
@@ -907,18 +889,6 @@
 						alert('请输入大于 0 的售价');
 						return false;
 					}
-					if (!this.couponForm.startDate) {
-						alert('请选择开始时间');
-						return false;
-					}
-					if (!this.couponForm.endDate) {
-						alert('请选择结束时间');
-						return false;
-					}
-					if (new Date(this.couponForm.endDate).getTime() < new Date(this.couponForm.startDate).getTime()) {
-						alert('结束时间不能早于开始时间');
-						return false;
-					}
 					if (this.parseNumber(this.couponForm.people) < 0) {
 						alert('请输入正确的活动上限人数');
 						return false;
@@ -955,8 +925,6 @@
 						categoryName,
 						type: categoryName,
 						price: Number(this.parseNumber(this.couponForm.price).toFixed(2)),
-						startDate: this.formatDateTimeForApi(this.couponForm.startDate),
-						endDate: this.formatDateTimeForApi(this.couponForm.endDate),
 						image,
 						images: carouselImages.length ? carouselImages : (image ? [image] : []),
 						video,
