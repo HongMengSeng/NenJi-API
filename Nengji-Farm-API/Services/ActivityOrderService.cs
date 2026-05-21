@@ -183,6 +183,37 @@ public class ActivityOrderService : IActivityOrderService
         return true;
     }
 
+    public async Task<(bool Success, string Message)> VerifyByOrderIdAsync(long orderId, CancellationToken cancellationToken = default)
+    {
+        var order = await _dbContext.Set<ActivityOrder>()
+            .Include(o => o.ActivityOrderDetails)
+                .ThenInclude(d => d.ActivityVerificationRecords)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId, cancellationToken);
+
+        if (order is null)
+            return (false, "订单不存在");
+
+        if (order.OrderStatusId != 2)
+            return (false, order.OrderStatusId switch
+            {
+                1 => "该订单未支付，无法核销",
+                3 => "该订单已全部核销",
+                4 => "该订单已退款，无法核销",
+                _ => $"当前订单状态不允许核销（状态ID: {order.OrderStatusId}）",
+            });
+
+        // 找第一个未核销的明细
+        var unverifiedDetail = order.ActivityOrderDetails
+            .FirstOrDefault(d => d.ActivityVerificationRecords.Count == 0);
+
+        if (unverifiedDetail is null)
+            return (false, "该订单所有明细已核销");
+
+        // 复用现有的核销逻辑
+        var result = await VerifyOrderDetailAsync(unverifiedDetail.ActivityOrderDetailsId, cancellationToken);
+        return (result, result ? "核销成功" : "核销失败");
+    }
+
     public async Task<ActivityOrderRefundResponse> RefundAsync(ActivityOrderRefundRequest request, string operatorName, CancellationToken cancellationToken = default)
     {
         if (request.OrderId <= 0)
@@ -294,10 +325,10 @@ public class ActivityOrderService : IActivityOrderService
         if (refund is null)
             throw new BusinessException("退款记录不存在", 404);
 
-        if (refund.Status == "completed" || refund.Status == "已退款")
+        if (refund.Status == "completed")
             throw new BusinessException("该退款已处理完成，无法驳回", 422);
 
-        if (refund.Status == "已驳回")
+        if (refund.Status == "rejected")
             throw new BusinessException("该退款已被驳回，请勿重复操作", 422);
 
         // 查找对应订单并恢复状态
@@ -314,7 +345,7 @@ public class ActivityOrderService : IActivityOrderService
         }
 
         // 更新退款记录
-        refund.Status = "已驳回";
+        refund.Status = "rejected";
         refund.AdminReply = request.AdminReply;
         refund.ProcessNote = request.ProcessNote;
         refund.ProcessTime = DateTime.Now;

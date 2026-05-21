@@ -324,9 +324,9 @@ public class ProductOrderService : IProductOrderService
                 RefundAmount = refund.RefundAmount,
                 RefundStatus = refund.Status switch
                 {
-                    "待处理" => "退款中",
-                    "completed" or "已退款" => "已退款",
-                    "已驳回" => "已驳回",
+                    "pending" => "退款中",
+                    "completed" => "已退款",
+                    "rejected" => "已驳回",
                     _ => refund.Status
                 },
                 RefundReason = refund.Reason,
@@ -401,7 +401,7 @@ public class ProductOrderService : IProductOrderService
                         ? System.Text.Json.JsonSerializer.Serialize(dto.EffectiveRefundImages)
                         : null,
                     RefundAmount = order.TotalAmount,
-                    Status = "待处理",
+                    Status = "pending",
                     CreateTime = DateTime.Now
                 };
                 _context.RefundRecords.Add(refundRecord);
@@ -413,12 +413,12 @@ public class ProductOrderService : IProductOrderService
                 order.OrderStatusId = 7;
 
                 var existingRefund = await _context.RefundRecords
-                    .Where(r => r.OrderNo == dto.OrderNo && r.Status == "待处理")
+                    .Where(r => r.OrderNo == dto.OrderNo && r.Status == "pending")
                     .OrderByDescending(r => r.CreateTime)
                     .FirstOrDefaultAsync(cancellationToken);
                 if (existingRefund != null)
                 {
-                    existingRefund.Status = "已退款";
+                    existingRefund.Status = "completed";
                     existingRefund.ProcessTime = DateTime.Now;
                 }
                 break;
@@ -429,12 +429,12 @@ public class ProductOrderService : IProductOrderService
                 order.OrderStatusId = 2;
 
                 var pendingRefund = await _context.RefundRecords
-                    .Where(r => r.OrderNo == dto.OrderNo && r.Status == "待处理")
+                    .Where(r => r.OrderNo == dto.OrderNo && r.Status == "pending")
                     .OrderByDescending(r => r.CreateTime)
                     .FirstOrDefaultAsync(cancellationToken);
                 if (pendingRefund != null)
                 {
-                    pendingRefund.Status = "已驳回";
+                    pendingRefund.Status = "rejected";
                     pendingRefund.ProcessTime = DateTime.Now;
                     pendingRefund.AdminReply = dto.AdminReply;
                     pendingRefund.ProcessNote = dto.ProcessNote;

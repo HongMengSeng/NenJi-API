@@ -1946,35 +1946,12 @@
 						return;
 					}
 
-					try {
-						if (!this.ensureRefundToken()) {
-							return;
-						}
-						const headers = this.getProductAuthHeaders({
-							'Content-Type': 'application/json'
-						});
-
-						const response = await fetch(FarmAPI.url(`/api/activity-order/refund`), {
-							method: 'POST',
-							headers,
-							body: JSON.stringify({
-								refundId: order.refundId,
-								action: 'reject',
-								adminReply: '不符合退款条件',
-								processNote: '已核实'
-							})
-						});
-
-						const result = await FarmAPI.parseResponse(response);
-						if (result.code === 200 || result.code === 0) {
-							this.closeProductActionModal();
-							this.fetchProductOrders();
-						} else {
-							this.productActionModalError = result.message || '驳回退款失败';
-						}
-					} catch (error) {
-						console.error('驳回退款失败:', error);
-						this.productActionModalError = '驳回退款失败，请重试';
+					const success = await this.requestProductOrderStatusUpdate(order, 'refund-reject', {
+						adminReply: '不符合退款条件',
+						processNote: '已核实'
+					});
+					if (success) {
+						this.closeProductActionModal();
 					}
 				},
 

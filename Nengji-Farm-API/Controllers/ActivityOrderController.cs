@@ -65,14 +65,24 @@ public class ActivityOrderController : ControllerBase
         [FromBody] VerifyActivityOrderRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request?.ActivityOrderDetailsId <= 0)
-            return Ok(ApiResult.Fail("参数不能为空", 400));
-
         try
         {
-            var success = await _orderService.VerifyOrderDetailAsync(request.ActivityOrderDetailsId, cancellationToken);
+            // 支持通过 orderId 核销（前端使用）
+            if (request?.OrderId > 0)
+            {
+                var (success, message) = await _orderService.VerifyByOrderIdAsync(request.OrderId, cancellationToken);
+                if (!success)
+                    return Ok(ApiResult.Fail(message, 400));
+                return Ok(ApiResult.Success(message));
+            }
 
-            if (!success)
+            // 支持通过 activityOrderDetailsId 核销（管理端使用）
+            if (request?.ActivityOrderDetailsId <= 0)
+                return Ok(ApiResult.Fail("参数不能为空", 400));
+
+            var result = await _orderService.VerifyOrderDetailAsync(request.ActivityOrderDetailsId, cancellationToken);
+
+            if (!result)
                 return Ok(ApiResult.Fail("核销明细不存在或已被删除", 404));
 
             return Ok(ApiResult.Success("核销成功"));

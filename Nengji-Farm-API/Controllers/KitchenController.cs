@@ -28,7 +28,7 @@ public class KitchenController : ControllerBase
     }
 
     /// <summary>
-    /// �����¼
+    /// 厨房登录
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
@@ -40,19 +40,18 @@ public class KitchenController : ControllerBase
         {
             if (string.IsNullOrWhiteSpace(dto.PhoneNumber) || string.IsNullOrWhiteSpace(dto.Password))
             {
-                return Ok(ApiResult.Fail("�˺Ż����벻��Ϊ��"));
+                return Ok(ApiResult.Fail("账号或密码不能为空"));
             }
 
             var result = await _kitchenService.LoginAsync(dto.PhoneNumber, dto.Password, cancellationToken);
 
             if (result == null)
             {
-                // ���������� Service ���߼���������ʾ��
-                // ��� Service �ڲ�û���쳣ֻ�Ƿ��� null��˵��û�ҵ��˻������
-                return Ok(ApiResult.Fail("�˺Ż��������"));
+                // 如果 Service 内部没有异常只是返回 null，说明没找到账号或密码错误
+                return Ok(ApiResult.Fail("账号或密码错误"));
             }
 
-            // ���� Token
+            // 生成 Token
             var token = _jwtHelper.GenerateToken(new Entities.User
             {
                 UserId = result.UserId,
@@ -60,7 +59,7 @@ public class KitchenController : ControllerBase
                 PhoneNumber = result.PhoneNumber
             });
 
-            _logger.LogInformation($"�����¼�ɹ� - �ֻ���: {dto.PhoneNumber}, UserId: {result.UserId}");
+            _logger.LogInformation($"厨房登录成功 - 手机号: {dto.PhoneNumber}, UserId: {result.UserId}");
 
             return Ok(ApiResult.Success(new
             {
@@ -72,20 +71,20 @@ public class KitchenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"�����¼ʧ��: {ex.Message}");
+            _logger.LogError($"厨房登录失败: {ex.Message}");
 
-            if (ex.Message.Contains("δע��"))
-                return Ok(ApiResult.Fail("���ֻ���δע��"));
+            if (ex.Message.Contains("未注册"))
+                return Ok(ApiResult.Fail("该手机号未注册"));
 
-            if (ex.Message.Contains("����"))
-                return Ok(ApiResult.Fail("�˺Ż��������"));
+            if (ex.Message.Contains("禁用"))
+                return Ok(ApiResult.Fail("账号或密码错误"));
 
             return Ok(ApiResult.Fail(ex.Message));
         }
     }
 
     /// <summary>
-    /// ��ȡ���ն����б�
+    /// 获取厨房订单列表
     /// </summary>
     [HttpGet("order/list")]
     public async Task<ActionResult<ApiResult>> GetOrderList(
@@ -105,13 +104,13 @@ public class KitchenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"��ȡ�����б�ʧ��: {ex.Message}");
-            return Ok(ApiResult.Fail("��ȡ�����б�ʧ��"));
+            _logger.LogError($"获取订单列表失败: {ex.Message}");
+            return Ok(ApiResult.Fail("获取订单列表失败"));
         }
     }
 
     /// <summary>
-    /// ��ȡ��������
+    /// 获取订单详情
     /// </summary>
     [HttpGet("order/detail")]
     //[Authorize]
@@ -123,7 +122,7 @@ public class KitchenController : ControllerBase
         {
             if (orderId <= 0)
             {
-                return Ok(ApiResult.Fail("orderId ����Ϊ��"));
+                return Ok(ApiResult.Fail("orderId 不能为空"));
             }
 
             var result = await _kitchenService.GetOrderDetailAsync(orderId, cancellationToken);
@@ -132,17 +131,17 @@ public class KitchenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"��ȡ��������ʧ��: {ex.Message}");
+            _logger.LogError($"获取订单详情失败: {ex.Message}");
 
-            if (ex.Message.Contains("������"))
-                return Ok(ApiResult.Fail("����������", 404));
+            if (ex.Message.Contains("不存在"))
+                return Ok(ApiResult.Fail("订单不存在", 404));
 
-            return Ok(ApiResult.Fail("��ȡ��������ʧ��"));
+            return Ok(ApiResult.Fail("获取订单详情失败"));
         }
     }
 
     /// <summary>
-    /// ��ǲ�ƷΪ�ѳ��ͣ����Ľӿڣ�
+    /// 标记产品为已出餐（后厨接口）
     /// </summary>
     [HttpPost("dish/finish")]
     public async Task<ActionResult<ApiResult>> MarkDishFinish(
@@ -153,7 +152,7 @@ public class KitchenController : ControllerBase
         {
             if (dto.DishOrderDetailsId <= 0)
             {
-                return Ok(ApiResult.Fail("dishOrderDetailsId ����Ϊ��"));
+                return Ok(ApiResult.Fail("dishOrderDetailsId 不能为空"));
             }
 
             var result = await _kitchenService.MarkDishFinishAsync(dto.DishOrderDetailsId, cancellationToken);
@@ -162,12 +161,12 @@ public class KitchenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"��Ʒ���ͱ��ʧ��: {ex.Message}");
+            _logger.LogError($"产品出餐标记失败: {ex.Message}");
 
-            if (ex.Message.Contains("������"))
+            if (ex.Message.Contains("不存在"))
                 return Ok(ApiResult.Fail(ex.Message, 400));
 
-            return Ok(ApiResult.Fail("��Ʒ���ͱ��ʧ��"));
+            return Ok(ApiResult.Fail("产品出餐标记失败"));
         }
     }
 
@@ -178,7 +177,7 @@ public class KitchenController : ControllerBase
 
         if (!success)
         {
-            // ʧ���r���� 400 �� 404
+            // 失败时返回 400 或 404
             return Ok(new ApiResponse<object>
             {
                 Code = 400,
@@ -186,7 +185,7 @@ public class KitchenController : ControllerBase
             });
         }
 
-        // �ɹ��r�����ęnҪ��ĸ�ʽ
+        // 成功时按文档要求的格式
         return Ok(new ApiResponse<object>
         {
             Data = data
@@ -194,7 +193,7 @@ public class KitchenController : ControllerBase
     }
 
     /// <summary>
-    /// ��ȡ����ͳ������
+    /// 获取厨房统计数据
     /// </summary>
     [HttpGet("today-statistics")]
     public async Task<ActionResult<ApiResult>> GetTodayStatistics(CancellationToken cancellationToken)
@@ -207,26 +206,26 @@ public class KitchenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"��ȡͳ������ʧ��: {ex.Message}");
-            return Ok(ApiResult.Fail("��ȡͳ������ʧ��"));
+            _logger.LogError($"获取统计数据失败: {ex.Message}");
+            return Ok(ApiResult.Fail("获取统计数据失败"));
         }
     }
 
     /// <summary>
-    /// ����ǳ�
+    /// 用户登出
     /// </summary>
     [HttpPost("logout")]
     public ActionResult<ApiResult> Logout()
     {
         try
         {
-            _logger.LogInformation("����û��ѵǳ�");
-            return Ok(ApiResult.Success("�˳��ɹ�"));
+            _logger.LogInformation("厨房用户已登出");
+            return Ok(ApiResult.Success("退出成功"));
         }
         catch (Exception ex)
         {
-            _logger.LogError($"�ǳ�ʧ��: {ex.Message}");
-            return Ok(ApiResult.Fail("�ǳ�ʧ��"));
+            _logger.LogError($"登出失败: {ex.Message}");
+            return Ok(ApiResult.Fail("登出失败"));
         }
     }
 }

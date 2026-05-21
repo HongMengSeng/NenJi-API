@@ -9,7 +9,10 @@
       "Bash(/c/Python312/python *)",
       "Bash(awk '/createApp\\\\\\(/,/\\\\.mount/' \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/web_management/order-coupon.html\")",
       "Bash(awk '/const { createApp } = Vue;/,0' \"C:/Users/Administrator/Desktop/Kuade-NengJiFarm/web_management/order-coupon.html\")",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Read(//c/Users/Administrator/Desktop/Kuade-NengJiFarm/Nengji-Farm-API/**)",
+      "Read(//c/Users/Administrator/Desktop/**)",
+      "Bash(ls \"C:\\\\\\\\Users\\\\\\\\Administrator\\\\\\\\Desktop\\\\\\\\Kuade-NengJiFarm\\\\\\\\Nengji-Farm-API\\\\\\\\\")"
     ]
   }
 }
