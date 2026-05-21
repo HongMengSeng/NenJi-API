@@ -692,6 +692,7 @@ Page({
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     const type = e.currentTarget.dataset.type;
+    const isFarmGood = e.currentTarget.dataset.isFarmGood;
     
     if (type === 'food') {
       // 点餐跳转到菜品详情页
@@ -700,8 +701,9 @@ Page({
       });
     } else {
       // 商品跳转到商品详情页
+      const farmGoodParam = isFarmGood ? '&isFarmGood=1' : '';
       wx.navigateTo({
-        url: '/user-pages/goods-detail/goods-detail?id=' + id
+        url: '/user-pages/goods-detail/goods-detail?id=' + id + farmGoodParam
       });
     }
   }

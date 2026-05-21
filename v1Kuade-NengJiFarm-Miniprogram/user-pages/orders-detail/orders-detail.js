@@ -139,7 +139,8 @@ Page({
             ...item,
             image: this.processImageUrl(item.image),
             price: price,
-            subtotal: subtotal
+            subtotal: subtotal,
+            isFarmGood: item.isFarmGood || item.is_farm_good || false
           };
         });
         
