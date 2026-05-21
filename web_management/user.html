@@ -325,8 +325,7 @@
 										</td>
 										<td class="is-center">
 											<div class="table-actions">
-												<button v-if="user.role === '员工' || user.role === '厨师'" class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
-												<span v-else>-</span>
+												<button class="btn btn-primary btn-inline" @click="editUser(user)">编辑</button>
 											</div>
 										</td>
 									</tr>
@@ -456,14 +455,14 @@
 					return role || '未知';
 				},
 				normalizeUser(item) {
-					const guid = item.guid || item.userId || '';
+					const id = item.id || item.userId || item.guid || '';
 					return {
-						id: item.id || '',
-						guid: guid,
-						userId: guid,
-						nickname: item.nickname || '',
-						uniqueKey: item.id ? `user-${item.id}` : (guid ? `user-${guid}` : `user-${item.phone || Math.random()}`),
-						wxOpenid: item.wxOpenid || '',
+						id: id,
+						guid: id,
+						userId: id,
+						nickname: item.nickname || item.account || '',
+						uniqueKey: id ? `user-${id}` : `user-${item.phone || Math.random()}`,
+						wxOpenid: item.wxOpenid || id,
 						phone: item.phone || '无',
 						gender: item.gender,
 						role: item.role,
@@ -494,7 +493,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return FarmAPI.url(`/api/back-user/list?${params.toString()}`);
+					return FarmAPI.url(`/api/user/list?${params.toString()}`);
 				},
 				async fetchUsers(url) {
 					const res = await fetch(url, {
@@ -625,15 +624,15 @@
 					}
 					window.location.href = 'user-add.html';
 				},
-				// 跳转编辑页：仅允许编辑普通员工，并把列表 ID 带到编辑页。
+				// 跳转编辑页：允许编辑普通员工和普通用户，并把列表 ID 带到编辑页。
 				editUser(user = this.selectedUser) {
 					if (!this.ensureSession()) {
 						return;
 					}
 
-					const targetUser = user && (user.role === '员工' || user.role === '厨师') ? user : null;
-					if (targetUser && targetUser.id) {
-						console.log('当前用户guid:', targetUser.guid);
+					const targetUser = user && user.id ? user : null;
+					if (targetUser) {
+						console.log('当前用户id:', targetUser.id);
 						const params = new URLSearchParams({
 							userId: targetUser.id,
 							role: targetUser.role || targetUser.roleText || ''
@@ -668,7 +667,7 @@
 						return;
 					}
 
-					const targetIds = this.pendingDeleteUsers.map(user => user.guid).filter(Boolean);
+					const targetIds = this.pendingDeleteUsers.map(user => user.id || user.guid).filter(Boolean);
 					if (!targetIds.length) {
 						this.cancelDelete();
 						alert('未找到用户ID');
@@ -677,12 +676,12 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch(FarmAPI.url('/api/back-user/delete'), {
+							const res = await fetch(FarmAPI.url('/api/user/delete'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
-								body: JSON.stringify({ guid: targetId })
+								body: JSON.stringify({ id: targetId })
 							});
 							const data = await FarmAPI.parseResponse(res);
 
