@@ -48,7 +48,7 @@ Page({
       return;
     }
 
-    this.setData({ isFarmGood });
+    this.setData({ isFarmGood: isFarmGood || false });
     this.getGoodsDetail(goodsId);
     this.updateCartCount();
   },
@@ -94,6 +94,7 @@ Page({
             { id: 2, image: goodsImage }
           ];
         }
+        const isAcre = data.type === 'acre' || data.isAcre;
         this.setData({
           goods: {
             id: data.id || goodsId,
@@ -106,11 +107,14 @@ Page({
             weight: data.weight || '',
             storage: data.storage || '',
             videoUrl: videoUrl,
-            stock: Number(data.stock || 0)
+            stock: Number(data.stock || 0),
+            type: data.type || '',
+            isAcre: isAcre
           },
           swiperList: swiperList,
           loading: false,
-          hasVideo: hasVideo
+          hasVideo: hasVideo,
+          isFarmGood: isAcre
         });
       })
       .catch((err) => {
