@@ -34,7 +34,7 @@ public class DishService : IDishService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            var statusId = MapStatusToId(status);
+            var statusId = await MapStatusToIdAsync(status, cancellationToken);
             query = query.Where(x => x.Status == statusId);
         }
 
@@ -64,13 +64,15 @@ public class DishService : IDishService
             .Where(c => categoryIds.Contains(c.DishCategoryId))
             .ToDictionaryAsync(c => c.DishCategoryId, c => c.DishCategoryName, cancellationToken);
 
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
+
         var mappedRecords = records.Select(r => new DishListItemDto
         {
             Id = r.DishId.ToString(),
             Name = r.DishName,
             Price = r.DishPrice,
             Stock = r.DishRemainingQuantity,
-            Status = MapStatusToText(r.Status),
+            Status = MapStatusToText(r.Status, statusIdToName),
             Image = r.ImageUrl ?? string.Empty,
             UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
             Description = r.DishDescription ?? string.Empty,
@@ -114,6 +116,8 @@ public class DishService : IDishService
             .Select(c => c.DishCategoryName)
             .FirstOrDefaultAsync(cancellationToken);
 
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
+
         var images = await _dbContext.Set<DishImage>()
             .Where(x => x.DishId == id)
             .OrderBy(x => x.SortOrder)
@@ -141,7 +145,7 @@ public class DishService : IDishService
             Name = dish.DishName,
             Price = dish.DishPrice,
             Stock = dish.DishRemainingQuantity,
-            Status = MapStatusToText(dish.Status),
+            Status = MapStatusToText(dish.Status, statusIdToName),
             Image = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
             CoverImage = MediaHelper.NormalizeImageUrl(dish.ImageUrl),
             CarouselMedia = carouselMedia,
@@ -156,13 +160,14 @@ public class DishService : IDishService
     {
         var price = dto.Price > 0 ? dto.Price : 0.01m;
         var stock = dto.Stock >= int.MaxValue / 2 ? 0 : Math.Max(0, dto.Stock);
+        var statusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
 
         var dish = new Dish
         {
             DishName = dto.Name,
             DishPrice = price,
             DishRemainingQuantity = stock,
-            Status = MapStatusToId(dto.Status),
+            Status = statusId,
             ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath),
             DishDescription = dto.Description ?? string.Empty,
             DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken),
@@ -220,7 +225,7 @@ public class DishService : IDishService
         dish.DishName = dto.Name;
         dish.DishPrice = dto.Price > 0 ? dto.Price : 0.01m;
         dish.DishRemainingQuantity = dto.Stock >= int.MaxValue / 2 ? 0 : Math.Max(0, dto.Stock);
-        dish.Status = MapStatusToId(dto.Status);
+        dish.Status = await MapStatusToIdAsync(dto.Status, cancellationToken);
         dish.ImageUrl = MediaHelper.ProcessImageData(dto.Image, _env.WebRootPath);
         dish.DishDescription = dto.Description ?? string.Empty;
         dish.DishCategoryId = await ResolveCategoryIdAsync(dto.DishType, cancellationToken);
@@ -298,22 +303,39 @@ public class DishService : IDishService
         return true;
     }
 
-    private static int MapStatusToId(string status)
+    /// <summary>从 dish_status 表加载状态映射（id ↔ name）</summary>
+    private async Task<(Dictionary<int, string> IdToName, Dictionary<string, int> NameToId)> LoadStatusMappingAsync(CancellationToken cancellationToken = default)
     {
-        var normalized = status.StartsWith("已", StringComparison.Ordinal)
-            ? status[1..]
-            : status;
+        var statuses = await _dbContext.DishStatuses.ToListAsync(cancellationToken);
+        var idToName = new Dictionary<int, string>();
+        var nameToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        return normalized switch
+        foreach (var s in statuses)
         {
-            "上架" => 1,
-            "售空" => 3,
-            _ => 2 // 已下架或其他默认为下架
-        };
+            idToName[s.DishStatusId] = s.StatusName;
+            var raw = s.StatusName;
+            nameToId[raw] = s.DishStatusId;
+            if (raw.StartsWith("已", StringComparison.Ordinal))
+                nameToId[raw[1..]] = s.DishStatusId;
+        }
+
+        return (idToName, nameToId);
     }
 
-    private static string MapStatusToText(int status)
+    public async Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(status))
+            return 1;
+
+        var normalized = status.Trim();
+        var (_, nameToId) = await LoadStatusMappingAsync(cancellationToken);
+        return nameToId.TryGetValue(normalized, out var id) ? id : 1;
+    }
+
+    private static string MapStatusToText(int status, Dictionary<int, string>? statusMap = null)
+    {
+        if (statusMap != null && statusMap.TryGetValue(status, out var name))
+            return name;
         return status switch
         {
             1 => "已上架",

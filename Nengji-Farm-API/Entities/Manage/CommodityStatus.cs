@@ -30,6 +30,7 @@ public partial class CommodityStatus
     [StringLength(30)]
     public string StatusName { get; set; }
 
-    [InverseProperty("CommodityStatus")]
-    public virtual ICollection<Commodity> Commodities { get; set; } = new List<Commodity>();
+    // Note: Commodity does not have a CommodityStatus navigation property,
+    // so the InverseProperty on a collection here would cause EF Core model error.
+    // Navigation removed; access statuses via DbSet<CommodityStatus> directly.
 }

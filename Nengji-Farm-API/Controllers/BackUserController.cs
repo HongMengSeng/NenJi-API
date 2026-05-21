@@ -29,6 +29,7 @@ namespace WebAPI.Controllers
         /// <param name="pageNum">页码（从1开始，默认为1）</param>
         /// <param name="pageSize">每页记录数（默认为10）</param>
         [HttpGet("list")]
+        [HttpGet("/api/user/list")]
         public IActionResult GetUserList([FromQuery] string? keyword, [FromQuery] int pageNum = 1, [FromQuery] int pageSize = 20)
         {
             try

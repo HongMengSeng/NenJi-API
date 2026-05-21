@@ -21,9 +21,15 @@ public interface IProductService
     /// <summary>获取商品分类列表</summary>
     Task<List<CommodityCategory>> GetCategoriesAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>获取商品状态列表</summary>
+    Task<List<CommodityStatus>> GetStatusesAsync(CancellationToken cancellationToken = default);
+
     /// <summary>获取已启用的单位列表</summary>
     Task<List<Unit>> GetUnitsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>获取产品管理统计数据</summary>
     Task<ProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>根据状态名称映射到状态ID（从 commodity_status 表动态读取）</summary>
+    Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default);
 }

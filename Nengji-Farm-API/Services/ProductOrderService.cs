@@ -80,6 +80,8 @@ public class ProductOrderService : IProductOrderService
             .ToListAsync(cancellationToken);
         var refundLookup = refundRecords.ToDictionary(r => r.OrderNo);
 
+        var orderStatusMap = await LoadOrderStatusMappingAsync(cancellationToken);
+
         var records = items.Select(item =>
         {
             var isSubscription = item.o.OrderNo.StartsWith("S");
@@ -95,7 +97,7 @@ public class ProductOrderService : IProductOrderService
             {
                 orderSource = "认购一亩田";
                 deliveryMethod = "一亩田认购";
-                (var os, var ps, var dn) = MapSubscriptionStatus(item.o.OrderStatusId);
+                (var os, var ps, var dn) = MapSubscriptionStatus(item.o.OrderStatusId, orderStatusMap);
                 return new ProductOrderListItemDto
                 {
                     OrderId = item.o.OrderNo,
@@ -124,7 +126,7 @@ public class ProductOrderService : IProductOrderService
             {
                 orderSource = "商城下单";
                 deliveryMethod = (item.o.AddressId > 0 && item.o.TrackingTypeId != null) ? "快递配送" : "到店自提";
-                (var os, var ps, var dn) = MapRetailStatus(item.o.OrderStatusId);
+                (var os, var ps, var dn) = MapRetailStatus(item.o.OrderStatusId, orderStatusMap);
                 return new ProductOrderListItemDto
                 {
                     OrderId = item.o.OrderNo,
@@ -212,13 +214,15 @@ public class ProductOrderService : IProductOrderService
             .OrderByDescending(r => r.CreateTime)
             .FirstOrDefaultAsync(cancellationToken);
 
+        var orderStatusMap = await LoadOrderStatusMappingAsync(cancellationToken);
+
         string orderStatus, paymentStatus, deliveryNote;
         string orderType, orderSource, deliveryMethod;
         List<LogisticsRecordDto> logisticsRecords;
 
         if (isSubscription)
         {
-            (orderStatus, paymentStatus, deliveryNote) = MapSubscriptionStatus(order.o.OrderStatusId);
+            (orderStatus, paymentStatus, deliveryNote) = MapSubscriptionStatus(order.o.OrderStatusId, orderStatusMap);
             orderType = "认购一亩田";
             orderSource = "认购一亩田";
             deliveryMethod = "一亩田认购";
@@ -226,7 +230,7 @@ public class ProductOrderService : IProductOrderService
         }
         else
         {
-            (orderStatus, paymentStatus, deliveryNote) = MapRetailStatus(order.o.OrderStatusId);
+            (orderStatus, paymentStatus, deliveryNote) = MapRetailStatus(order.o.OrderStatusId, orderStatusMap);
             orderType = "农产品购买";
             orderSource = "商城下单";
             deliveryMethod = (order.o.AddressId > 0 && order.o.TrackingTypeId != null) ? "快递配送" : "到店自提";
@@ -475,31 +479,55 @@ public class ProductOrderService : IProductOrderService
         }
     }
 
-    private static (string orderStatus, string paymentStatus, string deliveryNote) MapRetailStatus(int statusId)
+    private async Task<Dictionary<int, string>> LoadOrderStatusMappingAsync(CancellationToken cancellationToken)
     {
-        return statusId switch
-        {
-            1 => ("待支付", "待支付", "等待客户支付"),
-            2 => ("待发货", "已支付", "待仓库发货"),
-            3 => ("待收货", "已支付", "已发货，等待客户签收"),
-            4 => ("已完成", "已支付", "订单已完成"),
-            5 => ("已取消", "已退款", "订单已取消"),
-            6 => ("退款中", "已支付", "客户已申请退款，等待平台处理"),
-            7 => ("已退款", "已退款", "退款已处理完成"),
-            _ => ("未知", "未知", "")
-        };
+        return await _context.CommodityOrderStatuses
+            .ToDictionaryAsync(x => x.OrderStatusId, x => x.StatusName, cancellationToken);
     }
 
-    private static (string orderStatus, string paymentStatus, string deliveryNote) MapSubscriptionStatus(int statusId)
+    private static (string orderStatus, string paymentStatus, string deliveryNote) MapRetailStatus(
+        int statusId, Dictionary<int, string> statusMap)
     {
-        return statusId switch
+        var name = statusMap.GetValueOrDefault(statusId, "未知");
+        var payment = statusId switch
         {
-            1 => ("待支付", "待支付", "等待客户支付"),
-            2 => ("待签约", "已支付", "支付完成，待后台确认签约"),
-            4 => ("已完成", "已支付", "认购已完成"),
-            7 => ("已退款", "已退款", "退款已处理完成"),
-            _ => ("未知", "未知", "")
+            1 => "待支付",
+            5 or 7 => "已退款",
+            _ => "已支付"
         };
+        var note = statusId switch
+        {
+            1 => "等待客户支付",
+            2 => "待仓库发货",
+            3 => "已发货，等待客户签收",
+            4 => "订单已完成",
+            5 => "订单已取消",
+            6 => "客户已申请退款，等待平台处理",
+            7 => "退款已处理完成",
+            _ => name
+        };
+        return (name, payment, note);
+    }
+
+    private static (string orderStatus, string paymentStatus, string deliveryNote) MapSubscriptionStatus(
+        int statusId, Dictionary<int, string> statusMap)
+    {
+        var name = statusId == 2 ? "待签约" : statusMap.GetValueOrDefault(statusId, "未知");
+        var payment = statusId switch
+        {
+            1 => "待支付",
+            7 => "已退款",
+            _ => "已支付"
+        };
+        var note = statusId switch
+        {
+            1 => "等待客户支付",
+            2 => "支付完成，待后台确认签约",
+            4 => "认购已完成",
+            7 => "退款已处理完成",
+            _ => name
+        };
+        return (name, payment, note);
     }
 }
 

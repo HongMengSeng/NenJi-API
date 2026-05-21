@@ -479,7 +479,7 @@ public class OrderController : ControllerBase
             detailImage = image,
             spec,
             description,
-            type = "normal",
+            type = commodity.CategoryId == 5 ? "acre" : "normal",
             sold = stats?.Sold ?? Math.Max(0, commodity.Quantity ?? 0),
             stock = stats?.Stock ?? (commodity.InStock ?? 0)
         };
@@ -883,7 +883,7 @@ public class OrderController : ControllerBase
                 price = x.UnitPrice,
                 quantity = x.Quantity,
                 image,
-                type = "normal",
+                type = commodity?.CategoryId == 5 ? "acre" : "normal",
                 statusId = x.StatusId ?? 1,
                 status = MapDetailStatusValue(x.StatusId ?? 1)
             };

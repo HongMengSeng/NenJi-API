@@ -1,8 +1,10 @@
 namespace WebAPI.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using WebAPI.Common;
+using WebAPI.Data;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
@@ -11,12 +13,64 @@ using WebAPI.Services;
 public class DishController : ControllerBase
 {
     private readonly IDishService _dishService;
+    private readonly ManageAppDbContext _dbContext;
     private readonly IWebHostEnvironment _env;
 
-    public DishController(IDishService dishService, IWebHostEnvironment env)
+    public DishController(IDishService dishService, ManageAppDbContext dbContext, IWebHostEnvironment env)
     {
         _dishService = dishService;
+        _dbContext = dbContext;
         _env = env;
+    }
+
+    /// <summary>
+    /// 获取菜品状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetStatuses(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var statuses = await _dbContext.DishStatuses
+                .OrderBy(s => s.DishStatusId)
+                .Select(s => new
+                {
+                    statusId = s.DishStatusId,
+                    statusName = s.StatusName
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取状态列表失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
+    /// 获取菜品类型列表
+    /// </summary>
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var categories = await _dbContext.DishCategories
+                .OrderBy(c => c.DishSortOrder)
+                .Select(c => new
+                {
+                    categoryId = c.DishCategoryId,
+                    categoryName = c.DishCategoryName
+                })
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResult.Success(categories));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取类型列表失败：{ex.Message}", 500));
+        }
     }
 
     /// <summary>

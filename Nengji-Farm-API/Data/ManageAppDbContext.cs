@@ -48,6 +48,7 @@ public class ManageAppDbContext : DbContext
     public DbSet<DishCategory> DishCategories => Set<DishCategory>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<CommodityCategory> CommodityCategories => Set<CommodityCategory>();
+    public DbSet<CommodityStatus> CommodityStatuses => Set<CommodityStatus>();
 
     // TODO: The following entities are not yet in ManageAPI. Add them when needed.
     // public DbSet<AcreProject> AcreProjects => Set<AcreProject>();
@@ -162,6 +163,11 @@ public class ManageAppDbContext : DbContext
         modelBuilder.Entity<DiningTableStatusDict>(entity =>
         {
             entity.HasKey(x => x.TableStatusId);
+        });
+
+        modelBuilder.Entity<CommodityStatus>(entity =>
+        {
+            entity.HasKey(x => x.CommodityStatusId);
         });
     }
 }

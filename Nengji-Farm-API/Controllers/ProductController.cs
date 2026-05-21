@@ -199,6 +199,23 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
+    /// 获取商品状态列表
+    /// </summary>
+    [HttpGet("statuses")]
+    public async Task<IActionResult> GetStatuses(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var statuses = await _productService.GetStatusesAsync(cancellationToken);
+            return Ok(ApiResult.Success(statuses));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResult.Fail($"获取状态列表失败：{ex.Message}", 500));
+        }
+    }
+
+    /// <summary>
     /// 获取商品分类列表
     /// </summary>
     [HttpGet("categories")]

@@ -19,4 +19,6 @@ public interface IDishService
     Task<bool> DeleteDishAsync(int id, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteDishBatchAsync(int[] ids, CancellationToken cancellationToken = default);
+
+    Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default);
 }

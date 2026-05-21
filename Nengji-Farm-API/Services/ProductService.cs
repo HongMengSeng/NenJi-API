@@ -60,6 +60,8 @@ public class ProductService : IProductService
             .Where(c => categoryIds.Contains(c.Id))
             .ToDictionaryAsync(c => c.Id, c => c.CategoryName, cancellationToken);
 
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
+
         var mapped = records.Select(c =>
         {
             var (netWeight, weightUnit) = ParseWeightText(c.WeightText);
@@ -69,7 +71,7 @@ public class ProductService : IProductService
                 Name = c.ProductName ?? string.Empty,
                 Price = c.UnitPrice ?? 0m,
                 Stock = c.InStock ?? 0,
-                Status = MapStatusToText(c.CommodityStatusId),
+                Status = MapStatusToText(c.CommodityStatusId, statusIdToName),
                 Image = MediaHelper.NormalizeImageUrl(c.ImageUrl),
                 UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 NetWeight = netWeight,
@@ -141,13 +143,15 @@ public class ProductService : IProductService
             .Select(c => c.CategoryName)
             .FirstOrDefaultAsync(cancellationToken);
 
+        var (statusIdToName, _) = await LoadStatusMappingAsync(cancellationToken);
+
         return new ProductDetailDto
         {
             Id = commodity.CommodityId.ToString(),
             Name = commodity.ProductName,
             Price = commodity.UnitPrice ?? 0m,
             Stock = commodity.InStock ?? 0,
-            Status = MapStatusToText(commodity.CommodityStatusId),
+            Status = MapStatusToText(commodity.CommodityStatusId, statusIdToName),
             Image = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
             CoverImage = MediaHelper.NormalizeImageUrl(commodity.ImageUrl),
             CarouselMedia = carouselList,
@@ -169,7 +173,7 @@ public class ProductService : IProductService
             UnitPrice = dto.Price,
             InStock = dto.Stock,
             Quantity = dto.Stock,
-            CommodityStatusId = MapStatusToId(dto.Status),
+            CommodityStatusId = await MapStatusToIdAsync(dto.Status, cancellationToken),
             ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath),
             StorageCondition = dto.StorageCondition,
             SpecDescription = dto.Description,
@@ -238,7 +242,7 @@ public class ProductService : IProductService
         commodity.UnitPrice = dto.Price;
         commodity.InStock = dto.Stock;
         commodity.Quantity = dto.Stock;
-        commodity.CommodityStatusId = MapStatusToId(dto.Status);
+        commodity.CommodityStatusId = await MapStatusToIdAsync(dto.Status, cancellationToken);
         commodity.ImageUrl = MediaHelper.ProcessImageData(dto.CoverImage, _env.WebRootPath);
         commodity.StorageCondition = dto.StorageCondition;
         commodity.SpecDescription = dto.Description;
@@ -338,11 +342,38 @@ public class ProductService : IProductService
         return category?.Id ?? 1;
     }
 
+    /// <summary>从 commodity_status 表加载状态映射（id ↔ name）</summary>
+    private async Task<(Dictionary<int, string> IdToName, Dictionary<string, int> NameToId)> LoadStatusMappingAsync(CancellationToken cancellationToken = default)
+    {
+        var statuses = await _dbContext.Set<CommodityStatus>().ToListAsync(cancellationToken);
+        var idToName = new Dictionary<int, string>();
+        var nameToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var s in statuses)
+        {
+            idToName[s.CommodityStatusId] = s.StatusName;
+            var raw = s.StatusName;
+            nameToId[raw] = s.CommodityStatusId;
+            if (raw.StartsWith("已", StringComparison.Ordinal))
+                nameToId[raw[1..]] = s.CommodityStatusId;
+        }
+
+        return (idToName, nameToId);
+    }
+
     public async Task<List<CommodityCategory>> GetCategoriesAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Set<CommodityCategory>()
             .AsNoTracking()
             .OrderBy(c => c.SortOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<CommodityStatus>> GetStatusesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<CommodityStatus>()
+            .AsNoTracking()
+            .OrderBy(s => s.CommodityStatusId)
             .ToListAsync(cancellationToken);
     }
 
@@ -394,22 +425,20 @@ public class ProductService : IProductService
         return (weight, string.IsNullOrEmpty(unitPart) ? null : unitPart);
     }
 
-    private static int MapStatusToId(string status)
+    public async Task<int> MapStatusToIdAsync(string status, CancellationToken cancellationToken = default)
     {
-        var normalized = status.StartsWith("已", StringComparison.Ordinal)
-            ? status[1..]
-            : status;
+        if (string.IsNullOrWhiteSpace(status))
+            return 1;
 
-        return normalized switch
-        {
-            "上架" => 1,
-            "售空" => 3,
-            _ => 2 // 已下架或其他默认为下架
-        };
+        var normalized = status.Trim();
+        var (_, nameToId) = await LoadStatusMappingAsync(cancellationToken);
+        return nameToId.TryGetValue(normalized, out var id) ? id : 1;
     }
 
-    private static string MapStatusToText(int? statusId)
+    private static string MapStatusToText(int? statusId, Dictionary<int, string>? statusMap = null)
     {
+        if (statusId.HasValue && statusMap != null && statusMap.TryGetValue(statusId.Value, out var name))
+            return name;
         return statusId switch
         {
             1 => "已上架",
