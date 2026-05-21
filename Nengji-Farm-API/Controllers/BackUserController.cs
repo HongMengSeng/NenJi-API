@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 
+using WebAPI.Data;
 using WebAPI.Dtos;
+using WebAPI.Entities.Manage;
 using WebAPI.Services;
 
 namespace WebAPI.Controllers
@@ -11,11 +13,13 @@ namespace WebAPI.Controllers
     {
         private readonly ILogger<BackUserController> _logger;
         private readonly IUserService _userService;
+        private readonly ManageAppDbContext _dbContext;
 
-        public BackUserController(ILogger<BackUserController> logger, IUserService userService)
+        public BackUserController(ILogger<BackUserController> logger, IUserService userService, ManageAppDbContext dbContext)
         {
             _logger = logger;
             _userService = userService;
+            _dbContext = dbContext;
         }
 
         /// <summary>
@@ -249,6 +253,41 @@ namespace WebAPI.Controllers
                 {
                     Code = 400,
                     Message = ex.Message == "用户不存在" ? "用户不存在，请刷新列表" : "删除用户失败"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 获取角色列表
+        /// </summary>
+        [HttpGet("roles")]
+        public IActionResult GetRoles()
+        {
+            try
+            {
+                var roles = _dbContext.Roles
+                    .OrderBy(x => x.RoleId)
+                    .Select(x => new
+                    {
+                        roleId = x.RoleId,
+                        roleName = x.RoleName
+                    })
+                    .ToList();
+
+                return Ok(new ApiResponses<object>
+                {
+                    Code = 200,
+                    Message = "获取成功",
+                    Data = new { records = roles }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"获取角色列表失败: {ex.Message}");
+                return BadRequest(new ApiResponse
+                {
+                    Code = 400,
+                    Message = "获取角色列表失败"
                 });
             }
         }
