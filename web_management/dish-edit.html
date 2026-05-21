@@ -310,12 +310,9 @@
 					<header class="top-nav">
 						<div>农场管理后台-菜品管理-编辑页面</div>
 						<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div class="user-info-row">
+							<div class="user-avatar">用</div>
 							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
-					</div>
 					</header>
 					
 					<!-- 菜品编辑页面 -->
@@ -338,6 +335,7 @@
 									<label>菜品类型</label>
 									<select v-model="dishForm.dishType">
 										<option value="">请选择类型</option>
+										<option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.categoryName }}</option>
 									</select>
 								</div>
 							</div>
@@ -345,6 +343,8 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="dishForm.status">
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.statusId" :value="status.statusId">{{ status.statusName }}</option>
 									</select>
 								</div>
 							</div>
@@ -452,6 +452,8 @@
 						previewImageUrl: '',
 						previewVideoItem: null,
 						editingDishId: '',
+						categories: [],
+						statuses: [],
 						// 菜品表单
 						dishForm: {
 							name: '',
@@ -467,8 +469,8 @@
 					}
 				},
 				
-				mounted() {
-					// 检查是否是编辑模式
+				async mounted() {
+					await Promise.all([this.loadCategories(), this.loadStatuses()]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const dishId = urlParams.get('id');
 					if (dishId) {
@@ -478,6 +480,40 @@
 				},
 				
 				methods: {
+					// 加载菜品分类
+					async loadCategories() {
+						try {
+							const data = await FarmAPI.dish.categories();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.categories = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.categories = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.categories = payload.list;
+							}
+						} catch (error) {
+							console.error('加载菜品分类失败:', error);
+						}
+					},
+					
+					// 加载菜品状态
+					async loadStatuses() {
+						try {
+							const data = await FarmAPI.dish.statuses();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.statuses = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.statuses = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.statuses = payload.list;
+							}
+						} catch (error) {
+							console.error('加载菜品状态失败:', error);
+						}
+					},
+					
 					// 跳转到指定页面
 					navigateTo(page) {
 						window.location.href = page;
@@ -603,6 +639,30 @@
 						return text;
 					},
 					
+					// 根据类型名称获取categoryId
+					getCategoryIdByName(categoryName) {
+						const category = this.categories.find(c => c.categoryName === categoryName);
+						return category ? category.categoryId : categoryName;
+					},
+					
+					// 根据categoryId获取类型名称
+					getCategoryNameById(categoryId) {
+						const category = this.categories.find(c => c.categoryId === categoryId);
+						return category ? category.categoryName : String(categoryId);
+					},
+					
+					// 根据状态名称获取statusId
+					getStatusIdByName(statusName) {
+						const status = this.statuses.find(s => s.statusName === statusName);
+						return status ? status.statusId : statusName;
+					},
+					
+					// 根据statusId获取状态名称
+					getStatusNameById(statusId) {
+						const status = this.statuses.find(s => s.statusId === statusId);
+						return status ? status.statusName : String(statusId);
+					},
+					
 					// 加载菜品数据
 					async loadDishData(id) {
 						console.log('当前菜品ID:', id);
@@ -629,8 +689,8 @@
 									name: dish.name || '',
 									price: dish.price || 0.01,
 									stock: dish.stock || 0,
-									dishType: dish.dishType || '',
-									status: this.normalizeStatus(dish.status) || '上架',
+									dishType: this.getCategoryIdByName(dish.dishType || ''),
+									status: this.getStatusIdByName(dish.status || ''),
 									image: dish.image || dish.coverImage || '',
 									carouselMedia: dish.carouselMedia || [],
 									specImages: dish.specImages || [],
@@ -826,8 +886,8 @@
 							name: String(this.dishForm.name || '').trim(),
 							price: this.toNumber(this.dishForm.price),
 							stock: this.toNumber(this.dishForm.stock),
-							dishType: String(this.dishForm.dishType || '').trim(),
-							status: this.dishForm.status,
+							dishType: this.getCategoryNameById(this.dishForm.dishType),
+							status: this.getStatusNameById(this.dishForm.status),
 							image: this.normalizeImageSavePath(this.dishForm.image),
 							carouselMedia: this.dishForm.carouselMedia.map(item => ({
 								type: item.type || '',
@@ -872,20 +932,7 @@
 						// 跳回菜品管理页面
 						window.location.href = 'dish.html';
 					}
-				,
-
-				logout() {
-					if (confirm('确定要退出登录吗？')) {
-						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-							window.Auth.clearAuth();
-						} else {
-							localStorage.removeItem('token');
-							localStorage.removeItem('userInfo');
-						}
-						window.location.href = 'login.html';
-					}
 				}
-}
 			}).mount('#app')
 		</script>
 	</body>

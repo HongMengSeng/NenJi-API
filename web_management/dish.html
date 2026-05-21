@@ -241,12 +241,9 @@
 					<header class="top-nav">
 						<div>农场管理后台-菜品管理</div>
 						<div class="user-info">
-						<div class="user-avatar">用</div>
-						<div class="user-info-row">
+							<div class="user-avatar">用</div>
 							<div>用户12312</div>
-							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
-					</div>
 					</header>
 					
 					<!-- 菜品管理页面 -->
@@ -269,8 +266,7 @@
 											<input type="text" v-model.trim="searchKeyword" class="search-input" placeholder="菜品ID/菜品名称搜索" @keyup.enter="searchDishes" />
 											<select v-model="statusFilter" class="filter-select" @change="searchDishes">
 												<option value="">全部状态</option>
-												<option value="上架">已上架</option>
-												<option value="下架">已下架</option>
+												<option v-for="status in statuses" :key="status.statusId" :value="status.statusName">{{ status.statusName }}</option>
 											</select>
 											<button type="button" class="btn btn-primary" @click="searchDishes">搜索</button>
 										</div>
@@ -304,9 +300,7 @@
 												<td>{{ formatDisplayTime(dish.uploadTime) }}</td>
 												<td>{{ dish.price }}</td>
 												<td>{{ dish.stock || 0 }}</td>
-												<td>
-													<span :class="['status-tag', dish.status === '已上架' ? 'active' : 'inactive']">{{ dish.status }}</span>
-												</td>
+												<td>{{ dish.status || '-' }}</td>
 												<td>
 													<div class="row-actions">
 														<button type="button" class="btn btn-primary" @click="editDish(dish)">编辑</button>
@@ -386,12 +380,14 @@
 						deleteTargetLabel: '',
 						searchKeyword: '',
 						statusFilter: '',
+						statuses: [],
 						listError: '',
 						deleteError: '',
 						jumpPage: 1
 					}
 				},
-				mounted() {
+				async mounted() {
+					await this.loadStatuses();
 					this.loadDishes();
 				},
 				computed: {
@@ -408,7 +404,7 @@
 						return this.getDeleteWarningText();
 					},
 					activeDishCount() {
-						return this.allDishes.filter(dish => dish.status === '已上架').length;
+						return this.allDishes.filter(dish => dish.status && ['上架', '已上架', '1', 'true'].includes(String(dish.status).trim())).length;
 					}
 				},
 				methods: {
@@ -441,19 +437,20 @@
 						dish.image = '';
 					},
 
-					normalizeDishStatus(status) {
-						const text = String(status ?? '').trim();
-						if (!text) {
-							return '已下架';
+					async loadStatuses() {
+						try {
+							const data = await FarmAPI.dish.statuses();
+							const payload = data?.data ?? data?.Data ?? data;
+							if (Array.isArray(payload)) {
+								this.statuses = payload;
+							} else if (Array.isArray(payload?.records)) {
+								this.statuses = payload.records;
+							} else if (Array.isArray(payload?.list)) {
+								this.statuses = payload.list;
+							}
+						} catch (error) {
+							
 						}
-						const normalizedText = text.toUpperCase();
-						if (['1', 'TRUE', 'ACTIVE', 'ON', 'ON_SALE', 'ONLINE'].includes(normalizedText) || ['上架', '已上架'].includes(text)) {
-							return '已上架';
-						}
-						if (['0', 'FALSE', 'INACTIVE', 'OFF', 'OFF_SALE', 'OFFLINE'].includes(normalizedText) || ['下架', '已下架'].includes(text)) {
-							return '已下架';
-						}
-						return text;
 					},
 
 					normalizeDish(dish) {
@@ -475,7 +472,7 @@
 							uploadTime: this.formatDisplayTime(dish.uploadTime || dish.createTime || dish.createdTime || dish.createdAt || ''),
 							price: dish.price ?? dish.dishPrice ?? '',
 							stock: dish.stock ?? dish.inventory ?? 0,
-							status: this.normalizeDishStatus(dish.status),
+							status: dish.status ?? '',
 							selected: false
 						};
 					},
@@ -527,7 +524,7 @@
 						if (status) {
 							params.set('status', status);
 						}
-						console.log('菜品列表查询参数:', Object.fromEntries(params.entries()));
+						
 
 						try {
 							const response = await fetch(`${DISH_LIST_API}?${params.toString()}`, {
@@ -557,16 +554,7 @@
 							this.currentPage = Number(pageData.pageNum) || pageNum;
 							this.jumpPage = this.currentPage;
 							this.dishSelectAll = false;
-							console.log('菜品列表请求成功:', {
-								total: this.totalDishes,
-								pageNum: this.currentPage,
-								pageSize: this.pageSize,
-								keyword,
-								status,
-								records: dishes
-							});
-						} catch (error) {
-							console.error('获取菜品列表失败:', error);
+							} catch (error) {
 							this.listError = '网络错误，请重试';
 							this.allDishes = [];
 							this.dishes = [];
@@ -700,26 +688,12 @@
 							this.resetDeleteState();
 							await this.loadDishes(nextPage);
 						} catch (error) {
-							console.error('删除菜品失败:', error);
 							this.deleteLoading = false;
 							this.deleteError = error.message || '删除菜品失败';
 							this.listError = this.deleteError;
 						}
 					}
-				,
-
-				logout() {
-					if (confirm('确定要退出登录吗？')) {
-						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
-							window.Auth.clearAuth();
-						} else {
-							localStorage.removeItem('token');
-							localStorage.removeItem('userInfo');
-						}
-						window.location.href = 'login.html';
-					}
 				}
-}
 			}).mount('#app');
 		</script>
 	</body>

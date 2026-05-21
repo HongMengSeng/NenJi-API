@@ -297,7 +297,9 @@
 			edit: function (data) { return post('/api/dish/edit', data); },
 			delete: function (id) { return post('/api/dish/delete', { id: id }); },
 			deleteBatch: function (ids) { return post('/api/dish/deleteBatch', { ids: ids }); },
-			deleteByQuery: function (id) { return request('/api/dish/delete', { method: 'POST', params: { id: id } }); }
+			deleteByQuery: function (id) { return request('/api/dish/delete', { method: 'POST', params: { id: id } }); },
+			categories: function () { return request('/api/dish/categories'); },
+			statuses: function () { return request('/api/dish/statuses'); }
 		},
 		activity: {
 			list: function (params) { return list('/api/activity/list', params); },
