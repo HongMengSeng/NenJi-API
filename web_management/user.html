@@ -493,7 +493,7 @@
 					if (keyword) {
 						params.set('keyword', String(keyword).trim());
 					}
-					return FarmAPI.url(`/api/user/list?${params.toString()}`);
+					return FarmAPI.url(`/api/back-user/list?${params.toString()}`);
 				},
 				async fetchUsers(url) {
 					const res = await fetch(url, {
@@ -667,7 +667,7 @@
 						return;
 					}
 
-					const targetIds = this.pendingDeleteUsers.map(user => user.id || user.guid).filter(Boolean);
+					const targetIds = this.pendingDeleteUsers.map(user => user.guid).filter(Boolean);
 					if (!targetIds.length) {
 						this.cancelDelete();
 						alert('未找到用户ID');
@@ -676,12 +676,12 @@
 
 					try {
 						for (const targetId of targetIds) {
-							const res = await fetch(FarmAPI.url('/api/user/delete'), {
+							const res = await fetch(FarmAPI.url('/api/back-user/delete'), {
 								method: 'POST',
 								headers: window.Auth.getAuthHeaders({
 									'Content-Type': 'application/json'
 								}),
-								body: JSON.stringify({ id: targetId })
+								body: JSON.stringify({ guid: targetId })
 							});
 							const data = await FarmAPI.parseResponse(res);
 

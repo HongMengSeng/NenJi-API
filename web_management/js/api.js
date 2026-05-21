@@ -335,11 +335,11 @@
 			status: function (data) { return post('/api/table/status', data); }
 		},
 		user: {
-			list: function (params) { return list('/api/user/list', params); },
-			detail: function (id) { return request('/api/user/detail', { params: { id: id } }); },
-			add: function (data) { return post('/api/user/add', data); },
-			edit: function (data) { return put('/api/user/edit', data); },
-			delete: function (id) { return post('/api/user/delete', { id: id }); },
+			list: function (params) { return list('/api/back-user/list', params); },
+			detail: function (id) { return request('/api/back-user/detail', { params: { id: id } }); },
+			add: function (data) { return post('/api/back-user/add', data); },
+			edit: function (data) { return post('/api/back-user/edit', data); },
+			delete: function (id) { return post('/api/back-user/delete', { id: id }); },
 			roles: function () { return request('/api/back-user/roles'); }
 		}
 	};
