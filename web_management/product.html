@@ -264,6 +264,7 @@
 						<div class="user-info">
 							<div class="user-avatar">用</div>
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
 					</header>
 					
@@ -971,6 +972,18 @@
 					// 搜索按钮入口：按当前关键字重新筛选列表。
 					searchProducts() {
 						this.loadProducts(1);
+					},
+
+					logout() {
+						if (confirm('确定要退出登录吗？')) {
+							if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+								window.Auth.clearAuth();
+							} else {
+								localStorage.removeItem('token');
+								localStorage.removeItem('userInfo');
+							}
+							window.location.href = 'login.html';
+						}
 					}
 				}
 			}).mount('#app');

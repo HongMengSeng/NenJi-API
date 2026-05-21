@@ -91,6 +91,23 @@ body {
     font-weight: 600;
 }
 
+.btn-logout {
+    padding: 6px 12px;
+    margin-left: 8px;
+    border: 1px solid #d3a239;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #d3a239;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: linear-gradient(135deg, #E5B846 0%, #D3A239 100%);
+    color: white;
+}
+
 /* 通用内容区滚动容器 */
 .content-container {
     flex: 1;

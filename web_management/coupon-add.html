@@ -211,6 +211,23 @@
 				box-shadow: 0 10px 24px rgba(5, 150, 105, 0.24);
 			}
 
+		.btn-logout {
+				padding: 6px 12px;
+				margin-left: 12px;
+				border: 1px solid #d3a239;
+				border-radius: 4px;
+				background-color: transparent;
+				color: #d3a239;
+				font-size: 13px;
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.btn-logout:hover {
+				background: linear-gradient(135deg, #E5B846 0%, #D3A239 100%);
+				color: white;
+			}
+
 		@media (max-width: 1024px) {
 			.form-row {
 				flex-direction: column;
@@ -247,6 +264,7 @@
 					<div class="user-info">
 						<div class="user-avatar">用</div>
 						<div>用户12312</div>
+						<button class="btn-logout" @click="logout">退出登录</button>
 					</div>
 				</header>
 
@@ -935,6 +953,18 @@
 
 				cancel() {
 					window.location.href = 'coupon.html';
+				},
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
 				}
 			}
 		}).mount('#app');

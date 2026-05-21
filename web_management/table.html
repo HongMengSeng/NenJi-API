@@ -395,9 +395,12 @@
 					<header class="top-nav">
 						<div>农场管理后台-餐桌管理</div>
 						<div class="user-info">
-							<div class="user-avatar">用</div>
+						<div class="user-avatar">用</div>
+						<div class="user-info-row">
 							<div>用户12312</div>
+							<button class="btn-logout" @click="logout">退出登录</button>
 						</div>
+					</div>
 					</header>
 
 					<div class="dish-page">
@@ -862,7 +865,20 @@
 					buildTableQrCodeUrl(payload) {
 						return FarmAPI.qrDataURL(payload, { cellSize: 6, margin: 2 });
 					}
+				,
+
+				logout() {
+					if (confirm('确定要退出登录吗？')) {
+						if (window.Auth && typeof window.Auth.clearAuth === 'function') {
+							window.Auth.clearAuth();
+						} else {
+							localStorage.removeItem('token');
+							localStorage.removeItem('userInfo');
+						}
+						window.location.href = 'login.html';
+					}
 				}
+}
 			}).mount('#app');
 		</script>
 	</body>
