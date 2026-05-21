@@ -211,6 +211,8 @@
 									<li @click="navigateTo('order.html')">订单管理</li>
 									<li class="active" @click="navigateTo('dish.html')">菜品管理</li>
 									<li @click="navigateTo('coupon.html')">活动券管理</li>
+\t\t\t\t\t\t\t<li @click=\"navigateTo('table.html')\">餐桌管理</li>
+										<li @click="navigateTo('table.html')">餐桌管理</li>
 									<li @click="navigateTo('user.html')">用户管理</li>
 								</ul>
 				</aside>
@@ -344,6 +346,7 @@
 			const DISH_IMAGE_BASE_URL = FarmAPI.config.getBaseURL();
 			const DISH_LIST_API = FarmAPI.url('/api/dish/list');
 			const DISH_DELETE_API = FarmAPI.url('/api/dish/delete');
+			const DISH_DELETE_BATCH_API = FarmAPI.url('/api/dish/deleteBatch');
 
 			createApp({
 				data() {
@@ -674,32 +677,41 @@
 						}
 						this.resetDeleteState();
 					},
-					async confirmDelete() {
-						if (!this.deleteTargetIds.length || !this.deleteTargetType) {
-							this.resetDeleteState();
-							return;
-						}
-
-						this.deleteLoading = true;
-						this.listError = '';
-						const targetIds = [...this.deleteTargetIds];
-						try {
-							const deletedIds = [];
-							for (const id of targetIds) {
-								deletedIds.push(await this.deleteDishById(id));
+t					async confirmDelete() {
+							if (!this.deleteTargetIds.length || !this.deleteTargetType) {
+								this.resetDeleteState();
+								return;
 							}
-							const nextPage = this.dishes.length <= deletedIds.length && this.currentPage > 1
-								? this.currentPage - 1
-								: this.currentPage;
-							this.resetDeleteState();
-							await this.loadDishes(nextPage);
-						} catch (error) {
-							console.error('删除菜品失败:', error);
-							this.deleteLoading = false;
-							this.listError = error.message || '删除菜品失败';
-							alert(this.listError);
+
+							this.deleteLoading = true;
+							this.listError = '';
+							const targetIds = [...this.deleteTargetIds];
+							try {
+								if (targetIds.length > 1) {
+									const response = await fetch(DISH_DELETE_BATCH_API, {
+										method: 'POST',
+										headers: window.Auth.getAuthHeaders({ 'Content-Type': 'application/json' }),
+										body: JSON.stringify({ ids: targetIds })
+									});
+									const data = await FarmAPI.parseResponse(response);
+									if (!response.ok || !this.isSuccessResponse(data)) {
+										throw new Error(this.getErrorMessage(data, '批量删除菜品失败'));
+									}
+								} else {
+									await this.deleteDishById(targetIds[0]);
+								}
+								const nextPage = this.dishes.length <= targetIds.length && this.currentPage > 1
+									? this.currentPage - 1
+									: this.currentPage;
+								this.resetDeleteState();
+								await this.loadDishes(nextPage);
+							} catch (error) {
+								console.error('删除菜品失败:', error);
+								this.deleteLoading = false;
+								this.listError = error.message || '删除菜品失败';
+								alert(this.listError);
+							}
 						}
-					}
 				}
 			}).mount('#app')
 		</script>

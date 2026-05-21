@@ -255,6 +255,7 @@
 					<li class="active" @click="navigateTo('order.html')">订单管理</li>
 					<li @click="navigateTo('dish.html')">菜品管理</li>
 					<li @click="navigateTo('coupon.html')">活动券管理</li>
+t					<li @click="navigateTo('table.html')">餐桌管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
@@ -327,7 +328,7 @@
 					<div class="info-section">
 						<div class="section-title">
 							菜品点单明细
-							<button class="btn-refund" style="margin-left: 20px;">退款</button>
+							<button class="btn-refund" style="margin-left: 20px;" @click="openDishRefundModal">退款</button>
 						</div>
 						<div class="detail-table-wrapper">
 							<table class="detail-table">
@@ -350,7 +351,7 @@
 									<td>¥{{ formatAmount(item.price) }}</td>
 									<td>¥{{ formatAmount(item.subtotal) }}</td>
 									<td>{{ item.status || '未知' }}</td>
-									<td><button class="btn-refund btn-refund-sm">退款</button></td>
+									<td><button class="btn-refund btn-refund-sm" @click="openDishRefundModal">退款</button></td>
 								</tr>
 								<tr v-if="orderItems.length === 0">
 									<td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">暂无菜品数据</td>
@@ -401,6 +402,24 @@
 					</div>
 				</div>
 			</main>
+n			<!-- 退款提示弹窗 -->
+			<div v-if="dishRefundModalVisible" class="modal-mask" @click.self="dishRefundModalVisible = false">
+				<div class="modal-dialog" style="max-width: 440px;">
+					<div class="modal-header">
+						<div class="modal-title">退款</div>
+						<button class="modal-close" @click="dishRefundModalVisible = false" aria-label="关闭">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px;">
+							<div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 8px;">暂不支持</div>
+							<div style="font-size: 13px; color: #b91c1c; line-height: 1.7;">后端菜品订单接口暂未开放退款功能，如需退款请联系后端开发人员添加退款接口后再操作。</div>
+						</div>
+					</div>
+					<div class="modal-actions">
+						<button class="btn btn-default" @click="dishRefundModalVisible = false">关闭</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 	
@@ -414,6 +433,7 @@
 		createApp({
 			data() {
 				return {
+t				dishRefundModalVisible: false,
 					loading: true,
 					loadError: '',
 					orderInfo: {
@@ -506,6 +526,9 @@
 				},
 				
 				goBack() {
+t				openDishRefundModal() {
+						this.dishRefundModalVisible = true;
+					},
 					window.location.href = 'order-dish.html';
 				},
 				

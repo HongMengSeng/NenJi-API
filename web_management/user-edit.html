@@ -113,6 +113,7 @@
 					<li @click="navigateTo('order.html')">订单管理</li>
 					<li @click="navigateTo('dish.html')">菜品管理</li>
 					<li @click="navigateTo('coupon.html')">活动券管理</li>
+					<li @click="navigateTo('table.html')">餐桌管理</li>
 					<li class="active" @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
@@ -143,10 +144,9 @@
 
 					<div class="form-group">
 						<label>身份</label>
-						<select v-model="form.role">
+					<select v-model="form.role">
 							<option value="">请选择身份</option>
-							<option value="员工">员工</option>
-							<option value="厨师">厨师</option>
+							<option v-for="role in roleList" :key="role.roleId || role.id" :value="role.roleName || role.name">{{ role.roleName || role.name }}</option>
 						</select>
 					</div>
 
@@ -165,11 +165,13 @@
 	<script src="js/api.js"></script>
 	<script>
 		const { createApp } = Vue;
+			const ROLES_LIST_API = FarmAPI.url('/api/back-user/roles/list');
 
 		createApp({
 			data() {
 				return {
 					submitting: false,
+					roleList: [],
 					form: {
 						id: '',
 						guid: '',
@@ -203,6 +205,7 @@
 				this.form.id = userId;
 				this.form.role = currentRole;
 				this.loadUserData(userId);
+n					this.loadRoles();
 			},
 			methods: {
 				navigateTo(page) {
@@ -312,6 +315,7 @@
 							nickname: this.form.realName,
 							gender: this.form.gender,
 							role: this.form.role
+						roleList: [],
 						};
 
 						if (this.form.password) {
@@ -346,6 +350,25 @@
 						this.submitting = false;
 					}
 				},
+				async loadRoles() {
+						try {
+							const res = await fetch(ROLES_LIST_API, {
+								headers: window.Auth.getAuthHeaders()
+							});
+							const data = await FarmAPI.parseResponse(res);
+							const codeText = String(data.code ?? '').toLowerCase();
+							const success = data.code == null
+								|| Number(data.code) === 200
+								|| Number(data.code) === 0
+								|| codeText === 'success'
+								|| data.success === true;
+							if (success && Array.isArray(data.data)) {
+								this.roleList = data.data;
+							}
+						} catch (error) {
+							console.error('加载角色列表失败:', error);
+						}
+					},
 				cancel() {
 					window.location.href = 'user.html';
 				}

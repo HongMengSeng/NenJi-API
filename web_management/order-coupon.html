@@ -347,6 +347,7 @@
 					<li class="active" @click="navigateTo('order.html')">订单管理</li>
 					<li @click="navigateTo('dish.html')">点餐管理</li>
 					<li @click="navigateTo('coupon.html')">活动券管理</li>
+					<li @click="navigateTo('table.html')">餐桌管理</li>
 					<li @click="navigateTo('user.html')">用户管理</li>
 				</ul>
 			</aside>
@@ -498,7 +499,7 @@
 					<div style="margin-top: 20px;">
 						<div class="detail-label" style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 10px;">活动项目</div>
 						<div v-if="activeCouponOrder.items && activeCouponOrder.items.length > 0" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-							<div v-for="(item, index) in activeCouponOrder.items" :key="item.activityOrderDetailsId || index" style="border-bottom: 1px solid #e2e8f0; padding: 12px; last-child:border-bottom:none;">
+							<div v-for="(item, index) in activeCouponOrder.items" :key="item.activityOrderDetailsId || index" :style="index < (activeCouponOrder.items || []).length - 1 ? 'border-bottom: 1px solid #e2e8f0; padding: 12px;' : 'padding: 12px;'">
 								<div style="display: flex; gap: 12px;">
 									<img v-if="item.activityImage" :src="getActivityImageUrl(item.activityImage)" :alt="item.activityTitle" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
 									<div style="flex: 1;">
@@ -815,27 +816,82 @@
 					this.couponWriteOffModalVisible = false;
 					this.activeCouponOrder = null;
 				},
-				confirmWriteOffCouponOrder() {
+				async confirmWriteOffCouponOrder() {
 					if (!this.activeCouponOrder) {
 						return;
 					}
 
-					const target = this.couponAllOrders.find(order => order.orderId === this.activeCouponOrder.orderId);
-					if (target) {
-						target.orderStatus = '已核销';
-						target.writeOffTime = this.getCurrentDateTime();
-						if (!target.verificationRecords) {
-							target.verificationRecords = [];
-						}
-						target.verificationRecords.push({
-							writeOffTime: target.writeOffTime,
-							storeName: target.storeName,
-							operator: '店员',
-							remark: '券类核销'
-						});
+					const orderId = this.activeCouponOrder.orderId || this.activeCouponOrder.orderNo;
+					if (!orderId) {
+						alert('订单ID缺失，无法核销');
+						return;
 					}
 
-					this.closeWriteOffCouponModal();
+					const items = this.activeCouponOrder.items || [];
+					const verifyCode = items.length > 0 && items[0].activityQrcode
+						? items[0].activityQrcode
+						: String(orderId);
+
+					try {
+						const response = await fetch(FarmAPI.url('/api/activity-order/verify'), {
+							method: 'POST',
+							headers: window.Auth.getAuthHeaders({
+								'Content-Type': 'application/json'
+							}),
+							body: JSON.stringify({
+								orderId: orderId,
+								verifyCode: verifyCode
+							})
+						});
+
+						const responseText = await response.text();
+						let data = {};
+						try {
+							data = responseText ? JSON.parse(responseText) : {};
+						} catch (parseError) {
+							console.error('JSON解析失败:', parseError);
+						}
+
+						if (response.status === 401 || response.status === 403) {
+							window.Auth.clearAuth();
+							window.Auth.redirectToLogin();
+							return;
+						}
+
+						const codeText = String(data.code ?? '').toLowerCase();
+						const success = data.code == null
+							|| Number(data.code) === 200
+							|| Number(data.code) === 0
+							|| codeText === 'success'
+							|| data.success === true;
+
+						if (!response.ok || !success) {
+							alert(data.message || '核销失败，请重试');
+							return;
+						}
+
+						const target = this.couponAllOrders.find(order => order.orderId === this.activeCouponOrder.orderId);
+						if (target) {
+							target.orderStatus = '已核销';
+							target.paymentStatus = '已支付';
+							target.statusName = '已核销';
+							if (!target.verificationRecords) {
+								target.verificationRecords = [];
+							}
+							target.verificationRecords.push({
+								writeOffTime: this.getCurrentDateTime(),
+								storeName: target.storeName || '',
+								operator: '管理员',
+								remark: '券类核销'
+							});
+						}
+
+						this.closeWriteOffCouponModal();
+						alert('核销成功');
+					} catch (error) {
+						console.error('核销请求失败:', error);
+						alert('网络错误，核销请求失败，请重试');
+					}
 				},
 				closeRefundCouponModal() {
 					this.couponRefundModalVisible = false;
