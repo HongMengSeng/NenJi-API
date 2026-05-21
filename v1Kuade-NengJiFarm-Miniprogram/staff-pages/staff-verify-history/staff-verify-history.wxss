@@ -135,14 +135,16 @@ page {
   color: var(--text-primary);
 }
 
+.filter-tags-scroll {
+  white-space: nowrap;
+}
+
 .filter-tags {
-  display: flex;
+  display: inline-flex;
   flex-wrap: nowrap;
   gap: 16rpx;
   align-items: center;
-  overflow-x: auto;
   padding-bottom: 8rpx;
-  -webkit-overflow-scrolling: touch;
 }
 
 .filter-tags::-webkit-scrollbar {
@@ -326,6 +328,12 @@ page {
 .history-type.tag-study {
   background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
+  border: none;
+}
+
+.history-type.tag-pick {
+  background: linear-gradient(180deg, #fce7f3 0%, #fbcfe8 100%);
+  color: #831843;
   border: none;
 }
 

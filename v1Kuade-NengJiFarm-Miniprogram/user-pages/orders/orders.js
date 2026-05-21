@@ -24,7 +24,7 @@ Page({
     statusTabs: [
       { key: 'all', name: '全部' },
       { key: 'pending', name: '待付款' },
-      { key: 'paid', name: '待处理' },
+      { key: 'paid', name: '待出餐/待发货' },
       { key: 'shipping', name: '待收货' },
       { key: 'cancelled', name: '已取消' },
       { key: 'refund', name: '退款/售后' },

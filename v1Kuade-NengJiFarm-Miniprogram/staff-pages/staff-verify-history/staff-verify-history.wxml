@@ -14,25 +14,35 @@
     </view>
 
     <!-- 筛选标签 -->
-    <view class="filter-tags">
-      <text
-        class="filter-tag {{filterType === 'all' ? 'active' : ''}}"
-        data-type="all"
-        bindtap="onFilterChange"
-      >全部</text>
-    
-      <text
-        wx:for="{{categories}}"
-        wx:key="id"
-        class="filter-tag {{filterType === item.id ? 'active' : ''}}"
-        data-type="{{item.id}}"
-        bindtap="onFilterChange"
-      >{{item.name}}</text>
-      <text class="filter-tag date-tag {{dateRange.startDate ? 'active' : ''}}" bindtap="selectDateRange">
-        <text class="date-icon">📅</text>
-        <text class="date-text">{{dateRange.startDate || '选择日期'}}</text>
-      </text>
-    </view>
+    <scroll-view 
+      class="filter-tags-scroll" 
+      scroll-x 
+      enable-flex 
+      scroll-into-view="{{scrollToView}}" 
+      scroll-with-animation
+    >
+      <view class="filter-tags">
+        <text
+          id="filter-all"
+          class="filter-tag {{filterType === 'all' ? 'active' : ''}}"
+          data-type="all"
+          bindtap="onFilterChange"
+        >全部</text>
+      
+        <text
+          wx:for="{{categories}}"
+          wx:key="id"
+          id="filter-{{item.id}}"
+          class="filter-tag {{filterType === item.id ? 'active' : ''}}"
+          data-type="{{item.id}}"
+          bindtap="onFilterChange"
+        >{{item.name}}</text>
+        <text id="filter-date" class="filter-tag date-tag {{dateRange.startDate ? 'active' : ''}}" bindtap="selectDateRange">
+          <text class="date-icon">📅</text>
+          <text class="date-text">{{dateRange.startDate || '选择日期'}}</text>
+        </text>
+      </view>
+    </scroll-view>
   </view>
 
   <!-- 加载中 -->

@@ -254,18 +254,41 @@ Page({
           const isPointsExchange = item.type === 'points_exchange' || item.typeName === '积分兑换';
           const isPickupHistory = item.voucherType === 'goods_pickup' || item.voucherType === 'pickup' || item.isPickupOrder || item.deliveryMethod === 'pickup';
           const isStudy = item.typeName === '亲子研学' || item.categoryName === '亲子研学';
+          const isPickExperience = item.typeName === '采摘体验' || item.categoryName === '采摘体验' || item.voucherType === 'pick_experience';
+          
           let tagClass = 'tag-activity';
+          let voucherType = 'activity';
+          let typeName = '活动券';
+          
           if (isPointsExchange) {
             tagClass = 'tag-points';
+            voucherType = 'points_exchange';
+            typeName = '积分兑换';
           } else if (isPickupHistory) {
             tagClass = 'tag-pickup';
+            voucherType = 'goods_pickup';
+            typeName = '商品自取';
           } else if (isStudy) {
             tagClass = 'tag-study';
+            voucherType = 'parent_child_study';
+            typeName = '亲子研学';
+          } else if (isPickExperience) {
+            tagClass = 'tag-pick';
+            voucherType = 'pick_experience';
+            typeName = '采摘体验';
           }
+          
+          const statusMap = {
+            'verified': '已核销',
+            'pending': '待核销',
+            'cancelled': '已取消'
+          };
+          const displayStatus = statusMap[item.status] || item.status || '已核销';
+          
           return {
           id: item.id || Math.random().toString(36).substr(2, 9),
-          voucherType: isPointsExchange ? 'points_exchange' : (item.voucherType || (isPickupHistory ? 'goods_pickup' : 'activity')),
-          typeName: isPointsExchange ? '积分兑换' : (item.categoryName || item.typeName || (isPickupHistory ? '商品自取' : '活动券')),
+          voucherType: voucherType,
+          typeName: typeName,
           tagClass: tagClass,
           userName: item.userName || '未知用户',
           userPhone: item.userPhone || item.phone || '',
@@ -274,7 +297,7 @@ Page({
           showParticipants: !isPointsExchange && !isPickupHistory,
           verifyTime: item.verifyTime || item.time || item.createTime,
           verifyTimeFormatted: item.verifyTime ? this.formatTime(item.verifyTime) : '-',
-          status: item.status || '已核销',
+          status: displayStatus,
           verified: item.verified || true,
           orderId: item.orderId || item.orderNo || item.id,
           raw: item
