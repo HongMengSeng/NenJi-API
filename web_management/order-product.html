@@ -653,20 +653,6 @@
 			word-break: break-word;
 		}
 
-		.pagination{
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			flex-wrap: wrap;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-
 		.page-jump-input{
 			width: 60px;
 			padding: 5px;
@@ -720,6 +706,7 @@
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
 	<script src="js/admin-utils.js"></script>
 	</head>
 <body>
@@ -900,19 +887,19 @@
 						</div>
 						<div class="info-item">
 							<div class="info-label">申请时间</div>
-							<div class="info-value">{{ productActionModalOrder.refundApplyTime || '未记录' }}</div>
+							<div class="info-value">{{ productActionModalOrder.refundApplyTime || '--' }}</div>
 						</div>
 						<div class="info-item">
 							<div class="info-label">物流公司</div>
-							<div class="info-value">{{ getProductLogisticsCompany(productActionModalOrder) || '未分配' }}</div>
+							<div class="info-value">{{ getProductLogisticsCompany(productActionModalOrder) || '--' }}</div>
 						</div>
 						<div class="info-item">
 							<div class="info-label">物流单号</div>
-							<div class="info-value">{{ productActionModalOrder.logisticsNo || '未填写' }}</div>
+							<div class="info-value">{{ productActionModalOrder.logisticsNo || '--' }}</div>
 						</div>
 						<div class="info-item full">
 							<div class="info-label">退款原因</div>
-							<div class="info-value">{{ productActionModalOrder.refundReason || '无' }}</div>
+							<div class="info-value">{{ productActionModalOrder.refundReason || '--' }}</div>
 						</div>
 						<div class="info-item full">
 							<div class="info-label">图片证明</div>
@@ -1018,7 +1005,7 @@
 						</div>
 						<div class="info-item full">
 							<div class="info-label">退款原因</div>
-							<div class="info-value">{{ selectedRefund.reason || '无' }}</div>
+							<div class="info-value">{{ selectedRefund.reason || '--' }}</div>
 						</div>
 						<div class="info-item full">
 							<div class="info-label">退款说明</div>
@@ -1148,7 +1135,7 @@
 				pendingProductOrders() {
 					return this.allProductOrders.filter(order =>
 						this.isManagedProductOrder(order) &&
-						['待发货', '待收货', '退款中', '待签约', '认购中'].includes(this.getProductOrderDisplayStatus(order.orderStatus))
+						['待发货', '待收货', '已发货', '配送中', '申请退款', '退款中', '待签约', '认购中'].includes(order.orderStatus)
 					).length;
 				},
 
@@ -1261,11 +1248,10 @@
 				},
 
 				getProductOrderStatusClass(status) {
-					const displayStatus = this.getProductOrderDisplayStatus(status);
-					if (displayStatus === '已完成') return 'completed';
-					if (displayStatus === '已退款') return 'refunded';
-					if (displayStatus === '待支付') return 'unpaid';
-					if (displayStatus === '待发货' || displayStatus === '待收货' || displayStatus === '退款中' || displayStatus === '认购中') return 'processing';
+					if (status === '已完成' || status === '退款完成') return 'completed';
+					if (status === '已退款') return 'refunded';
+					if (status === '待支付') return 'unpaid';
+					if (status === '待发货' || status === '待收货' || status === '已发货' || status === '配送中' || status === '申请退款' || status === '退款中' || status === '待签约' || status === '认购中') return 'processing';
 					return 'pending';
 				},
 
@@ -1279,18 +1265,6 @@
 				},
 
 				getProductLogisticsCompanyByNo(logisticsNo) {
-					const normalizedNo = String(logisticsNo || '').trim().toUpperCase();
-					if (!normalizedNo) {
-						return '';
-					}
-
-					if (normalizedNo.startsWith('SF')) {
-						return '顺丰';
-					}
-					if (normalizedNo.startsWith('YZ') || normalizedNo.startsWith('EMS') || normalizedNo.startsWith('POST')) {
-						return '邮政';
-					}
-
 					return '';
 				},
 
@@ -1462,10 +1436,10 @@
 					}
 
 					if (this.isSubscriptionProductOrder(order)) {
-						return order.fieldName || '一亩田认购';
+						return order.fieldName || '';
 					}
 
-					return this.getProductDetailLogisticsType(order) || '未分配';
+					return this.getProductDetailLogisticsType(order) || '';
 				},
 
 				getProductOrderSourceLabel(order) {
@@ -1473,7 +1447,7 @@
 						return '--';
 					}
 
-					return order.orderSource || (this.isSubscriptionProductOrder(order) ? '认购一亩田' : '商城下单');
+					return order.orderSource || '';
 				},
 
 				isSubscriptionProductOrder(order) {
@@ -1494,31 +1468,6 @@
 				},
 
 				getProductOrderDisplayStatus(status) {
-					if (status === '待支付') {
-						return '待支付';
-					}
-					if (status === '待签约') {
-						return '待签约';
-					}
-					if (status === '认购中') {
-						return '认购中';
-					}
-					if (status === '待发货') {
-						return '待发货';
-					}
-					if (status === '已发货' || status === '配送中' || status === '待收货') {
-						return '待收货';
-					}
-					if (status === '申请退款' || status === '退款中') {
-						return '退款中';
-					}
-					if (status === '已退款') {
-						return '已退款';
-					}
-					if (status === '退款完成' || status === '已完成' || status === '已取消') {
-						return '已完成';
-					}
-
 					return status || '--';
 				},
 
@@ -1531,7 +1480,7 @@
 						return '付款后进入履约';
 					}
 
-					return '按订单地址配送';
+					return '';
 				},
 
 				getProductLogisticsTypeNote(order) {
@@ -1549,54 +1498,20 @@
 
 					const displayStatus = this.getProductOrderDisplayStatus(order.orderStatus);
 
-					if (this.isSubscriptionProductOrder(order)) {
-						if (displayStatus === '待支付') {
-							return '待客户完成认购支付';
-						}
-						if (displayStatus === '待签约') {
-							return order.paymentStatus === '已支付' ? '支付完成，待后台确认签约' : '等待客户完成认购支付';
-						}
-						if (displayStatus === '认购中') {
-							return order.signTime ? `已签约：${this.formatDisplayTime(order.signTime)}` : '已签约，认购履约中';
-						}
-						if (displayStatus === '已退款') {
-							return '认购订单已退款';
-						}
-						if (displayStatus === '已完成') {
-							return order.completeTime ? `完成于 ${this.formatDisplayTime(order.completeTime)}` : '认购订单已完成';
-						}
-						return order.remark || order.deliveryNote || '';
+					if (displayStatus === '待收货' && order.shippedTime) {
+						return `发货于 ${this.formatDisplayTime(order.shippedTime)}`;
+					}
+					if (displayStatus === '退款中' && order.refundApplyTime) {
+						return `申请于 ${this.formatDisplayTime(order.refundApplyTime)}`;
+					}
+					if (this.isSubscriptionProductOrder(order) && displayStatus === '认购中' && order.signTime) {
+						return `已签约：${this.formatDisplayTime(order.signTime)}`;
+					}
+					if (displayStatus === '已完成' && order.completeTime) {
+						return `完成于 ${this.formatDisplayTime(order.completeTime)}`;
 					}
 
-					if (displayStatus === '待支付') {
-						return '等待客户支付';
-					}
-					if (displayStatus === '待发货') {
-						return '待仓库发货';
-					}
-					if (displayStatus === '待收货') {
-						return order.shippedTime ? `发货于 ${this.formatDisplayTime(order.shippedTime)}` : '等待客户收货';
-					}
-					if (displayStatus === '退款中') {
-						return order.refundApplyTime ? `申请于 ${this.formatDisplayTime(order.refundApplyTime)}` : '等待平台处理';
-					}
-					if (displayStatus === '已退款') {
-						return '退款已处理完成';
-					}
-					if (displayStatus === '已完成') {
-						if (order.paymentStatus === '已退款') {
-							return '退款已处理完成';
-						}
-						if (String(order.deliveryNote || '').includes('取消')) {
-							return '订单已取消';
-						}
-						if (order.completeTime) {
-							return `完成于 ${this.formatDisplayTime(order.completeTime)}`;
-						}
-						return '订单已完成';
-					}
-
-					return '';
+					return order.remark || order.deliveryNote || '';
 				},
 
 				hasProductPrimaryActions(order) {
@@ -2085,23 +2000,16 @@
 					return (Array.isArray(source) ? source : []).map((order, index) => {
 						const normalizedOrder = this.normalizeProductOrder(order, index);
 						const isSubscriptionOrder = this.isSubscriptionProductOrder(normalizedOrder);
-						const normalizedOrderStatus = this.getProductOrderDisplayStatus(
-							normalizedOrder.orderStatus || (normalizedOrder.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
-						);
+						const normalizedOrderStatus = this.getProductOrderDisplayStatus(normalizedOrder.orderStatus);
 
 						return {
 							...normalizedOrder,
 							orderCategory: normalizedOrder.orderCategory || (String(normalizedOrder.orderId || '').startsWith('S') ? 'subscription' : 'product'),
-							orderSource: normalizedOrder.orderSource || (isSubscriptionOrder ? '认购一亩田' : '商城下单'),
-							deliveryMethod: normalizedOrder.deliveryMethod || (isSubscriptionOrder ? '一亩田认购' : '快递配送'),
-							logisticsType: normalizedOrder.logisticsType || (isSubscriptionOrder ? normalizedOrder.fieldName || '' : ''),
 							receiverName: normalizedOrder.receiverName || normalizedOrder.userName || '',
 							userName: normalizedOrder.userName || normalizedOrder.receiverName || '',
 							contactPhone: normalizedOrder.contactPhone || normalizedOrder.phone || '',
 							orderTime: this.formatDisplayTime(normalizedOrder.orderTime),
-							orderStatus: normalizedOrderStatus === '--'
-								? (normalizedOrder.paymentStatus === '待支付' ? '待支付' : (isSubscriptionOrder ? '待签约' : '待发货'))
-								: normalizedOrderStatus,
+							orderStatus: normalizedOrderStatus || normalizedOrder.orderStatus || '',
 							refundReason: normalizedOrder.refundReason || '',
 							refundApplyTime: normalizedOrder.refundApplyTime ? this.formatDisplayTime(normalizedOrder.refundApplyTime) : '',
 							refundProofImages: Array.isArray(normalizedOrder.refundProofImages) ? normalizedOrder.refundProofImages.filter(Boolean) : [],
@@ -2138,9 +2046,9 @@
 						deliveryMethod: order.deliveryMethod || orderInfo.deliveryMethod || '',
 						logisticsType: order.logisticsType || fulfillmentInfo.schedule || orderInfo.logisticsType || '',
 						logisticsNo: order.logisticsNo || order.trackingNo || fulfillmentInfo.trackingNo || orderInfo.logisticsNo || '',
-						paymentMethod: order.paymentMethod || order.payMethod || orderInfo.paymentMethod || '微信支付',
-						paymentStatus: paymentStatus || '待支付',
-						orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || (paymentStatus === '待支付' ? '待支付' : ''),
+						paymentMethod: order.paymentMethod || order.payMethod || orderInfo.paymentMethod || '',
+						paymentStatus: paymentStatus || '',
+						orderStatus: order.orderStatus || order.status || orderInfo.orderStatus || orderInfo.status || '',
 						orderTime: order.orderTime || order.createTime || order.createdTime || order.createdAt || orderInfo.orderTime || orderInfo.createTime || ''
 					};
 				},

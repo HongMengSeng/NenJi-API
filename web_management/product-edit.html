@@ -415,6 +415,10 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+											{{ status.statusName }}
+										</option>
 									</select>
 								</div>
 							</div>
@@ -540,6 +544,7 @@
 			const PRODUCT_API_ORIGIN = new URL(PRODUCT_DETAIL_API).origin;
 			const UNITS_API = FarmAPI.url('/api/product/units');
 			const CATEGORIES_API = FarmAPI.url('/api/product/categories');
+			const STATUSES_API = FarmAPI.url('/api/product/statuses');
 			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
@@ -558,6 +563,7 @@
 						units: [],
 						unitsLoading: false,
 						categories: [],
+						statuses: [],
 						// 产品表单
 						productForm: {
 							id: '',
@@ -565,7 +571,7 @@
 							price: '',
 							stock: '',
 							productType: '',
-							status: '已上架',
+							status: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -580,9 +586,12 @@
 				
 				async mounted() {
 					this.loadCategories();
+					await Promise.all([
+						this.loadStatuses(),
+						this.loadUnits()
+					]);
 					const urlParams = new URLSearchParams(window.location.search);
 					const productId = urlParams.get('id');
-					await this.loadUnits();
 					if (productId) {
 						this.productId = productId;
 						this.loadProductData(productId);
@@ -689,6 +698,27 @@
 						} catch (error) {
 							console.warn('加载分类列表接口异常:', error);
 							this.categories = [];
+						}
+					},
+
+					async loadStatuses() {
+						try {
+							const response = await fetch(STATUSES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.statuses = Array.isArray(data.data) ? data.data : [];
+								console.log('状态列表请求成功:', this.statuses);
+							} else {
+								console.warn('加载状态列表失败:', data.message);
+								this.statuses = [];
+							}
+						} catch (error) {
+							console.warn('加载状态列表接口异常:', error);
+							this.statuses = [];
 						}
 					},
 
@@ -915,13 +945,25 @@
 					normalizeStatus(status) {
 						const text = String(status || '').trim();
 						if (!text) {
-							return '上架';
+							return '';
 						}
+						// 先在状态列表中查找匹配的状态名称
+						const matchedStatus = this.statuses.find(s => 
+							s.statusName === text || 
+							String(s.commodityStatusId) === text ||
+							s.statusName === '已' + text
+						);
+						if (matchedStatus) {
+							return matchedStatus.statusName;
+						}
+						// 如果没有匹配，尝试常见的映射
 						if (['已上架', '上架', '1', 'true', 'active', 'on', 'ON_SALE'].includes(text)) {
-							return '已上架';
+							const onShelf = this.statuses.find(s => s.statusName === '上架');
+							return onShelf ? onShelf.statusName : '上架';
 						}
 						if (['已下架', '下架', '0', 'false', 'inactive', 'off', 'OFF_SALE'].includes(text)) {
-							return '已下架';
+							const offShelf = this.statuses.find(s => s.statusName === '下架');
+							return offShelf ? offShelf.statusName : '下架';
 						}
 						return text;
 					},
@@ -937,13 +979,16 @@
 						const weightUnit = this.resolveProductWeightUnit(product, unitId);
 						this.coverImagePreview = '';
 						this.specImagePreviews = [];
+						const originalStatus = product.status;
+						const normalizedStatus = this.normalizeStatus(originalStatus);
+						console.log('状态映射调试 - 原始值:', originalStatus, '| 状态列表:', this.statuses, '| 映射结果:', normalizedStatus);
 						this.productForm = {
 							id: product.id || product.productId || this.productId,
 							name: product.name || product.productName || '',
 							price: product.price ?? '',
 							stock: product.stock ?? 0,
 							productType: product.productType || '实物',
-							status: this.normalizeStatus(product.status),
+							status: normalizedStatus,
 							coverImage: this.resolveMediaUrl(product.coverImage || product.image || ''),
 							carouselMedia: this.normalizeCarouselMedia(product.carouselMedia),
 							netWeight: product.netWeight ?? product.weight ?? '',

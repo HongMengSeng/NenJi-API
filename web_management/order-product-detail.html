@@ -530,33 +530,6 @@
 					return `${match[1]}-${pad(match[2])}-${pad(match[3])} ${pad(match[4])}:${pad(match[5])}`;
 				},
 
-				getManagedLogisticsCompanyMap() {
-					return {
-						P202604010001: '顺丰',
-						P202604010002: '顺丰',
-						P202604010003: '邮政',
-						P202604010005: '顺丰',
-						P202604010006: '顺丰',
-						P202604010007: '顺丰'
-					};
-				},
-
-				getLogisticsCompanyByTrackingNo(trackingNo) {
-					const normalizedNo = String(trackingNo || '').trim().toUpperCase();
-					if (!normalizedNo) {
-						return '';
-					}
-
-					if (normalizedNo.startsWith('SF')) {
-						return '顺丰';
-					}
-					if (normalizedNo.startsWith('YZ') || normalizedNo.startsWith('EMS') || normalizedNo.startsWith('POST')) {
-						return '邮政';
-					}
-
-					return '';
-				},
-
 				getLogisticsCompanyDisplay(record) {
 					if (this.orderInfo.deliveryMethod === '到店自提') {
 						return (record && record.logisticsType) || this.orderInfo.logisticsType || this.orderInfo.deliveryMethod || '--';
@@ -567,17 +540,7 @@
 						return currentLogisticsType;
 					}
 
-					const companyMap = this.getManagedLogisticsCompanyMap();
-					const orderNo = String(this.orderInfo.orderNo || '').trim();
-					if (orderNo && companyMap[orderNo]) {
-						return companyMap[orderNo];
-					}
-
-					const recordTrackingNo = record && record.trackingNo;
-					return this.getLogisticsCompanyByTrackingNo(recordTrackingNo)
-						|| this.getLogisticsCompanyByTrackingNo(this.fulfillmentInfo.trackingNo)
-						|| this.getLogisticsCompanyByTrackingNo(this.orderInfo.logisticsNo)
-						|| '--';
+					return '--';
 				},
 
 				getTotalItemCount() {
@@ -611,37 +574,7 @@
 					return 'pending';
 				},
 
-				buildFallbackLogisticsRecords(orderInfo, fulfillmentInfo) {
-					let status = '处理中';
-					if (orderInfo.orderStatus === '已完成') {
-						status = orderInfo.deliveryMethod === '到店自提' ? '已核销' : '已签收';
-					} else if (orderInfo.orderStatus === '已取消' || orderInfo.paymentStatus === '已退款') {
-						status = '已关闭';
-					} else if (orderInfo.orderStatus === '待支付' || orderInfo.paymentStatus === '待支付') {
-						status = '待支付';
-					} else if (orderInfo.orderStatus === '待自提') {
-						status = '待核销';
-					} else if (orderInfo.orderStatus === '待发货') {
-						status = '待揽收';
-					} else if (orderInfo.orderStatus === '已发货') {
-						status = '已发货';
-					} else if (orderInfo.orderStatus === '配送中') {
-						status = '运输中';
-					} else if (orderInfo.orderStatus === '待收货') {
-						status = '待收货';
-					}
-
-					return [
-						{
-							logisticsType: orderInfo.logisticsType || orderInfo.deliveryMethod || '待分配物流',
-							nodeName: orderInfo.deliveryMethod === '到店自提' ? '自提处理' : '物流处理',
-							handler: orderInfo.deliveryMethod === '到店自提' ? fulfillmentInfo.address : (fulfillmentInfo.schedule || '待分配物流'),
-							status,
-							updateTime: orderInfo.createTime,
-							remark: orderInfo.deliveryNote || '暂无物流说明'
-						}
-					];
-				},
+				
 
 				navigateTo(page) {
 					window.location.href = page;
@@ -651,194 +584,7 @@
 					window.location.href = 'order-product.html';
 				},
 
-				getSubscriptionPrice() {
-					const prices = {
-						'P202604010008': 8888,
-						'P202604020001': 6666,
-						'P202604020002': 8888,
-						'P202604020003': 12888
-					};
-					return prices[this.orderInfo.orderNo] || 8888;
-				},
-
-				getSubscriptionTypeName() {
-					const orderNo = this.orderInfo.orderNo || '';
-					if (orderNo.includes('P202604020001')) return '春季认购';
-					if (orderNo.includes('P202604020002')) return '夏季认购';
-					if (orderNo.includes('P202604020003')) return '秋季认购（VIP）';
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.name) {
-						if (item.name.includes('春季')) return '春季认购';
-						if (item.name.includes('夏季')) return '夏季认购';
-						if (item.name.includes('秋季')) return '秋季认购（VIP）';
-					}
-					return '全年认购';
-				},
-
-				getSubscriptionFieldNo() {
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.spec && item.spec.includes('编号')) {
-						const match = item.spec.match(/编号\s*([^\s]+)/);
-						if (match) return match[1];
-					}
-					const orderNo = this.orderInfo.orderNo || '';
-					return 'YT-2026-' + orderNo.slice(-4);
-				},
-
-				getExpectedYield() {
-					const item = this.orderItems && this.orderItems[0];
-					if (item && item.description) {
-						const match = item.description.match(/预计[^\d]*(\d+)kg/);
-						if (match) return match[1] + ' kg 有机蔬菜';
-					}
-					return '2000 kg 有机蔬菜';
-				},
-
-				getProductCatalog() {
-					return {
-						'20250120120030': {
-							name: '苹果礼盒',
-							image: '',
-							price: 58,
-							spec: '精品礼盒装',
-							netWeight: '5kg/箱'
-						},
-						'20261201130021': {
-							name: '雪梨礼盒',
-							image: '',
-							price: 49,
-							spec: '礼盒装',
-							netWeight: '4kg/箱'
-						},
-						'20260301120031': {
-							name: '番茄礼盒',
-							image: '',
-							price: 39,
-							spec: '净菜精选装',
-							netWeight: '3kg/箱'
-						},
-						'20260302120032': {
-							name: '黄瓜礼盒',
-							image: '',
-							price: 29,
-							spec: '净菜精选装',
-							netWeight: '2.5kg/箱'
-						},
-						'20260305120035': {
-							name: '胡萝卜家庭装',
-							image: '',
-							price: 18,
-							spec: '家庭实惠装',
-							netWeight: '2kg/袋'
-						},
-						'20260306120036': {
-							name: '白菜家庭装',
-							image: '',
-							price: 16,
-							spec: '家庭实惠装',
-							netWeight: '3kg/袋'
-						},
-						'SUB20260401001': {
-							name: '春季时令一亩田认购',
-							image: '',
-							price: 16,
-							spec: '家庭实惠装',
-							netWeight: ''
-						},
-						'20260401090011': {
-							name: '农家土鸡蛋',
-							image: '',
-							price: 26,
-							spec: '盒装',
-							netWeight: '20枚/盒'
-						},
-						'20260401090012': {
-							name: '农家蜂蜜',
-							image: '',
-							price: 59,
-							spec: '玻璃瓶装',
-							netWeight: '500g/瓶'
-						},
-						'20260401090013': {
-							name: '有机草莓礼盒',
-							image: '',
-							price: 66,
-							spec: '冷链礼盒装',
-							netWeight: '2kg/箱'
-						},
-						'spring_subscription': {
-							name: '一亩田春季认购',
-							image: '',
-							price: 6666
-						},
-						'summer_subscription': {
-							name: '一亩田夏季认购',
-							image: '',
-							price: 8888
-						},
-						'autumn_subscription': {
-							name: '一亩田秋季认购',
-							image: '',
-							price: 12888
-						},
-						'spring_subscription_item': {
-							name: '春季时令一亩田认购',
-							image: '',
-							price: 8888
-						}
-					};
-				},
-
-				buildOrderItems(itemConfigs, orderType) {
-					if (orderType === '认购一亩田') {
-						const firstItem = itemConfigs && itemConfigs[0];
-						const subscriptionField = firstItem && firstItem.subscriptionField ? firstItem.subscriptionField : '';
-						const price = firstItem && firstItem.price ? firstItem.price : this.getSubscriptionPrice();
-						let seasonName = '一亩田套餐';
-						let seasonDesc = '专属田地 666㎡ | 全年蔬菜配送 | 预计年产 2000kg 有机蔬菜';
-
-						if (subscriptionField.includes('春季')) {
-							seasonName = '一亩田春季认购';
-							seasonDesc = '春季专属田地 666㎡ | 春季蔬菜套餐配送 | 预计春季产 800kg 有机蔬菜';
-						} else if (subscriptionField.includes('夏季')) {
-							seasonName = '一亩田夏季认购';
-							seasonDesc = '夏季专属田地 666㎡ | 夏季蔬菜套餐配送 | 预计夏季产 1000kg 有机蔬菜';
-						} else if (subscriptionField.includes('秋季')) {
-							seasonName = '一亩田秋季认购';
-							seasonDesc = '秋季专属田地 666㎡ | 秋季蔬菜套餐配送 | 预计秋季产 1200kg 有机蔬菜';
-						}
-
-						return [{
-							productId: 'subscription',
-							image: '',
-							name: seasonName,
-							description: seasonDesc,
-							spec: subscriptionField || '认购套餐',
-							netWeight: '1亩',
-							quantity: 1,
-							price: price,
-							subtotal: price
-						}];
-					}
-
-					const catalog = this.getProductCatalog();
-					return itemConfigs.map(config => {
-						const product = catalog[config.productId] || {};
-						const price = Number(config.price != null ? config.price : product.price || 0);
-						const quantity = Number(config.quantity || 1);
-						return {
-							productId: config.productId,
-							image: config.image || product.image || '',
-							name: config.name || product.name || '未知商品',
-							description: config.description || product.description || '农产品订单商品',
-							spec: config.spec || product.spec || '标准装',
-							netWeight: config.netWeight || product.netWeight || '规格待补充',
-							quantity: quantity,
-							price: price,
-							subtotal: Number((price * quantity).toFixed(2))
-						};
-					});
-				},
+				
 
 				async loadOrderDetail(orderNo, phone) {
 					if (!orderNo) {
@@ -918,7 +664,7 @@
 									updateTime: record.updateTime || '',
 									remark: record.remark || ''
 								}))
-								: this.buildFallbackLogisticsRecords(this.orderInfo, this.fulfillmentInfo);
+								: [];
 
 							this.orderInfo.createTime = this.formatDisplayTime(this.orderInfo.createTime);
 							this.logisticsRecords.forEach(record => {

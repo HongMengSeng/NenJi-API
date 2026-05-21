@@ -586,20 +586,6 @@
 			word-break: break-word;
 		}
 
-		.pagination{
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 15px 0;
-			border-top: 1px solid #e2e8f0;
-			background: white;
-			gap: 10px;
-			flex-wrap: wrap;
-			position: sticky;
-			bottom: 0;
-			z-index: 10;
-		}
-
 		.page-jump-input{
 			width: 60px;
 			padding: 5px;
@@ -649,6 +635,7 @@
 	</style>
 	<link rel="stylesheet" href="css/admin-base.css" />
 	<link rel="stylesheet" href="css/admin-components.css" />
+	<link rel="stylesheet" href="css/admin-pagination.css" />
 	<script src="js/admin-utils.js"></script>
 	</head>
 <body>
@@ -858,9 +845,9 @@
 				},
 
 				getProductOrderStatusClass(status) {
-					if (displayStatus === '已完成') return 'completed';
-					if (displayStatus === '待支付') return 'unpaid';
-					if (displayStatus === '待发货' || displayStatus === '待收货' || displayStatus === '退款中') return 'processing';
+					if (status === '已完成') return 'completed';
+					if (status === '待支付') return 'unpaid';
+					if (status === '待发货' || status === '待收货' || status === '退款中') return 'processing';
 					return 'pending';
 				},
 
@@ -1134,8 +1121,6 @@
 					}
 					alert('请输入有效的菜品订单页码');
 				},
-
-			,
 
 				logout() {
 					if (confirm('确定要退出登录吗？')) {

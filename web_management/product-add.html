@@ -406,6 +406,10 @@
 								<div class="form-group">
 									<label>状态</label>
 									<select v-model="productForm.status">
+										<option value="">请选择状态</option>
+										<option v-for="status in statuses" :key="status.commodityStatusId" :value="status.statusName">
+											{{ status.statusName }}
+										</option>
 									</select>
 								</div>
 							</div>
@@ -529,6 +533,7 @@
 			const { createApp } = Vue
 			const UNITS_API = FarmAPI.url('/api/product/units');
 			const CATEGORIES_API = FarmAPI.url('/api/product/categories');
+			const STATUSES_API = FarmAPI.url('/api/product/statuses');
 			const COMMON_UPLOAD_API = FarmAPI.url('/api/common/upload');
 			const UPLOAD_MAX_SIZE = 50 * 1024 * 1024;
 			const UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'];
@@ -545,13 +550,14 @@
 						units: [],
 						unitsLoading: false,
 						categories: [],
+						statuses: [],
 						// 产品表单
 						productForm: {
 							name: '',
 							price: '',
 							stock: '',
 							productType: '',
-							status: '已上架',
+							status: '',
 							coverImage: '',
 							carouselMedia: [],
 							netWeight: '',
@@ -568,6 +574,7 @@
 					this.resetInitialView();
 					this.loadUnits();
 					this.loadCategories();
+					this.loadStatuses();
 				},
 				
 				methods: {
@@ -682,6 +689,29 @@
 						} catch (error) {
 							console.warn('加载分类列表接口异常:', error);
 							this.categories = [];
+						}
+					},
+
+					async loadStatuses() {
+						try {
+							const response = await fetch(STATUSES_API, {
+								headers: window.Auth && typeof window.Auth.getAuthHeaders === 'function'
+									? window.Auth.getAuthHeaders()
+									: {}
+							});
+							const data = await FarmAPI.parseResponse(response);
+							if (data.code === 0 || data.code === 200) {
+								this.statuses = Array.isArray(data.data) ? data.data : [];
+								if (this.statuses.length > 0 && !this.productForm.status) {
+									this.productForm.status = this.statuses[0].statusName;
+								}
+							} else {
+								console.warn('加载状态列表失败:', data.message);
+								this.statuses = [];
+							}
+						} catch (error) {
+							console.warn('加载状态列表接口异常:', error);
+							this.statuses = [];
 						}
 					},
 
