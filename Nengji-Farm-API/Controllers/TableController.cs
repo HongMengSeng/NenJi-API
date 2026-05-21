@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 
-using WebAPI.Common;
 using WebAPI.Dtos;
 using WebAPI.Services;
 
@@ -40,18 +39,17 @@ public class TableController : ControllerBase
 
             var pages = (total + pageSize - 1) / pageSize;
 
-            return Ok(ApiResult.Success(new
+            return Ok(new ApiResponses<object>
             {
-                records,
-                total,
-                pages,
-                pageNum
-            }));
+                Code = 200,
+                Message = "success",
+                Data = new { records, total, pages, pageNum }
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取餐桌列表失败");
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -66,20 +64,20 @@ public class TableController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(id))
-                return Ok(ApiResult.Fail("餐桌ID不能为空", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var detail = await _tableService.GetTableDetailAsync(id.Trim(), baseUrl, cancellationToken);
 
             if (detail is null)
-                return Ok(ApiResult.Fail("餐桌不存在", 404));
+                return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
 
-            return Ok(ApiResult.Success(detail));
+            return Ok(new ApiResponses<object> { Code = 200, Message = "success", Data = detail });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取餐桌详情失败 - ID: {Id}", id);
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -94,33 +92,33 @@ public class TableController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(dto.Tableno))
-                return Ok(ApiResult.Fail("餐桌号不能为空", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
             var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
             if (error != null)
-                return Ok(ApiResult.Fail(error, 400));
+                return Ok(new ApiResponse { Code = 400, Message = error });
             dto.Tableno = normalized!;
 
             if (dto.Capacity < 1 || dto.Capacity > 30)
-                return Ok(ApiResult.Fail("容纳人数必须在 1-30 之间", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "容纳人数必须在 1-30 之间" });
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var result = await _tableService.CreateTableAsync(dto, baseUrl, cancellationToken);
 
-            return Ok(ApiResult.Success(result, "新增成功"));
+            return Ok(new ApiResponses<object> { Code = 200, Message = "新增成功", Data = result });
         }
         catch (InvalidOperationException ex)
         {
-            return Ok(ApiResult.Fail(ex.Message, 409));
+            return Ok(new ApiResponse { Code = 409, Message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return Ok(ApiResult.Fail(ex.Message, 400));
+            return Ok(new ApiResponse { Code = 400, Message = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "新增餐桌失败");
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -135,13 +133,13 @@ public class TableController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(dto.Id))
-                return Ok(ApiResult.Fail("餐桌ID不能为空", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
             if (!string.IsNullOrWhiteSpace(dto.Tableno))
             {
                 var (normalized, error) = TableNoHelper.Normalize(dto.Tableno);
                 if (error != null)
-                    return Ok(ApiResult.Fail(error, 400));
+                    return Ok(new ApiResponse { Code = 400, Message = error });
                 dto.Tableno = normalized;
             }
 
@@ -149,22 +147,22 @@ public class TableController : ControllerBase
             var result = await _tableService.UpdateTableAsync(dto, baseUrl, cancellationToken);
 
             if (result is null)
-                return Ok(ApiResult.Fail("餐桌不存在", 404));
+                return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
 
-            return Ok(ApiResult.Success(result, "修改成功"));
+            return Ok(new ApiResponses<object> { Code = 200, Message = "修改成功", Data = result });
         }
         catch (InvalidOperationException ex)
         {
-            return Ok(ApiResult.Fail(ex.Message, 409));
+            return Ok(new ApiResponse { Code = 409, Message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return Ok(ApiResult.Fail(ex.Message, 400));
+            return Ok(new ApiResponse { Code = 400, Message = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新餐桌失败 - ID: {Id}", dto.Id);
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -179,19 +177,19 @@ public class TableController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(dto.Id))
-                return Ok(ApiResult.Fail("餐桌ID不能为空", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
             var success = await _tableService.DeleteTableAsync(dto.Id.Trim(), cancellationToken);
 
             if (!success)
-                return Ok(ApiResult.Fail("餐桌不存在", 404));
+                return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
 
-            return Ok(ApiResult.Success(null, "停用成功"));
+            return Ok(new ApiResponses<object> { Code = 200, Message = "停用成功", Data = null });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除餐桌失败 - ID: {Id}", dto.Id);
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -205,12 +203,12 @@ public class TableController : ControllerBase
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var count = await _tableService.RegenerateAllQrCodesAsync(baseUrl, cancellationToken);
-            return Ok(ApiResult.Success(new { count }, $"已重新生成 {count} 张二维码"));
+            return Ok(new ApiResponses<object> { Code = 200, Message = $"已重新生成 {count} 张二维码", Data = new { count } });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "重新生成二维码失败");
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 
@@ -225,22 +223,22 @@ public class TableController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(dto.Tableno))
-                return Ok(ApiResult.Fail("餐桌号不能为空", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
             if (dto.Status < 1 || dto.Status > 3)
-                return Ok(ApiResult.Fail("状态值不正确，仅支持 1=空闲, 2=使用中, 3=停用", 400));
+                return Ok(new ApiResponse { Code = 400, Message = "状态值不正确，仅支持 1=空闲, 2=使用中, 3=停用" });
 
             var result = await _tableService.UpdateTableStatusAsync(dto, cancellationToken);
 
             if (result is null)
-                return Ok(ApiResult.Fail("餐桌不存在", 404));
+                return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
 
-            return Ok(ApiResult.Success(result, "状态更新成功"));
+            return Ok(new ApiResponses<object> { Code = 200, Message = "状态更新成功", Data = result });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新餐桌状态失败 - Tableno: {Tableno}", dto.Tableno);
-            return Ok(ApiResult.Fail("服务器内部错误", 500));
+            return Ok(new ApiResponse { Code = 500, Message = "服务器内部错误" });
         }
     }
 }
