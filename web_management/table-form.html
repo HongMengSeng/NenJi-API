@@ -332,6 +332,9 @@
 							}
 							if (!this.isEditMode) {
 								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
+							} else if (this.editingTableId !== originalTableId) {
+								// 餐桌编号已修改，重新生成二维码
+								this.printTableQrCode(qrCodeId, originalTableId, capacity, data.data && data.data.qrCodeUrl);
 							}
 							window.location.href = 'table.html';
 						} catch (error) {
