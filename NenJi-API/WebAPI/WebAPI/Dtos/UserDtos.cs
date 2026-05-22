@@ -157,14 +157,6 @@ namespace WebAPI.Dtos
     }
 
     /// <summary>
-    /// 批量删除用户请求DTO
-    /// </summary>
-    public class DeleteBatchDto
-    {
-        public List<string> ids { get; set; } = new();
-    }
-
-    /// <summary>
     /// �û���¼����DTO
     /// </summary>
     public class LoginDto

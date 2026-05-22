@@ -34,41 +34,6 @@ public class OrderController : ControllerBase
     }
 
     /// <summary>
-    /// 根据桌台 ID 获取当前桌台信息（扫码后解析名称用）
-    /// </summary>
-    [AllowAnonymous]
-    [HttpGet("table-info/{tableId:int}")]
-    public async Task<IActionResult> GetTableInfo(int tableId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (tableId <= 0)
-                return Ok(ApiResult.Fail("桌台 ID 不正确", 400));
-
-            var table = await _dbContext.DiningTables
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.DiningTableId == tableId, cancellationToken);
-
-            if (table is null)
-                return Ok(ApiResult.Fail("桌台不存在", 404));
-
-            return Ok(ApiResult.Success(new
-            {
-                id = table.TableNo,
-                diningTableId = table.DiningTableId,
-                name = FormatTableName(table.TableNo),
-                tableNo = table.TableNo,
-                status = table.TableStatusId == 1 ? "free" : "occupied",
-                statusText = table.TableStatusId == 1 ? "空闲" : "使用中"
-            }));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResult.Fail("获取桌台信息失败：" + ex.Message));
-        }
-    }
-
-    /// <summary>
     /// 获取当前可用桌台列表（点餐页公共接口，无需登录）
     /// </summary>
     [AllowAnonymous]
@@ -82,8 +47,7 @@ public class OrderController : ControllerBase
                 .OrderBy(x => x.DiningTableId)
                 .Select(x => new
                 {
-                    id = x.TableNo,
-                    diningTableId = x.DiningTableId,
+                    id = x.DiningTableId,
                     name = FormatTableName(x.TableNo),
                     status = x.TableStatusId == 1 ? "free" : "occupied",
                     statusText = x.TableStatusId == 1 ? "空闲" : "使用中"
@@ -1240,9 +1204,9 @@ public class OrderController : ControllerBase
 
     private static string BuildTableQrUrl(long tableId)
     {
-        // 注意：不编码 query 参数值，因为小程序端解析 QR 码时直接用
-        // res.result.match(/query=([^&]+)/) 提取，编码后会导致解析失败
-        return $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query=tableId={tableId}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
+        var queryValue = $"tableId={tableId}&secret=^mFIT!xzJ@j55QN%R^4yZ0vx";
+        var encodedQuery = Uri.EscapeDataString(queryValue);
+        return $"weixin://dl/business/?appid=wx986e22f241e13ba2&path=subpkg/order/order&query={encodedQuery}";
     }
 
     private static string GenerateQrCodeBase64(string content)

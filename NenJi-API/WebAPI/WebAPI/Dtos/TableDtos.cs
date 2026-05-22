@@ -5,7 +5,6 @@ namespace WebAPI.Dtos;
 /// </summary>
 public class TableListItemDto
 {
-    public long DiningTableId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string Tableno { get; set; } = string.Empty;
     public int Capacity { get; set; }
@@ -18,7 +17,6 @@ public class TableListItemDto
 /// </summary>
 public class TableDetailDto
 {
-    public long DiningTableId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string Tableno { get; set; } = string.Empty;
     public int Capacity { get; set; }
@@ -42,7 +40,6 @@ public class CreateTableRequestDto
 /// </summary>
 public class UpdateTableRequestDto
 {
-    public long? DiningTableId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string? Tableno { get; set; }
     public int? Capacity { get; set; }
@@ -54,7 +51,6 @@ public class UpdateTableRequestDto
 /// </summary>
 public class DeleteTableRequestDto
 {
-    public long? DiningTableId { get; set; }
     public string Id { get; set; } = string.Empty;
 }
 
@@ -63,7 +59,6 @@ public class DeleteTableRequestDto
 /// </summary>
 public class UpdateTableStatusRequestDto
 {
-    public long? DiningTableId { get; set; }
     public string Tableno { get; set; } = string.Empty;
     public int Status { get; set; }
 }
@@ -73,7 +68,6 @@ public class UpdateTableStatusRequestDto
 /// </summary>
 public class TableMutationResponseDto
 {
-    public long DiningTableId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string Tableno { get; set; } = string.Empty;
     public int Capacity { get; set; }

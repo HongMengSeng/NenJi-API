@@ -259,43 +259,6 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// 接口6：批量删除用户
-        /// </summary>
-        [HttpPost("deleteBatch")]
-        public async Task<IActionResult> DeleteBatchUsers([FromBody] DeleteBatchDto dto)
-        {
-            try
-            {
-                if (dto.ids == null || dto.ids.Count == 0)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Code = 400,
-                        Message = "删除用户ID列表不能为空"
-                    });
-                }
-
-                _logger.LogInformation($"批量删除用户|数量: {dto.ids.Count}");
-                await _userService.DeleteBatchUsers(dto.ids);
-
-                return Ok(new ApiResponse
-                {
-                    Code = 200,
-                    Message = $"批量删除成功，共删除 {dto.ids.Count} 个用户"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"批量删除用户失败: {ex.Message}");
-                return BadRequest(new ApiResponse
-                {
-                    Code = 400,
-                    Message = ex.Message
-                });
-            }
-        }
-
-        /// <summary>
         /// 获取角色列表
         /// </summary>
         [HttpGet("roles")]
@@ -331,7 +294,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// 接口7：用户登录（只有管理员可登录）
+        /// 接口6：用户登录（只有管理员可登录）
         /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -377,7 +340,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// 接口8：用户注销
+        /// 接口7：用户注销
         /// 客户端删除本地存储的 Token 即可注销
         /// </summary>
         [HttpPost("logout")]

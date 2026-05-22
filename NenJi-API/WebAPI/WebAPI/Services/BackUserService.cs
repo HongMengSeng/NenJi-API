@@ -144,8 +144,7 @@ namespace WebAPI.Services
                 RealName = dto.RealName,
                 Password = _passwordService.HashPassword(dto.Password),
                 Gender = dto.Gender,
-                RoleId = dto.RoleId ?? 2,
-                Points = 0
+                RoleId = dto.RoleId ?? 2
 
                 //LoginTime = null,
 
@@ -205,34 +204,12 @@ namespace WebAPI.Services
             return true;
         }
 
-        /// <summary>
-        /// 批量删除用户
-        /// </summary>
-        public async Task<bool> DeleteBatchUsers(List<string> guids)
-        {
-            if (guids == null || guids.Count == 0)
-                throw new Exception("删除用户ID列表不能为空");
-
-            var users = await _dbContext.Users
-                .Where(u => guids.Contains(u.UserGuid))
-                .ToListAsync();
-
-            if (users.Count == 0)
-                throw new Exception("未找到要删除的用户");
-
-            _dbContext.Users.RemoveRange(users);
-            await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation($"✅ 批量删除用户成功 | 应删: {guids.Count}, 实删: {users.Count}");
-            return true;
-        }
-
         public async Task<UserDetailDto?> GetUserDetailAsync(string id)
         {
             if (!int.TryParse(id, out var userId)) return null;
             var user = await _dbContext.Users
-                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
+
 
             if (user == null) return null;
 
@@ -340,7 +317,6 @@ namespace WebAPI.Services
         public async Task<UserDetailDto?> GetUserDetailByIdAsync(int userId)
         {
             var user = await _dbContext.Users
-                .Include(u => u.Role)
                 .Where(u => u.UserId == userId)
                 .FirstOrDefaultAsync();
 
@@ -356,7 +332,6 @@ namespace WebAPI.Services
         public async Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid)
         {
             var user = await _dbContext.Users
-                .Include(u => u.Role)
                 .Where(u => u.UserGuid == userGuid)
                 .FirstOrDefaultAsync();
 
@@ -384,7 +359,6 @@ namespace WebAPI.Services
                 realName = user.RealName ?? string.Empty,
                 wxOpenId = user.WxOpenId ?? string.Empty,
                 roleId = user.RoleId,
-                roleName = user.Role?.RoleName ?? "普通用户",
             };
         }
     }

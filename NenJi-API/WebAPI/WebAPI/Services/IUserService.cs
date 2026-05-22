@@ -10,16 +10,15 @@ namespace WebAPI.Services
         Task<bool> EditUser(EditUserDto dto);
         //Task<bool> ChangeUserStatus(string userId, string status);
         Task<bool> DeleteUser(string userId);
-        Task<bool> DeleteBatchUsers(List<string> guids);
         Task<LoginResponseDto?> Login(string phone, string password);
         Task<UserDetailDto?> GetUserDetailAsync(string userId);
         /// <summary>
-        /// ï¿½ï¿½È¡ï¿½Ã»ï¿½ï¿½ï¿½ï¿½é£¨ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½IDï¿½ï¿½
+        /// »ñÈ¡ÓÃ»§ÏêÇé£¨»ùÓÚÓÃ»§ID£©
         /// </summary>
         Task<UserDetailDto?> GetUserDetailByIdAsync(int userId);
 
         /// <summary>
-        /// ï¿½ï¿½È¡ï¿½Ã»ï¿½ï¿½ï¿½ï¿½é£¨ï¿½ï¿½ï¿½ï¿½UserGuidï¿½ï¿½
+        /// »ñÈ¡ÓÃ»§ÏêÇé£¨»ùÓÚUserGuid£©
         /// </summary>
         Task<UserDetailDto?> GetUserDetailByGuidAsync(string userGuid);
     }

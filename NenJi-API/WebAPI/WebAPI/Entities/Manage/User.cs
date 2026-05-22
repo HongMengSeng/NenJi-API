@@ -40,8 +40,5 @@ public class User
     [Column("role_id")]
     public int RoleId { get; set; }
 
-    [Column("points")]
-    public long Points { get; set; }
-
     public Role? Role { get; set; }
 }

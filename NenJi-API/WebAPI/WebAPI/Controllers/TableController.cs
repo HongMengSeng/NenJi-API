@@ -176,10 +176,10 @@ public class TableController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(dto.Id) && !dto.DiningTableId.HasValue)
+            if (string.IsNullOrWhiteSpace(dto.Id))
                 return Ok(new ApiResponse { Code = 400, Message = "餐桌ID不能为空" });
 
-            var success = await _tableService.DeleteTableAsync(dto, cancellationToken);
+            var success = await _tableService.DeleteTableAsync(dto.Id.Trim(), cancellationToken);
 
             if (!success)
                 return Ok(new ApiResponse { Code = 404, Message = "餐桌不存在" });
@@ -222,8 +222,8 @@ public class TableController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(dto.Tableno) && !dto.DiningTableId.HasValue)
-                return Ok(new ApiResponse { Code = 400, Message = "餐桌标识不能为空，请提供 tableno 或 diningTableId" });
+            if (string.IsNullOrWhiteSpace(dto.Tableno))
+                return Ok(new ApiResponse { Code = 400, Message = "餐桌号不能为空" });
 
             if (dto.Status < 1 || dto.Status > 3)
                 return Ok(new ApiResponse { Code = 400, Message = "状态值不正确，仅支持 1=空闲, 2=使用中, 3=停用" });

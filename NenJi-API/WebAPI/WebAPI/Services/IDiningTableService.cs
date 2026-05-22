@@ -38,7 +38,7 @@ public interface IDiningTableService
     Task<TableMutationResponseDto?> UpdateTableAsync(UpdateTableRequestDto dto, string baseUrl, CancellationToken cancellationToken = default);
 
     /// <summary>删除餐桌</summary>
-    Task<bool> DeleteTableAsync(Dtos.DeleteTableRequestDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteTableAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>更新餐桌状态</summary>
     Task<UpdateTableStatusRequestDto?> UpdateTableStatusAsync(UpdateTableStatusRequestDto dto, CancellationToken cancellationToken = default);
