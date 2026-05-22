@@ -236,7 +236,7 @@ public class FarmGoodsController : ControllerBase
             return (object)new Dictionary<string, object?>
             {
                 ["id"] = x.CommodityId.ToString(),
-                ["type"] = "goods",
+                ["type"] = x.CategoryId == 5 ? "acre" : "normal",
                 ["name"] = x.ProductName,
                 ["price"] = price,
                 ["originalPrice"] = x.OriginalPrice ?? price,
